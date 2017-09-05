@@ -3,29 +3,49 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WHIP_LRU", "Source\WHIP_LRU\WHIP_LRU.csproj", "{089E059C-C6DE-4755-AF29-9797880A22E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RollbarCrashReporter", "Source\RollbarCrashReporter\RollbarCrashReporter.csproj", "{E083B367-9134-4CF5-9F9B-69E5EAF202FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "Source\UnitTests\UnitTests.csproj", "{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "log4net.RollbarNET", "Source\log4net.RollbarNET\log4net.RollbarNET.csproj", "{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
 		Release|x86 = Release|x86
 		Release|Any CPU = Release|Any CPU
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
 		$0.DotNetNamingPolicy = $1
-		$1.DirectoryNamespaceAssociation = None
+		$1.DirectoryNamespaceAssociation = PrefixedFlat
 		$1.ResourceNamePolicy = FileFormatDefault
 		$0.TextStylePolicy = $2
 		$2.FileWidth = 120
-		$2.inheritsSet = Mono
+		$2.inheritsSet = null
 		$2.inheritsScope = text/plain
-		$2.scope = text/plain
+		$2.scope = application/xml
 		$2.TabWidth = 2
 		$2.IndentWidth = 2
 		$0.CSharpFormattingPolicy = $3
@@ -59,5 +79,9 @@ Global
 		$9.String = Exception
 		$0.VersionControlPolicy = $10
 		$10.inheritsSet = Mono
+		$0.XmlFormattingPolicy = $11
+		$11.inheritsSet = Mono
+		$11.inheritsScope = application/xml
+		$11.scope = application/xml
 	EndGlobalSection
 EndGlobal
