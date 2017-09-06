@@ -69,9 +69,12 @@ namespace WHIP_LRU {
 			// Read in the ini file
 			ReadConfigurationFromINI(configSource);
 
-			var chattelConfig = new ChattelConfiguration(configSource, configSource.Configs["Assets"]);
-			_assetReader = new ChattelReader(chattelConfig);
-			_assetWriter = new ChattelWriter(chattelConfig);
+			var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
+			chattelConfigRead.DisableCache(); // Force caching off no matter how the INI is set. Doing this differently here.
+			_assetReader = new ChattelReader(chattelConfigRead);
+			var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);
+			chattelConfigWrite.DisableCache(); // Force caching off no matter how the INI is set. Doing this differently here.
+			_assetWriter = new ChattelWriter(chattelConfigWrite);
 
 			pidFile.SetStatus(PIDFileManager.Status.Starting);
 
