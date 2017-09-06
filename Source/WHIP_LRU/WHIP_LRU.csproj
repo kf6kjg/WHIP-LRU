@@ -75,6 +75,7 @@
     <Compile Include="Server\WHIPServer.cs" />
     <Compile Include="Server\ServerResponseMsg.cs" />
     <Compile Include="Server\ClientRequestMsg.cs" />
+    <Compile Include="Util\PIDFileManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -82,6 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Server\" />
+    <Folder Include="Util\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

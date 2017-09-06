@@ -7,6 +7,7 @@ using log4net;
 using log4net.Config;
 using Nini.Config;
 using WHIP_LRU.Server;
+using WHIP_LRU.Util;
 
 namespace WHIP_LRU {
 	class Application {
@@ -40,6 +41,8 @@ namespace WHIP_LRU {
 
 			var startupConfig = _configSource.Configs["Startup"];
 
+			var pidFile = new PIDFileManager(startupConfig.GetString("pidfile", string.Empty));
+
 			// Configure Log4Net
 			var logConfigFile = startupConfig.GetString("logconfig", string.Empty);
 			if (string.IsNullOrEmpty(logConfigFile)) {
@@ -70,9 +73,13 @@ namespace WHIP_LRU {
 			_assetReader = new ChattelReader(chattelConfig);
 			_assetWriter = new ChattelWriter(chattelConfig);
 
+			pidFile.SetStatus(PIDFileManager.Status.Starting);
+
+			// Start up the service.
 			using (var server = new WHIPServer(RequestReceivedDelegate)) {
 				//TODO: handle signals!
-				while (true) {
+				pidFile.SetStatus(PIDFileManager.Status.Running);
+				while (_isRunning) {
 					try {
 						server.Start();
 					}
