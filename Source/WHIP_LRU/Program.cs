@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using Chattel;
@@ -90,8 +91,12 @@ namespace WHIP_LRU {
 					try {
 						server.Start();
 					}
+					catch (SocketException e) {
+						LOG.Error("Unable to bind to address or port. Is something already listening on it, or have you granted permissions for WHIP_LRU to listen?", e);
+						_isRunning = false;
+					}
 					catch (Exception e) {
-						LOG.Warn("", e);
+						LOG.Warn("Exception during server execution, automatically restarting.", e);
 					}
 				}
 			}
