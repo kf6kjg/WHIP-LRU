@@ -24,6 +24,8 @@ namespace WHIP_LRU {
 		private static ChattelReader _assetReader;
 		private static ChattelWriter _assetWriter;
 
+		private static bool _isRunning = true;
+
 		public static int Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
 #pragma warning disable RECS0164 // Explicit delegate creation expression is redundant
@@ -77,8 +79,16 @@ namespace WHIP_LRU {
 
 			// Start up the service.
 			using (var server = new WHIPServer(RequestReceivedDelegate)) {
-				//TODO: handle signals!
 				pidFile.SetStatus(PIDFileManager.Status.Running);
+
+				// Handlers for signals.
+				Console.CancelKeyPress += delegate {
+					LOG.Debug("CTRL-C pressed, terminating.");
+					_isRunning = false;
+					server.Stop();
+				};
+
+				// Handle signals!
 				while (_isRunning) {
 					try {
 						server.Start();
