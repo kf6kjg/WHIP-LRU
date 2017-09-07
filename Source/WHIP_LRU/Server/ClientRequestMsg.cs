@@ -36,15 +36,13 @@ namespace WHIP_LRU.Server {
 		private const short UUID_LEN = 32;
 		private readonly List<byte> _data = new List<byte>();
 
-		public byte[] Data => _data.Skip(HEADER_SIZE).ToArray();
-		public UUID Id { get; private set; }
+		public byte[] Data => _data?.Skip(HEADER_SIZE).ToArray();
+		public UUID AssetId { get; private set; }
 		public bool IsReady { get; private set; }
 		public RequestType Type { get; private set; }
 
-		private string GetHeaderSummary() {
-			var intStatus = (int)_data[0];
-			var dataSize = InWorldz.Whip.Client.Util.NTOHL(_data.Take(HEADER_SIZE).ToArray(), DATA_SIZE_MARKER_LOC);
-			return " Status: " + intStatus + " Size was: " + dataSize;
+		public string GetHeaderSummary() {
+			return $"Type: {Type}, AssetID: {AssetId}, Size: {Data?.Length}";
 		}
 
 		public bool AddRange(IEnumerable<byte> data) {
@@ -73,7 +71,7 @@ namespace WHIP_LRU.Server {
 						var idString = encoding.GetString(idBytes.ToArray());
 						UUID id;
 						if (UUID.TryParse(idString, out id)) {
-							Id = id;
+							AssetId = id;
 						}
 						else {
 							throw new AssetProtocolError("Invalid UUID in server response: " + GetHeaderSummary());

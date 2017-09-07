@@ -71,6 +71,10 @@ namespace WHIP_LRU.Server {
 			}
 		}
 
+		public string GetHeaderSummary() {
+			return $"Code: {_code}, AssetID: {_assetId}, Size: {_data?.Length}";
+		}
+
 		public byte[] ToByteArray() {
 			var output = new byte[HEADER_SIZE + _data.Length];
 			/* Structure of message:

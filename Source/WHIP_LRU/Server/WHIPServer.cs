@@ -115,6 +115,9 @@ namespace WHIP_LRU.Server {
 
 			// Get the socket that handles the client request.  
 			var listener = (Socket)ar.AsyncState;
+
+			LOG.Debug($"[WHIP_SERVER] ccepting connection from {listener.RemoteEndPoint}.");
+
 			try {
 				var handler = listener.EndAccept(ar);
 
@@ -144,6 +147,8 @@ namespace WHIP_LRU.Server {
 				return;
 			}
 
+			LOG.Debug($"[WHIP_SERVER] Reading {bytesRead} from {handler.RemoteEndPoint}.");
+
 			if (bytesRead > 0) {
 				// There might be more data, so store the data received so far.
 				bool complete = false;
@@ -157,12 +162,16 @@ namespace WHIP_LRU.Server {
 				if (complete) {
 					ServerResponseMsg response = null;
 
+					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} completed: {state.message.GetHeaderSummary()}");
+
 					try {
 						response = _requestHandler(state.message);
 					}
 					catch (Exception e) {
 						LOG.Warn("[WHIP_SERVER] Exception caught from request handler.", e);
 					}
+
+					LOG.Debug($"[WHIP_SERVER] Replying to {handler.RemoteEndPoint}: {response.GetHeaderSummary()}");
 
 					try {
 						Send(handler, response);
@@ -173,6 +182,8 @@ namespace WHIP_LRU.Server {
 				}
 				else {
 					// Not all data received. Get more.  
+					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} incomplete, getting next packet.");
+
 					handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
 				}
 			}
