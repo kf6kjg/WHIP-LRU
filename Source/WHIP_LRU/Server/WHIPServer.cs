@@ -96,7 +96,7 @@ namespace WHIP_LRU.Server {
 
 				// Start an asynchronous socket to listen for connections.  
 				LOG.Debug("[WHIP_SERVER] Waiting for a connection...");
-				listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
+				listener.BeginAccept(AcceptCallback, listener);
 
 				// Wait until a connection is made before continuing.  
 				AllDone.WaitOne();
@@ -124,7 +124,7 @@ namespace WHIP_LRU.Server {
 				// Create the state object.  
 				var state = new StateObject();
 				state.workSocket = handler;
-				handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
+				handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 			}
 			catch (Exception e) {
 				LOG.Warn("[WHIP_SERVER] Exception caught while setting up to receive data from client.", e);
@@ -184,7 +184,7 @@ namespace WHIP_LRU.Server {
 					// Not all data received. Get more.  
 					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} incomplete, getting next packet.");
 
-					handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
+					handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
 				}
 			}
 		}
@@ -195,10 +195,10 @@ namespace WHIP_LRU.Server {
 				var byteData = response.ToByteArray();
 
 				// Begin sending the data to the remote device.  
-				handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), handler);
+				handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendCallback, handler);
 			}
 			else {
-				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, new AsyncCallback(SendCallback), handler);
+				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendCallback, handler);
 			}
 		}
 
