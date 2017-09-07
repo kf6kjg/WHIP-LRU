@@ -147,9 +147,9 @@ namespace WHIP_LRU.Server {
 				return;
 			}
 
-			LOG.Debug($"[WHIP_SERVER] Reading {bytesRead} from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
-
 			if (bytesRead > 0) {
+				LOG.Debug($"[WHIP_SERVER] Reading {bytesRead} from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
+
 				// There might be more data, so store the data received so far.
 				bool complete = false;
 				try {
@@ -186,6 +186,9 @@ namespace WHIP_LRU.Server {
 
 					handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
 				}
+			}
+			else {
+				LOG.Debug($"[WHIP_SERVER] Zero bytes received from {handler.RemoteEndPoint} on {handler.LocalEndPoint}. Client must have closed the connection.");
 			}
 		}
 
