@@ -116,15 +116,15 @@ namespace WHIP_LRU.Server {
 			// Get the socket that handles the client request.  
 			var listener = (Socket)ar.AsyncState;
 
-			LOG.Debug($"[WHIP_SERVER] ccepting connection from {listener.RemoteEndPoint}.");
-
 			try {
 				var handler = listener.EndAccept(ar);
+
+				LOG.Debug($"[WHIP_SERVER] Accepting connection from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
 
 				// Create the state object.  
 				var state = new StateObject();
 				state.workSocket = handler;
-				handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
+				handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
 			}
 			catch (Exception e) {
 				LOG.Warn("[WHIP_SERVER] Exception caught while setting up to receive data from client.", e);
@@ -143,11 +143,11 @@ namespace WHIP_LRU.Server {
 				bytesRead = handler.EndReceive(ar);
 			}
 			catch (Exception e) {
-				LOG.Warn("[WHIP_SERVER] Exception caught reading data from client.", e);
+				LOG.Warn($"[WHIP_SERVER] Exception caught reading data from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.", e);
 				return;
 			}
 
-			LOG.Debug($"[WHIP_SERVER] Reading {bytesRead} from {handler.RemoteEndPoint}.");
+			LOG.Debug($"[WHIP_SERVER] Reading {bytesRead} from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
 
 			if (bytesRead > 0) {
 				// There might be more data, so store the data received so far.
@@ -156,33 +156,33 @@ namespace WHIP_LRU.Server {
 					complete = state.message.AddRange(state.buffer.Take(bytesRead));
 				}
 				catch (Exception e) {
-					LOG.Warn("[WHIP_SERVER] Exception caught while extracting data from inbound message.", e);
+					LOG.Warn($"[WHIP_SERVER] Exception caught while extracting data from inbound message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.", e);
 				}
 
 				if (complete) {
 					ServerResponseMsg response = null;
 
-					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} completed: {state.message.GetHeaderSummary()}");
+					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} completed: {state.message.GetHeaderSummary()}");
 
 					try {
 						response = _requestHandler(state.message);
 					}
 					catch (Exception e) {
-						LOG.Warn("[WHIP_SERVER] Exception caught from request handler.", e);
+						LOG.Warn($"[WHIP_SERVER] Exception caught from request handler while processing message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
 					}
 
-					LOG.Debug($"[WHIP_SERVER] Replying to {handler.RemoteEndPoint}: {response.GetHeaderSummary()}");
+					LOG.Debug($"[WHIP_SERVER] Replying to  {handler.RemoteEndPoint} on {handler.LocalEndPoint}: {response.GetHeaderSummary()}");
 
 					try {
 						Send(handler, response);
 					}
 					catch (Exception e) {
-						LOG.Warn("[WHIP_SERVER] Exception caught responding to client.", e);
+						LOG.Warn($"[WHIP_SERVER] Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
 					}
 				}
 				else {
 					// Not all data received. Get more.  
-					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} incomplete, getting next packet.");
+					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} incomplete, getting next packet.");
 
 					handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
 				}
@@ -209,7 +209,7 @@ namespace WHIP_LRU.Server {
 
 				// Complete sending the data to the remote device.  
 				var bytesSent = handler.EndSend(ar);
-				LOG.Debug($"[WHIP_SERVER] Sent {bytesSent} bytes to client.");
+				LOG.Debug($"[WHIP_SERVER] Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}");
 
 				handler.Shutdown(SocketShutdown.Both);
 				handler.Close();
