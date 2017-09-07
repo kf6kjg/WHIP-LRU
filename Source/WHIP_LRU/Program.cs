@@ -78,8 +78,13 @@ namespace WHIP_LRU {
 
 			pidFile.SetStatus(PIDFileManager.Status.Starting);
 
+			var serverConfig = _configSource.Configs["Server"];
+
+			var address = serverConfig.GetString("Address", WHIPServer.DEFAULT_ADDRESS);
+			var port = (uint)serverConfig.GetInt("Port", (int)WHIPServer.DEFAULT_PORT);
+
 			// Start up the service.
-			using (var server = new WHIPServer(RequestReceivedDelegate)) {
+			using (var server = new WHIPServer(RequestReceivedDelegate, address, port)) {
 				pidFile.SetStatus(PIDFileManager.Status.Running);
 
 				// Handlers for signals.
