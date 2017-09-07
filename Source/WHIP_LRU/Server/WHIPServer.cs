@@ -109,7 +109,7 @@ namespace WHIP_LRU.Server {
 
 		#region Callbacks
 
-		public void AcceptCallback(IAsyncResult ar) {
+		private void AcceptCallback(IAsyncResult ar) {
 			// Signal the main thread to continue.  
 			AllDone.Set();
 
@@ -131,7 +131,7 @@ namespace WHIP_LRU.Server {
 			}
 		}
 
-		public void ReadCallback(IAsyncResult ar) {
+		private void ReadCallback(IAsyncResult ar) {
 			// Retrieve the state object and the handler socket  
 			// from the asynchronous state object.  
 			var state = (StateObject)ar.AsyncState;
