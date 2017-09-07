@@ -121,6 +121,7 @@ namespace WHIP_LRU.Server {
 				// Create the state object.  
 				var state = new StateObject();
 				state.workSocket = handler;
+				handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
 			}
 			catch (Exception e) {
 				LOG.Warn("[WHIP_SERVER] Exception caught while setting up to receive data from client.", e);
