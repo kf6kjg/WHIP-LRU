@@ -115,12 +115,16 @@ namespace WHIP_LRU.Server {
 
 			// Get the socket that handles the client request.  
 			var listener = (Socket)ar.AsyncState;
-			var handler = listener.EndAccept(ar);
+			try {
+				var handler = listener.EndAccept(ar);
 
-			// Create the state object.  
-			var state = new StateObject();
-			state.workSocket = handler;
-			handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
+				// Create the state object.  
+				var state = new StateObject();
+				state.workSocket = handler;
+			}
+			catch (Exception e) {
+				LOG.Warn("[WHIP_SERVER] Exception caught while setting up to receive data from client.", e);
+			}
 		}
 
 		public void ReadCallback(IAsyncResult ar) {
@@ -130,11 +134,24 @@ namespace WHIP_LRU.Server {
 			var handler = state.workSocket;
 
 			// Read data from the client socket.   
-			var bytesRead = handler.EndReceive(ar);
+			int bytesRead = 0;
+			try {
+				bytesRead = handler.EndReceive(ar);
+			}
+			catch (Exception e) {
+				LOG.Warn("[WHIP_SERVER] Exception caught reading data from client.", e);
+				return;
+			}
 
 			if (bytesRead > 0) {
-				// There might be more data, so store the data received so far.  
-				var complete = state.message.AddRange(state.buffer.Take(bytesRead));
+				// There might be more data, so store the data received so far.
+				bool complete = false;
+				try {
+					complete = state.message.AddRange(state.buffer.Take(bytesRead));
+				}
+				catch (Exception e) {
+					LOG.Warn("[WHIP_SERVER] Exception caught while extracting data from inbound message.", e);
+				}
 
 				if (complete) {
 					ServerResponseMsg response = null;
@@ -146,8 +163,11 @@ namespace WHIP_LRU.Server {
 						LOG.Warn("[WHIP_SERVER] Exception caught from request handler.", e);
 					}
 
-					if (response != null) {
+					try {
 						Send(handler, response);
+					}
+					catch (Exception e) {
+						LOG.Warn("[WHIP_SERVER] Exception caught responding to client.", e);
 					}
 				}
 				else {
@@ -158,11 +178,16 @@ namespace WHIP_LRU.Server {
 		}
 
 		private void Send(Socket handler, ServerResponseMsg response) {
-			// Convert the string data to byte data using ASCII encoding.  
-			var byteData = response.ToByteArray();
+			if (response != null) {
+				// Convert the string data to byte data using ASCII encoding.  
+				var byteData = response.ToByteArray();
 
-			// Begin sending the data to the remote device.  
-			handler.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), handler);
+				// Begin sending the data to the remote device.  
+				handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), handler);
+			}
+			else {
+				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, new AsyncCallback(SendCallback), handler);
+			}
 		}
 
 		private void SendCallback(IAsyncResult ar) {
