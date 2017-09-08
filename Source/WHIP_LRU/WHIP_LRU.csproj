@@ -76,6 +76,11 @@
     <Compile Include="Server\ServerResponseMsg.cs" />
     <Compile Include="Server\ClientRequestMsg.cs" />
     <Compile Include="Util\PIDFileManager.cs" />
+    <Compile Include="Server\AuthChallengeMsg.cs" />
+    <Compile Include="Server\IByteArraySerializable.cs" />
+    <Compile Include="Server\IByteArrayAppendable.cs" />
+    <Compile Include="Server\AuthResponseMsg.cs" />
+    <Compile Include="Server\AuthStatusMsg.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

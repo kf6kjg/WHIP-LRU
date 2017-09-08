@@ -29,14 +29,15 @@ using InWorldz.Whip.Client;
 using System.Text;
 
 namespace WHIP_LRU.Server {
-	public class ClientRequestMsg {
+	public class ClientRequestMsg : IByteArrayAppendable {
 		private const short DATA_SIZE_MARKER_LOC = 33;
 		private const short HEADER_SIZE = 37;
 		private const short UUID_TAG_LOCATION = 1;
 		private const short UUID_LEN = 32;
-		private readonly List<byte> _data = new List<byte>();
 
-		public byte[] Data => _data?.Skip(HEADER_SIZE).ToArray();
+		private readonly List<byte> _rawMessageData = new List<byte>();
+
+		public byte[] Data => _rawMessageData?.Skip(HEADER_SIZE).ToArray();
 		public UUID AssetId { get; private set; }
 		public bool IsReady { get; private set; }
 		public RequestType Type { get; private set; }
@@ -47,16 +48,16 @@ namespace WHIP_LRU.Server {
 
 		public bool AddRange(IEnumerable<byte> data) {
 			if (!IsReady) { // Refuse to append more data once loaded.
-				_data.AddRange(data);
+				_rawMessageData.AddRange(data);
 
-				if (_data.Count >= HEADER_SIZE) {
-					var header = _data.Take(HEADER_SIZE).ToArray();
+				if (_rawMessageData.Count >= HEADER_SIZE) {
+					var header = _rawMessageData.Take(HEADER_SIZE).ToArray();
 
 					// We've enough of the header to determine size.
 					var dataSize = InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC);
 					var packetSize = HEADER_SIZE + dataSize;
 
-					if (packetSize > 0 && _data.Count >= packetSize) {
+					if (packetSize > 0 && _rawMessageData.Count >= packetSize) {
 						// Load the class up with the data.
 						var type = header[0];
 						if (typeof(RequestType).IsEnumDefined(type)) {
@@ -87,7 +88,7 @@ namespace WHIP_LRU.Server {
 			return IsReady;
 		}
 
-		public enum RequestType {
+		public enum RequestType : byte {
 			RT_GET = 10,
 			RT_PUT = 11,
 			RT_PURGE = 12,

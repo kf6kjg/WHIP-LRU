@@ -29,7 +29,7 @@ using InWorldz.Whip.Client;
 using OpenMetaverse;
 
 namespace WHIP_LRU.Server {
-	public class ServerResponseMsg {
+	public class ServerResponseMsg : IByteArraySerializable {
 		private const short DATA_SZ_TAG_LOC = HEADER_SIZE - 4;
 		private const short HEADER_SIZE = 37;
 		private const short UUID_TAG_LOC = 1;
@@ -94,7 +94,7 @@ namespace WHIP_LRU.Server {
 			return output;
 		}
 
-		public enum ResponseCode {
+		public enum ResponseCode : byte {
 			RC_FOUND = 10,
 			RC_NOTFOUND = 11,
 			RC_ERROR = 12,

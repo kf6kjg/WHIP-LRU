@@ -35,6 +35,7 @@ namespace WHIP_LRU.Server {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		public const string DEFAULT_ADDRESS = "*";
+		public const string DEFAULT_PASSWORD = null;
 		public const uint DEFAULT_PORT = 32700;
 
 		// Thread signal.  
@@ -42,14 +43,14 @@ namespace WHIP_LRU.Server {
 
 		public delegate ServerResponseMsg RequestReceivedDelegate(ClientRequestMsg request);
 
-		private IPEndPoint _localEndPoint;
-		private int _port;
-
 		private bool _isRunning;
+		private IPEndPoint _localEndPoint;
+		private string _password;
+		private int _port;
 
 		private RequestReceivedDelegate _requestHandler;
 
-		public WHIPServer(RequestReceivedDelegate requestHandler, string address = DEFAULT_ADDRESS, uint port = DEFAULT_PORT) {
+		public WHIPServer(RequestReceivedDelegate requestHandler, string address = DEFAULT_ADDRESS, uint port = DEFAULT_PORT, string password = DEFAULT_PASSWORD) {
 			IPAddress addr;
 			if (string.IsNullOrWhiteSpace(address) || address == DEFAULT_ADDRESS) {
 				addr = IPAddress.Any;
@@ -66,6 +67,7 @@ namespace WHIP_LRU.Server {
 				}
 			}
 
+			_password = password;
 			_port = (int)port;
 
 			_requestHandler = requestHandler;
@@ -116,18 +118,38 @@ namespace WHIP_LRU.Server {
 			// Get the socket that handles the client request.  
 			var listener = (Socket)ar.AsyncState;
 
+			Socket handler = null;
+			StateObject state = null;
 			try {
-				var handler = listener.EndAccept(ar);
+				handler = listener.EndAccept(ar);
 
 				LOG.Debug($"[WHIP_SERVER] Accepting connection from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
 
 				// Create the state object.  
-				var state = new StateObject();
-				state.workSocket = handler;
-				handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+				state = new StateObject();
+				state.WorkSocket = handler;
+				state.State = State.Challenged;
+				state.Message = new AuthResponseMsg();
+				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 			}
 			catch (Exception e) {
 				LOG.Warn("[WHIP_SERVER] Exception caught while setting up to receive data from client.", e);
+				return;
+			}
+
+			LOG.Debug($"[WHIP_SERVER] Sending challenge to {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
+
+			var response = new AuthChallengeMsg();
+
+			var challenge = response.GetChallenge();
+
+			state.CorrectChallengeHash = AuthResponseMsg.ComputeChallengeHash(challenge, _password);
+
+			try {
+				Send(handler, response);
+			}
+			catch (Exception e) {
+				LOG.Warn($"[WHIP_SERVER] Exception caught responding to client connection request from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
 			}
 		}
 
@@ -135,7 +157,7 @@ namespace WHIP_LRU.Server {
 			// Retrieve the state object and the handler socket  
 			// from the asynchronous state object.  
 			var state = (StateObject)ar.AsyncState;
-			var handler = state.workSocket;
+			var handler = state.WorkSocket;
 
 			// Read data from the client socket.   
 			int bytesRead = 0;
@@ -143,48 +165,84 @@ namespace WHIP_LRU.Server {
 				bytesRead = handler.EndReceive(ar);
 			}
 			catch (Exception e) {
-				LOG.Warn($"[WHIP_SERVER] Exception caught reading data from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.", e);
+				LOG.Warn($"[WHIP_SERVER] Exception caught reading data.", e);
 				return;
 			}
 
 			if (bytesRead > 0) {
-				LOG.Debug($"[WHIP_SERVER] Reading {bytesRead} from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
+				LOG.Debug($"[WHIP_SERVER] Reading {bytesRead} bytes from {handler.RemoteEndPoint} on {handler.LocalEndPoint}. Connection in state {state.State}.");
 
-				// There might be more data, so store the data received so far.
 				bool complete = false;
 				try {
-					complete = state.message.AddRange(state.buffer.Take(bytesRead));
+					complete = state.Message.AddRange(state.Buffer.Take(bytesRead));
 				}
 				catch (Exception e) {
 					LOG.Warn($"[WHIP_SERVER] Exception caught while extracting data from inbound message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.", e);
 				}
 
 				if (complete) {
-					ServerResponseMsg response = null;
+					IByteArraySerializable response = null;
 
-					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} completed: {state.message.GetHeaderSummary()}");
+					switch (state.State) {
+						case State.Ready: {
+							// There might be more data, so store the data received so far.
+							var message = state.Message as ClientRequestMsg;
 
-					try {
-						response = _requestHandler(state.message);
-					}
-					catch (Exception e) {
-						LOG.Warn($"[WHIP_SERVER] Exception caught from request handler while processing message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
-					}
+							LOG.Debug($"[WHIP_SERVER] Request message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} completed: {message?.GetHeaderSummary()}");
 
-					LOG.Debug($"[WHIP_SERVER] Replying to  {handler.RemoteEndPoint} on {handler.LocalEndPoint}: {response.GetHeaderSummary()}");
+							try {
+								response = _requestHandler(message);
+							}
+							catch (Exception e) {
+								LOG.Warn($"[WHIP_SERVER] Exception caught from request handler while processing message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+							}
 
-					try {
-						Send(handler, response);
-					}
-					catch (Exception e) {
-						LOG.Warn($"[WHIP_SERVER] Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+							LOG.Debug($"[WHIP_SERVER] Replying to request message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}: {((ClientRequestMsg)response).GetHeaderSummary()}");
+
+							try {
+								Send(handler, response);
+								handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+							}
+							catch (Exception e) {
+								LOG.Warn($"[WHIP_SERVER] Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+							}
+						} break;
+						case State.Challenged:
+						default: {
+							// Wants to know status, reply accordingly.
+							var message = state.Message as AuthResponseMsg;
+
+							var hashCorrect = message?.ChallengeHash == state.CorrectChallengeHash;
+
+							LOG.Debug($"[WHIP_SERVER] Auth response from {handler.RemoteEndPoint} on {handler.LocalEndPoint} completed: " + (hashCorrect ? "Hash correct." : "Hash not correct, auth failed."));
+
+							response = new AuthStatusMsg(hashCorrect ? AuthStatusMsg.StatusType.AS_SUCCESS : AuthStatusMsg.StatusType.AS_FAILURE);
+
+							if (hashCorrect) {
+								state.Message = new ClientRequestMsg();
+								state.State = State.Ready;
+							}
+
+							try {
+								if (hashCorrect) {
+									Send(handler, response);
+									handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+								}
+								else {
+									SendAndClose(handler, response);
+								}
+							}
+							catch (Exception e) {
+								LOG.Warn($"[WHIP_SERVER] Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+							}
+						} break;
 					}
 				}
 				else {
 					// Not all data received. Get more.  
 					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} incomplete, getting next packet.");
 
-					handler.BeginReceive(state.buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
+					handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
 				}
 			}
 			else {
@@ -192,7 +250,7 @@ namespace WHIP_LRU.Server {
 			}
 		}
 
-		private void Send(Socket handler, ServerResponseMsg response) {
+		private void Send(Socket handler, IByteArraySerializable response) {
 			if (response != null) {
 				// Convert the string data to byte data using ASCII encoding.  
 				var byteData = response.ToByteArray();
@@ -212,7 +270,34 @@ namespace WHIP_LRU.Server {
 
 				// Complete sending the data to the remote device.  
 				var bytesSent = handler.EndSend(ar);
-				LOG.Debug($"[WHIP_SERVER] Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}");
+				LOG.Debug($"[WHIP_SERVER] Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
+			}
+			catch (Exception e) {
+				LOG.Warn($"[WHIP_SERVER] Problem responding to client.", e);
+			}
+		}
+
+		private void SendAndClose(Socket handler, IByteArraySerializable response) {
+			if (response != null) {
+				// Convert the string data to byte data using ASCII encoding.  
+				var byteData = response.ToByteArray();
+
+				// Begin sending the data to the remote device.  
+				handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendAndCloseCallback, handler);
+			}
+			else {
+				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendAndCloseCallback, handler);
+			}
+		}
+
+		private void SendAndCloseCallback(IAsyncResult ar) {
+			try {
+				// Retrieve the socket from the state object.  
+				var handler = (Socket)ar.AsyncState;
+
+				// Complete sending the data to the remote device.  
+				var bytesSent = handler.EndSend(ar);
+				LOG.Debug($"[WHIP_SERVER] Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}, and closing the connection.");
 
 				handler.Shutdown(SocketShutdown.Both);
 				handler.Close();
@@ -228,13 +313,24 @@ namespace WHIP_LRU.Server {
 			public const int BUFFER_SIZE = 1024;
 
 			// Client  socket.  
-			public Socket workSocket;
+			public Socket WorkSocket;
 
 			// Receive buffer.  
-			public byte[] buffer = new byte[BUFFER_SIZE];
+			public byte[] Buffer = new byte[BUFFER_SIZE];
 
 			// Received data.  
-			public ClientRequestMsg message = new ClientRequestMsg();
+			public IByteArrayAppendable Message;
+
+			// Current communications state
+			public State State;
+
+			// The expected response to the challenge
+			public string CorrectChallengeHash;
+		}
+
+		private enum State {
+			Challenged,
+			Ready,
 		}
 
 		#endregion
