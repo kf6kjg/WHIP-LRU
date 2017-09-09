@@ -115,12 +115,10 @@ namespace WHIP_LRU {
 			return 0;
 		}
 
-		public static ServerResponseMsg RequestReceivedDelegate(ClientRequestMsg request) {
+		public static void RequestReceivedDelegate(ClientRequestMsg request, WHIPServer.RequestResponseDelegate responseHandler, object context) {
+			// TODO: do this for real.  The response is done across a callback with the context pointer passed through so that I can queue these things and get back to them.
 
-
-
-
-			return null;
+			responseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero), context);
 		}
 
 		private static void LogBootMessage() {
