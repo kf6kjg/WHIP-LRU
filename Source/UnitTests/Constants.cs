@@ -41,9 +41,9 @@ namespace UnitTests {
 
 		static Constants() {
 			EXECUTABLE_DIRECTORY = TestContext.CurrentContext.TestDirectory;
-			INI_PATH = Path.Combine(EXECUTABLE_DIRECTORY, "UnitTest.WHIP_LRU.ini");
-			LOG_CONFIG_PATH = Path.Combine(EXECUTABLE_DIRECTORY, "UnitTest.WHIP_LRU.config");
-			PID_FILE_PATH = Path.Combine(EXECUTABLE_DIRECTORY, "UnitTest.WHIP_LRU.pid");
+			INI_PATH = Path.Combine(EXECUTABLE_DIRECTORY, "UnitTests.WHIP_LRU.ini");
+			LOG_CONFIG_PATH = Path.Combine(EXECUTABLE_DIRECTORY, "UnitTests.WHIP_LRU.config");
+			PID_FILE_PATH = Path.Combine(EXECUTABLE_DIRECTORY, "UnitTests.WHIP_LRU.pid");
 		}
 	}
 }

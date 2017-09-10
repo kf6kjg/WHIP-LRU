@@ -38,10 +38,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="UnitTest.WHIP_LRU.ini">
+    <None Include="UnitTests.WHIP_LRU.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="UnitTest.WHIP_LRU.config">
+    <None Include="UnitTests.WHIP_LRU.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
