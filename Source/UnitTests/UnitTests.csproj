@@ -35,7 +35,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SelfHostBase.cs" />
+    <Compile Include="Setup.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Tests\ServiceTests.cs" />
     <Compile Include="Tests\AuthTests.cs" />

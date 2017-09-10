@@ -27,7 +27,7 @@ using NUnit.Framework;
 
 namespace UnitTests.Tests {
 	[TestFixture]
-	public class ServiceTests : SelfHostBase {
+	public class ServiceTests {
 		[Test]
 		public void TestServiceListening() {
 			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {

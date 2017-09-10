@@ -31,7 +31,7 @@ using NUnit.Framework;
 
 namespace UnitTests.Tests {
 	[TestFixture]
-	public class AuthTests : SelfHostBase {
+	public class AuthTests {
 		public const byte CHALLENGE_PACKET_IDENTIFIER = 0;
 		public const ushort CHALLENGE_MESSAGE_SIZE = 8;
 		public const ushort CHALLENGE_SIZE = 7;

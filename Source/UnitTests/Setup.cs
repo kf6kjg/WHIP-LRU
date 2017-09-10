@@ -23,38 +23,55 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.IO;
 using System.Threading;
 using NUnit.Framework;
 
 namespace UnitTests {
-	public class SelfHostBase {
-		private System.Diagnostics.Process service;
+	[SetUpFixture]
+	public sealed class Setup {
+		private System.Diagnostics.Process _service;
+		private bool _processExited;
 
 		[OneTimeSetUp]
 		public void Init() {
 			// Boot the service
-			service = new System.Diagnostics.Process();
-			service.EnableRaisingEvents = false;
-			service.StartInfo.FileName = Path.Combine(Constants.EXECUTABLE_DIRECTORY, "WHIP_LRU.exe");
-			service.StartInfo.WorkingDirectory = Constants.EXECUTABLE_DIRECTORY;
-			service.StartInfo.Arguments = $"--inifile='{Constants.INI_PATH}' --logconfig='{Constants.LOG_CONFIG_PATH}' --pidfile='{Constants.PID_FILE_PATH}'";
-			service.StartInfo.RedirectStandardInput = false;
-			service.StartInfo.RedirectStandardOutput = false;
-			service.StartInfo.RedirectStandardError = false;
-			service.StartInfo.UseShellExecute = false;
+			_service = new System.Diagnostics.Process();
+			_service.EnableRaisingEvents = true;
+			_service.Exited += (sender, e) => {
+				_processExited = true;
+			};
+			_service.StartInfo.FileName = Path.Combine(Constants.EXECUTABLE_DIRECTORY, "WHIP_LRU.exe");
+			_service.StartInfo.WorkingDirectory = Constants.EXECUTABLE_DIRECTORY;
+			_service.StartInfo.Arguments = $"--inifile='{Constants.INI_PATH}' --logconfig='{Constants.LOG_CONFIG_PATH}' --pidfile='{Constants.PID_FILE_PATH}'";
+			_service.StartInfo.RedirectStandardInput = false;
+			_service.StartInfo.RedirectStandardOutput = false;
+			_service.StartInfo.RedirectStandardError = false;
+			_service.StartInfo.UseShellExecute = false;
 
-			var result = service.Start();
+			var result = _service.Start();
 			if (!result)
 				Assert.Fail("Could not start process, maybe an existing process has been reused?");
 
 			Thread.Sleep(500);
-			Assert.IsFalse(service.HasExited, "Service closed during startup, check UnitTests.WHIP_LRU.log!");
+			Assert.IsFalse(_service.HasExited, "Service closed during startup, check UnitTests.WHIP_LRU.log!");
 		}
 
 		[OneTimeTearDown]
 		public void Cleanup() {
-			service.Close(); // Ask it nicely to shut itself.
+			if (!_processExited) {
+				try {
+					_service.Kill(); // Good night.
+				}
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+				catch (Exception) {
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+					// Because I dont care.
+				}
+			}
+
+			Thread.Sleep(500);
 
 			// Clear the PID file if it exists.
 			File.Delete(Constants.PID_FILE_PATH);
