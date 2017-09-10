@@ -76,7 +76,7 @@ namespace WHIP_LRU.Server {
 		}
 
 		public byte[] ToByteArray() {
-			var output = new byte[HEADER_SIZE + _data.Length];
+			var output = new byte[HEADER_SIZE + (_data?.Length ?? 0)];
 			/* Structure of message:
 			 * (1 byte) ResponseCode
 			 * (32 bytes) UUID
@@ -87,9 +87,11 @@ namespace WHIP_LRU.Server {
 
 			_assetId.ToBytes(output, UUID_TAG_LOC);
 
-			Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(_data.Length)), 0, output, DATA_SZ_TAG_LOC, 4);
+			if (_data != null) {
+				Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(_data.Length)), 0, output, DATA_SZ_TAG_LOC, 4);
 
-			Buffer.BlockCopy(_data, 0, output, HEADER_SIZE, _data.Length * sizeof(byte)); // Yes, sizeof(byte) is redundant, but it's also good documentation.
+				Buffer.BlockCopy(_data, 0, output, HEADER_SIZE, _data.Length * sizeof(byte)); // Yes, sizeof(byte) is redundant, but it's also good documentation.
+			}
 
 			return output;
 		}
