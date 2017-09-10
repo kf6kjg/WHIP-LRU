@@ -38,6 +38,7 @@ namespace WHIP_LRU {
 			// Commandline switches
 			configSource.AddSwitch("Startup", "inifile");
 			configSource.AddSwitch("Startup", "logconfig");
+			configSource.AddSwitch("Startup", "pidfile");
 
 			var startupConfig = _configSource.Configs["Startup"];
 
