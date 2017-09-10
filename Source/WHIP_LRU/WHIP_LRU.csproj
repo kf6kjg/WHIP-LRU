@@ -56,9 +56,6 @@
     <Reference Include="openstacknet">
       <HintPath>..\..\packages\openstack.net.1.7.6\lib\net45\openstacknet.dll</HintPath>
     </Reference>
-    <Reference Include="protobuf-net">
-      <HintPath>..\..\packages\protobuf-net.2.1.0\lib\net45\protobuf-net.dll</HintPath>
-    </Reference>
     <Reference Include="LibreMetaverse.Types">
       <HintPath>..\..\packages\LibreMetaverse.Types.1.0.2.24\lib\net40\LibreMetaverse.Types.dll</HintPath>
     </Reference>
@@ -67,6 +64,16 @@
     </Reference>
     <Reference Include="LibreMetaverse">
       <HintPath>..\..\packages\LibreMetaverse.1.0.2.24\lib\net40\LibreMetaverse.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="LightningDB">
+      <HintPath>..\..\packages\LightningDB.0.9.9\lib\net45\LightningDB.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.Caching" />
+    <Reference Include="protobuf-net">
+      <HintPath>..\..\packages\protobuf-net.2.3.2\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -81,6 +88,8 @@
     <Compile Include="Server\IByteArrayAppendable.cs" />
     <Compile Include="Server\AuthResponseMsg.cs" />
     <Compile Include="Server\AuthStatusMsg.cs" />
+    <Compile Include="Cache\CacheManager.cs" />
+    <Compile Include="Cache\CacheException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -92,6 +101,8 @@
   <ItemGroup>
     <Folder Include="Server\" />
     <Folder Include="Util\" />
+    <Folder Include="Cache\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\..\packages\LightningDB.0.9.9\build\LightningDB.targets" Condition="Exists('..\..\packages\LightningDB.0.9.9\build\LightningDB.targets')" />
 </Project>
