@@ -30,11 +30,15 @@
     <Reference Include="nunit.framework">
       <HintPath>..\..\packages\NUnit.3.8.1\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="InWorldz.Whip.Client">
+      <HintPath>..\..\packages\InWorldz.Whip.Client.1.0.1\lib\net45\InWorldz.Whip.Client.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="SelfHostBase.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Tests\ServiceTests.cs" />
+    <Compile Include="Tests\AuthTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -39,6 +39,8 @@ namespace UnitTests {
 
 		public const int SERVICE_PORT = 33333;
 
+		public const string PASSWORD = "unittest";
+
 		static Constants() {
 			EXECUTABLE_DIRECTORY = TestContext.CurrentContext.TestDirectory;
 			INI_PATH = Path.Combine(EXECUTABLE_DIRECTORY, "UnitTests.WHIP_LRU.ini");
