@@ -40,7 +40,7 @@ namespace UnitTests.Tests {
 		public const byte STATUS_PACKET_IDENTIFIER = 1;
 		public const byte STATUS_PACKET_MESSAGE_SIZE = 2;
 
-		public enum StatusType {
+		public enum StatusType : byte {
 			AS_SUCCESS = 0,
 			AS_FAILURE = 1
 		}
