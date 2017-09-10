@@ -24,6 +24,7 @@
 // THE SOFTWARE.
 
 using System.IO;
+using System.Threading;
 using NUnit.Framework;
 
 namespace UnitTests {
@@ -46,6 +47,9 @@ namespace UnitTests {
 			var result = service.Start();
 			if (!result)
 				Assert.Fail("Could not start process, maybe an existing process has been reused?");
+
+			Thread.Sleep(100);
+			Assert.IsFalse(service.HasExited, "Service closed during startup, check UnitTests.WHIP_LRU.log!");
 		}
 
 		[OneTimeTearDown]
