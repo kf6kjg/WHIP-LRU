@@ -18,12 +18,14 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
     <OutputPath>..\..\bin</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -33,12 +35,14 @@
     <Reference Include="InWorldz.Whip.Client">
       <HintPath>..\..\packages\InWorldz.Whip.Client.1.0.1\lib\net45\InWorldz.Whip.Client.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Setup.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Tests\ServiceTests.cs" />
     <Compile Include="Tests\AuthTests.cs" />
+    <Compile Include="Tests\GetPutTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
