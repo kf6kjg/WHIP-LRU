@@ -345,7 +345,7 @@ namespace UnitTests.Tests {
 
 		#endregion
 
-		public static Asset CreateAndPutAsset(Socket conn) {
+		public static Asset CreateAndPutAsset(Socket conn, byte[] assetData = null) {
 			Contract.Requires(conn != null);
 
 			var asset = new Asset(
@@ -356,7 +356,7 @@ namespace UnitTests.Tests {
 				(int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds,
 				"Just junk",
 				"Just junk.",
-				new byte[] { 0x31, 0x33, 0x33, 0x37 }
+				assetData ?? new byte[] { 0x31, 0x33, 0x33, 0x37 }
 			);
 
 			var data = asset.Serialize().data;
