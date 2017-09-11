@@ -139,7 +139,7 @@ namespace UnitTests.Tests {
 
 			while (soFar < messageSize) {
 				//read the header and challenge phrase
-				int rcvd = conn.Receive(buffer, (int)messageSize - soFar, SocketFlags.None);
+				var rcvd = conn.Receive(buffer, 1024, SocketFlags.None);
 				if (rcvd == 0) return null; // Upstream disconnected
 
 				result.AddRange(buffer);

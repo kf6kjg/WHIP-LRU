@@ -83,8 +83,6 @@ namespace WHIP_LRU.Cache {
 					ProtoBuf.Serializer.Serialize(memStream, asset);
 					memStream.Position = 0;
 
-					var assetIdStr = asset.Id.ToString();
-
 					try {
 						using (var tx = _dbenv.BeginTransaction())
 						using (var db = tx.OpenDatabase($"assetstore-{assetId.Substring(0, 3)}", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
