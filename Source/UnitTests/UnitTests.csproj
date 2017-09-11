@@ -43,6 +43,7 @@
     <Compile Include="Tests\ServiceTests.cs" />
     <Compile Include="Tests\AuthTests.cs" />
     <Compile Include="Tests\GetPutTests.cs" />
+    <Compile Include="Tests\FullProtocolTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
