@@ -201,6 +201,47 @@ namespace UnitTests.Tests {
 
 		#endregion
 
+		#region PUT
+
+		[Test]
+		[Timeout(60000)]
+		public void TestOperationPUTWithDuplicateIdReturnsError() {
+			var asset = CreateAndPutAsset(_socket);
+
+			var data = asset.Serialize().data;
+
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
+			request.Send(_socket);
+
+			var response = new ServerResponseMsg(_socket);
+			Assert.AreEqual(ServerResponseMsg.Result.ERROR, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
+		}
+
+		[Test]
+		[Timeout(60000)]
+		public void TestOperationPUTWithValidIdReturnsOk() {
+			var asset = new Asset(
+				Guid.NewGuid().ToString(),
+				7, // Notecard
+				false,
+				false,
+				(int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds,
+				"Just junk",
+				"Just junk.",
+				new byte[] { 0x31, 0x33, 0x33, 0x37 }
+			);
+
+			var data = asset.Serialize().data;
+
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
+			request.Send(_socket);
+
+			var response = new ServerResponseMsg(_socket);
+			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
+		}
+
+		#endregion
+
 		#region STATUS_GET
 
 		[Test]
