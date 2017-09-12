@@ -26,6 +26,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using InWorldz.Whip.Client;
 using NUnit.Framework;
 
@@ -57,6 +58,16 @@ namespace UnitTests.Tests {
 			}
 		}
 
+		[Test]
+		[Timeout(60000)]
+		public void TestStressConnectCyclingParallel1000() {
+			Parallel.For(0, 1000, (index) => {
+				using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
+					socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
+				}
+			});
+		}
+
 		#endregion
 
 		#region PUT
@@ -68,6 +79,17 @@ namespace UnitTests.Tests {
 				var asset = FullProtocolTests.CreateAndPutAsset(_socket, RandomBytes());
 				Assert.NotNull(asset, "Stress test failed.");
 			}
+		}
+
+		[Test]
+		[Timeout(60000)]
+		public void TestStressPUTRandomAssetParallel1000() {
+			Parallel.For(0, 1000, (index) => {
+				using (var socket = AuthTests.Connect()) {
+					var asset = FullProtocolTests.CreateAndPutAsset(socket, RandomBytes());
+					Assert.NotNull(asset, "Stress test failed.");
+				}
+			});
 		}
 
 		#endregion
