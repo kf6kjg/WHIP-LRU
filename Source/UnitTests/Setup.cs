@@ -54,6 +54,8 @@ namespace UnitTests {
 			if (!result)
 				Assert.Fail("Could not start process, maybe an existing process has been reused?");
 
+
+
 			Thread.Sleep(500);
 			Assert.IsFalse(_service.HasExited, "Service closed during startup, check UnitTests.WHIP_LRU.log!");
 		}

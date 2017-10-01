@@ -1,4 +1,4 @@
-﻿// ProtocolTests.cs
+﻿// GetPutTests.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -22,6 +22,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using InWorldz.Whip.Client;
 using NUnit.Framework;
@@ -104,6 +105,5 @@ namespace UnitTests.Tests {
 				_provider.PutAsset(_asset);
 			}, "Failed to put the asset.");
 		}
-
 	}
 }

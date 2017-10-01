@@ -108,7 +108,7 @@ namespace UnitTests.Tests {
 
 		#endregion
 
-		#region GET_DONTPURGE
+		#region GET_DONTCACHE
 
 		/* TODO: Waiting on the library to support GET_DONTCACHE
 		[Test]
