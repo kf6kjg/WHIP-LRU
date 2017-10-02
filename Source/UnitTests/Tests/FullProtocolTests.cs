@@ -26,6 +26,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Net.Sockets;
+using System.Threading;
 using InWorldz.Whip.Client;
 using NUnit.Framework;
 
@@ -55,6 +56,9 @@ namespace UnitTests.Tests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, assetId);
 			request.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.ERROR, response.Status, $"Wrong result returned for asset {assetId}.");
 		}
@@ -66,6 +70,9 @@ namespace UnitTests.Tests {
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, assetId);
 			request.Send(_socket);
+
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.NOT_FOUND, response.Status, $"Wrong result returned for asset {assetId}.");
@@ -79,6 +86,9 @@ namespace UnitTests.Tests {
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, asset.Uuid);
 			request.Send(_socket);
+
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
 			var resultingAsset = new Asset(response.Data);
@@ -101,6 +111,9 @@ namespace UnitTests.Tests {
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, asset.Uuid);
 			request.Send(_socket);
+
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.FOUND, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
@@ -135,6 +148,9 @@ namespace UnitTests.Tests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.MAINT_PURGELOCALS, Guid.Empty.ToString());
 			request.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for purge locals.");
 		}
@@ -151,6 +167,9 @@ namespace UnitTests.Tests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, assetId);
 			request.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.ERROR, response.Status, $"Wrong result returned for asset {assetId}.");
 		}
@@ -162,6 +181,9 @@ namespace UnitTests.Tests {
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, assetId);
 			request.Send(_socket);
+
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.NOT_FOUND, response.Status, $"Wrong result returned for asset {assetId}.");
@@ -176,6 +198,9 @@ namespace UnitTests.Tests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, asset.Uuid);
 			request.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
 		}
@@ -189,11 +214,17 @@ namespace UnitTests.Tests {
 			var purgeRequest = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, asset.Uuid);
 			purgeRequest.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var purgeResponse = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, purgeResponse.Status, $"Wrong result returned for asset {asset.Uuid}.");
 
 			var getRequest = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, asset.Uuid);
 			getRequest.Send(_socket);
+
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.NOT_FOUND, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
@@ -212,6 +243,9 @@ namespace UnitTests.Tests {
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
 			request.Send(_socket);
+
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.ERROR, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
@@ -236,6 +270,9 @@ namespace UnitTests.Tests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
 			request.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
 		}
@@ -250,6 +287,9 @@ namespace UnitTests.Tests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString());
 			request.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var response = new ServerResponseMsg(_socket);
 
 			var statusInfo = response.ErrorMessage;
@@ -261,6 +301,9 @@ namespace UnitTests.Tests {
 		public void TestOperationSTATUS_GETReturnsOk() {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString());
 			request.Send(_socket);
+
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned.");
@@ -281,6 +324,9 @@ namespace UnitTests.Tests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STORED_ASSET_IDS_GET, assetRangeId);
 			request.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var response = new ServerResponseMsg(_socket);
 
 			var assetIdCSV = response.ErrorMessage;
@@ -298,6 +344,9 @@ namespace UnitTests.Tests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STORED_ASSET_IDS_GET, assetRangeId);
 			request.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for asset range matching {assetRangeId.Substring(0, 3)}*.");
 		}
@@ -314,6 +363,9 @@ namespace UnitTests.Tests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, assetId);
 			request.Send(_socket);
 
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.ERROR, response.Status, $"Wrong result returned for asset {assetId}.");
 		}
@@ -325,6 +377,9 @@ namespace UnitTests.Tests {
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, assetId);
 			request.Send(_socket);
+
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.NOT_FOUND, response.Status, $"Wrong result returned for asset {assetId}.");
@@ -338,6 +393,9 @@ namespace UnitTests.Tests {
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, asset.Uuid);
 			request.Send(_socket);
+
+			Thread.Sleep(10);
+			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.FOUND, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
@@ -363,6 +421,9 @@ namespace UnitTests.Tests {
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
 			request.Send(conn);
+
+			Thread.Sleep(10);
+			Assert.NotZero(conn.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(conn);
 
