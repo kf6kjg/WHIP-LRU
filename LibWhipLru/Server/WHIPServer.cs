@@ -170,6 +170,7 @@ namespace WHIP_LRU.Server {
 			catch (Exception e) {
 				LOG.Warn($"Exception caught reading data.", e);
 				Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 				return;
 			}
 
@@ -183,6 +184,7 @@ namespace WHIP_LRU.Server {
 				catch (Exception e) {
 					LOG.Warn($"Exception caught while extracting data from inbound message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.", e);
 					Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+					handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 					return;
 				}
 
@@ -202,6 +204,7 @@ namespace WHIP_LRU.Server {
 							catch (Exception e) {
 								LOG.Warn($"Exception caught from request handler while processing message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
 								Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
+								handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 								return;
 							}
 						} break;
@@ -233,6 +236,7 @@ namespace WHIP_LRU.Server {
 							catch (Exception e) {
 								LOG.Warn($"Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
 								Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+								handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 								return;
 							}
 						} break;
@@ -256,8 +260,6 @@ namespace WHIP_LRU.Server {
 				}
 
 				LOG.Debug($"Zero bytes received from {client} on {handler.LocalEndPoint}. Client must have closed the connection.");
-				handler.Disconnect(false);
-				return;
 			}
 		}
 
@@ -284,10 +286,15 @@ namespace WHIP_LRU.Server {
 				// Begin sending the data to the remote device.  
 				if (handler.Connected) {
 					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendCallback, handler);
+					LOG.Debug($"Sending {byteData.Length} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
+				}
+				else {
+					LOG.Debug($"Could not send {byteData.Length} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint} because no longer connected.");
 				}
 			}
 			else if (handler.Connected) {
 				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendCallback, handler);
+				LOG.Debug($"Sending nothing to {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
 			}
 			else {
 				LOG.Debug("Client disconnected before response could be sent.");
@@ -314,10 +321,20 @@ namespace WHIP_LRU.Server {
 				var byteData = response.ToByteArray();
 
 				// Begin sending the data to the remote device.  
-				handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendAndCloseCallback, handler);
+				if (handler.Connected) {
+					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendAndCloseCallback, handler);
+					LOG.Debug($"Sending {byteData.Length} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint} and then closing connection.");
+				}
+				else {
+					LOG.Debug($"Could not send {byteData.Length} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint} and then close connection because no longer connected.");
+				}
+			}
+			else if (handler.Connected) {
+				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendAndCloseCallback, handler);
+				LOG.Debug($"Sending nothing to {handler.RemoteEndPoint} on {handler.LocalEndPoint} and then closing connection.");
 			}
 			else {
-				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendAndCloseCallback, handler);
+				LOG.Debug("Client disconnected before response could be sent and the connection closed.");
 			}
 		}
 
@@ -328,13 +345,13 @@ namespace WHIP_LRU.Server {
 
 				// Complete sending the data to the remote device.  
 				var bytesSent = handler.EndSend(ar);
-				LOG.Debug($"Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}, and closing the connection.");
+				LOG.Debug($"Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}, and am closing the connection.");
 
 				handler.Shutdown(SocketShutdown.Both);
 				handler.Close();
 			}
 			catch (Exception e) {
-				LOG.Warn($"Problem responding to client.", e);
+				LOG.Warn($"Problem responding to client or closing the connection.", e);
 			}
 		}
 

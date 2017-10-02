@@ -22,7 +22,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
 using System.Net.Sockets;
+using System.Threading;
+using InWorldz.Whip.Client;
 using NUnit.Framework;
 
 namespace UnitTests.Tests {
@@ -40,6 +43,46 @@ namespace UnitTests.Tests {
 		[Test]
 		public void TestPIDFileExists() {
 			FileAssert.Exists(Constants.PID_FILE_PATH, "Missing expected pidfile.");
+		}
+
+		[Test]
+		[Timeout(5000)]
+		public void TestServiceMultipleBadRequests() {
+			using (var socket = AuthTests.Connect()) {
+				var assetId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
+
+				for (var index = 0; index < 10; ++index) {
+					var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, assetId);
+					request.Send(socket);
+
+					Thread.Sleep(10);
+					Assert.NotZero(socket.Available, $"Got nothing from the server on attempt {index+1}.");
+
+#pragma warning disable RECS0026 // Possible unassigned object created by 'new'
+					new ServerResponseMsg(socket);
+#pragma warning restore RECS0026 // Possible unassigned object created by 'new'
+					// Don't care what the reponse was.
+				}
+			}
+		}
+
+		[Test]
+		[Timeout(5000)]
+		public void TestServiceMultipleGoodRequests() {
+			using (var socket = AuthTests.Connect()) {
+				for (var index = 0; index < 10; ++index) {
+					var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString());
+					request.Send(socket);
+
+					Thread.Sleep(10);
+					Assert.NotZero(socket.Available, $"Got nothing from the server on attempt {index + 1}.");
+
+#pragma warning disable RECS0026 // Possible unassigned object created by 'new'
+					new ServerResponseMsg(socket);
+#pragma warning restore RECS0026 // Possible unassigned object created by 'new'
+					// Don't care what the reponse was.
+				}
+			}
 		}
 	}
 }
