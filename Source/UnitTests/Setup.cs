@@ -26,56 +26,57 @@
 using System;
 using System.IO;
 using System.Threading;
+using Chattel;
+using LibWhipLru;
+using log4net.Config;
+using Nini.Config;
 using NUnit.Framework;
+using WHIP_LRU.Server;
 
 namespace UnitTests {
 	[SetUpFixture]
 	public sealed class Setup {
-		private System.Diagnostics.Process _service;
-		private bool _processExited;
+		private WhipLru _service;
 
 		[OneTimeSetUp]
 		public void Init() {
-			// Boot the service
-			_service = new System.Diagnostics.Process();
-			_service.EnableRaisingEvents = true;
-			_service.Exited += (sender, e) => {
-				_processExited = true;
-			};
-			_service.StartInfo.FileName = Path.Combine(Constants.EXECUTABLE_DIRECTORY, "WHIP_LRU.exe");
-			_service.StartInfo.WorkingDirectory = Constants.EXECUTABLE_DIRECTORY;
-			_service.StartInfo.Arguments = $"--inifile='{Constants.INI_PATH}' --logconfig='{Constants.LOG_CONFIG_PATH}' --pidfile='{Constants.PID_FILE_PATH}'";
-			_service.StartInfo.RedirectStandardInput = false;
-			_service.StartInfo.RedirectStandardOutput = false;
-			_service.StartInfo.RedirectStandardError = false;
-			_service.StartInfo.UseShellExecute = false;
+			// Configure Log4Net
+			XmlConfigurator.Configure(new FileInfo(Constants.LOG_CONFIG_PATH));
 
-			var result = _service.Start();
-			if (!result)
-				Assert.Fail("Could not start process, maybe an existing process has been reused?");
+			// Load INI stuff
+			var configSource = new ArgvConfigSource(new string[] { });
 
+			// Configure nIni aliases and locale
+			Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US", true);
 
+			configSource.Alias.AddAlias("On", true);
+			configSource.Alias.AddAlias("Off", false);
+			configSource.Alias.AddAlias("True", true);
+			configSource.Alias.AddAlias("False", false);
+			configSource.Alias.AddAlias("Yes", true);
+			configSource.Alias.AddAlias("No", false);
 
-			Thread.Sleep(500);
-			Assert.IsFalse(_service.HasExited, "Service closed during startup, check UnitTests.WHIP_LRU.log!");
+			// Read in the ini file
+			configSource.Merge(new IniConfigSource(Constants.INI_PATH));
+
+			// Start booting server
+			var pidFileManager = new WHIP_LRU.Util.PIDFileManager(Constants.PID_FILE_PATH);
+
+			var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
+			var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);
+
+			_service = new WhipLru(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT, Constants.PASSWORD, pidFileManager, chattelConfigRead, chattelConfigWrite);
+
+			_service.Start();
 		}
 
 		[OneTimeTearDown]
 		public void Cleanup() {
-			if (!_processExited) {
-				try {
-					_service.Kill(); // Good night.
-				}
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-				catch (Exception) {
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-					// Because I dont care.
-				}
-			}
+			_service.Stop();
 
 			Thread.Sleep(500);
 
-			// Clear the PID file if it exists.
+			// Clear the PID file if it exists. 
 			File.Delete(Constants.PID_FILE_PATH);
 		}
 	}

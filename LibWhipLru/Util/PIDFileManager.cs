@@ -38,8 +38,8 @@ namespace WHIP_LRU.Util {
 	public class PIDFileManager {
 		public enum Status {
 			Init = 0,
-			Starting,
-			Running
+			Ready,
+			Running,
 		}
 
 		public string PidFile { get; private set; }

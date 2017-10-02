@@ -30,6 +30,7 @@ using System.Text;
 
 namespace WHIP_LRU.Server {
 	public class ClientRequestMsg : IByteArrayAppendable {
+		private const short REQUEST_TYPE_LOC = 0;
 		private const short DATA_SIZE_MARKER_LOC = 33;
 		private const short HEADER_SIZE = 37;
 		private const short UUID_TAG_LOCATION = 1;
@@ -57,25 +58,23 @@ namespace WHIP_LRU.Server {
 					var dataSize = InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC);
 					var packetSize = HEADER_SIZE + dataSize;
 
-					if (packetSize > 0 && _rawMessageData.Count >= packetSize) {
+					if (packetSize > REQUEST_TYPE_LOC && _rawMessageData.Count >= packetSize) {
 						// Load the class up with the data.
-						var type = header[0];
+						var type = header[REQUEST_TYPE_LOC];
 						if (typeof(RequestType).IsEnumDefined(type)) {
 							Type = (RequestType)type;
 						}
 						else {
-							throw new AssetProtocolError("Invalid result type in server response: " + GetHeaderSummary());
+							throw new AssetProtocolError($"Invalid result type in server response. Header summary: {GetHeaderSummary(header)}");
 						}
 
-						var idBytes = header.Skip(UUID_TAG_LOCATION).Take(UUID_LEN);
-						var encoding = new ASCIIEncoding();
-						var idString = encoding.GetString(idBytes.ToArray());
+						var idString = Encoding.ASCII.GetString(header, UUID_TAG_LOCATION, UUID_LEN);
 						UUID id;
 						if (UUID.TryParse(idString, out id)) {
 							AssetId = id;
 						}
 						else {
-							throw new AssetProtocolError("Invalid UUID in server response: " + GetHeaderSummary());
+							throw new AssetProtocolError($"Invalid UUID in server response. Header summary: {GetHeaderSummary(header)}");
 						}
 
 						IsReady = true;
@@ -86,6 +85,10 @@ namespace WHIP_LRU.Server {
 			}
 
 			return IsReady;
+		}
+
+		private static string GetHeaderSummary(byte[] header) {
+			return $"Type: {header[REQUEST_TYPE_LOC]}, AssetID: {Encoding.ASCII.GetString(header, UUID_TAG_LOCATION, UUID_LEN)}, Size: {InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC)}";
 		}
 
 		public enum RequestType : byte {

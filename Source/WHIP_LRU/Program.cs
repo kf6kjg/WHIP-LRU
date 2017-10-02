@@ -1,11 +1,13 @@
 ﻿using System;
 using System.IO;
-using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using Chattel;
+using LibWhipLru;
 using log4net;
 using log4net.Config;
+using Mono.Unix;
+using Mono.Unix.Native;
 using Nini.Config;
 using WHIP_LRU.Server;
 using WHIP_LRU.Util;
@@ -16,16 +18,9 @@ namespace WHIP_LRU {
 
 		private static readonly string EXECUTABLE_DIRECTORY = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase.Replace("file:/", string.Empty));
 
-		private static readonly string DEFAULT_INI_FILE = "WHIP_LRU.ini";
+		private static readonly string DEFAULT_INI_FILE = Path.Combine(EXECUTABLE_DIRECTORY, "WHIP_LRU.ini");
 
 		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
-
-		private static IConfigSource _configSource;
-
-		private static ChattelReader _assetReader;
-		private static ChattelWriter _assetWriter;
-
-		private static bool _isRunning = true;
 
 		public static int Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
@@ -33,16 +28,15 @@ namespace WHIP_LRU {
 
 			// Add the arguments supplied when running the application to the configuration
 			var configSource = new ArgvConfigSource(args);
-			_configSource = configSource;
 
 			// Commandline switches
 			configSource.AddSwitch("Startup", "inifile");
 			configSource.AddSwitch("Startup", "logconfig");
 			configSource.AddSwitch("Startup", "pidfile");
 
-			var startupConfig = _configSource.Configs["Startup"];
+			var startupConfig = configSource.Configs["Startup"];
 
-			var pidFile = new PIDFileManager(startupConfig.GetString("pidfile", string.Empty));
+			var pidFileManager = new PIDFileManager(startupConfig.GetString("pidfile", string.Empty));
 
 			// Configure Log4Net
 			var logConfigFile = startupConfig.GetString("logconfig", string.Empty);
@@ -67,60 +61,57 @@ namespace WHIP_LRU {
 			configSource.Alias.AddAlias("Yes", true);
 			configSource.Alias.AddAlias("No", false);
 
-			// Read in the ini file
-			ReadConfigurationFromINI(configSource);
+			var isRunning = true;
+			WhipLru whipLru = null;
 
-			var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
-			chattelConfigRead.DisableCache(); // Force caching off no matter how the INI is set. Doing this differently here.
-			_assetReader = new ChattelReader(chattelConfigRead);
-			var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);
-			chattelConfigWrite.DisableCache(); // Force caching off no matter how the INI is set. Doing this differently here.
-			_assetWriter = new ChattelWriter(chattelConfigWrite);
+			// Handlers for signals.
+			Console.CancelKeyPress += delegate {
+				LOG.Debug("CTRL-C pressed, terminating.");
+				isRunning = false;
+				whipLru?.Stop();
+			};
 
-			pidFile.SetStatus(PIDFileManager.Status.Starting);
+			var signals = new UnixSignal[]{
+				new UnixSignal(Signum.SIGINT),
+				new UnixSignal(Signum.SIGTERM),
+				new UnixSignal(Signum.SIGHUP),
+			};
 
-			var serverConfig = _configSource.Configs["Server"];
+			while (isRunning) {
+				// Read in the ini file
+				ReadConfigurationFromINI(configSource);
 
-			var address = serverConfig.GetString("Address", WHIPServer.DEFAULT_ADDRESS);
-			var port = (uint)serverConfig.GetInt("Port", (int)WHIPServer.DEFAULT_PORT);
-			var password = serverConfig.GetString("Password", WHIPServer.DEFAULT_PASSWORD);
+				var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
+				var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);
 
-			// Start up the service.
-			using (var server = new WHIPServer(RequestReceivedDelegate, address, port, password)) {
-				pidFile.SetStatus(PIDFileManager.Status.Running);
+				var serverConfig = configSource.Configs["Server"];
 
-				// Handlers for signals.
-				Console.CancelKeyPress += delegate {
-					LOG.Debug("CTRL-C pressed, terminating.");
-					_isRunning = false;
-					server.Stop();
-				};
+				var address = serverConfig.GetString("Address", WHIPServer.DEFAULT_ADDRESS);
+				var port = (uint)serverConfig.GetInt("Port", (int)WHIPServer.DEFAULT_PORT);
+				var password = serverConfig.GetString("Password", WHIPServer.DEFAULT_PASSWORD);
 
-				// Handle signals!
-				while (_isRunning) {
-					try {
-						server.Start();
-					}
-					catch (SocketException e) {
-						LOG.Error("Unable to bind to address or port. Is something already listening on it, or have you granted permissions for WHIP_LRU to listen?", e);
-						_isRunning = false;
-					}
-					catch (Exception e) {
-						LOG.Warn("Exception during server execution, automatically restarting.", e);
-					}
+				whipLru = new WhipLru(address, port, password, pidFileManager, chattelConfigRead, chattelConfigWrite);
+
+				whipLru.Start();
+
+				var signalIndex = UnixSignal.WaitAny(signals, -1);
+
+				switch (signals[signalIndex].Signum) {
+					case Signum.SIGHUP:
+						whipLru.Stop();
+					break;
+					case Signum.SIGINT:
+					case Signum.SIGKILL:
+						isRunning = false;
+						whipLru.Stop();
+					break;
 				}
 			}
 
-			// I don't care what's still connected or keeping things running, it's time to die!
-			Environment.Exit(0);
 			return 0;
 		}
 
-		public static void RequestReceivedDelegate(ClientRequestMsg request, WHIPServer.RequestResponseDelegate responseHandler, object context) {
-			// TODO: do this for real.  The response is done across a callback with the context pointer passed through so that I can queue these things and get back to them.
-
-			responseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero), context);
-		}
+		#region Bootup utils
 
 		private static void LogBootMessage() {
 			LOG.Info("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
@@ -168,6 +159,8 @@ namespace WHIP_LRU {
 				}
 			}
 		}
+
+		#endregion
 
 		#region Crash handler
 

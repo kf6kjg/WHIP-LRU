@@ -29,6 +29,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using log4net;
+using OpenMetaverse;
 
 namespace WHIP_LRU.Server {
 	public class WHIPServer : IDisposable {
@@ -39,7 +40,7 @@ namespace WHIP_LRU.Server {
 		public const uint DEFAULT_PORT = 32700;
 
 		// Thread signal.  
-		public static ManualResetEvent AllDone = new ManualResetEvent(false);
+		private ManualResetEvent _allDone = new ManualResetEvent(false);
 
 		public delegate void RequestReceivedDelegate(ClientRequestMsg request, RequestResponseDelegate responseHandler, object context);
 		public delegate void RequestResponseDelegate(ServerResponseMsg response, object context);
@@ -95,26 +96,27 @@ namespace WHIP_LRU.Server {
 			_isRunning = true;
 			while (_isRunning) {
 				// Set the event to nonsignaled state.  
-				AllDone.Reset();
+				_allDone.Reset();
 
 				// Start an asynchronous socket to listen for connections.  
 				LOG.Debug("[WHIP_SERVER] Waiting for a connection...");
 				listener.BeginAccept(AcceptCallback, listener);
 
 				// Wait until a connection is made before continuing.  
-				AllDone.WaitOne();
+				_allDone.WaitOne();
 			}
 		}
 
 		public void Stop() {
 			_isRunning = false;
+			_allDone.Set();
 		}
 
 		#region Callbacks
 
 		private void AcceptCallback(IAsyncResult ar) {
 			// Signal the main thread to continue.  
-			AllDone.Set();
+			_allDone.Set();
 
 			// Get the socket that handles the client request.  
 			var listener = (Socket)ar.AsyncState;
@@ -167,18 +169,21 @@ namespace WHIP_LRU.Server {
 			}
 			catch (Exception e) {
 				LOG.Warn($"[WHIP_SERVER] Exception caught reading data.", e);
+				Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 				return;
 			}
 
 			if (bytesRead > 0) {
 				LOG.Debug($"[WHIP_SERVER] Reading {bytesRead} bytes from {handler.RemoteEndPoint} on {handler.LocalEndPoint}. Connection in state {state.State}.");
 
-				bool complete = false;
+				var complete = false;
 				try {
 					complete = state.Message.AddRange(state.Buffer.Take(bytesRead));
 				}
 				catch (Exception e) {
 					LOG.Warn($"[WHIP_SERVER] Exception caught while extracting data from inbound message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.", e);
+					Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+					return;
 				}
 
 				if (complete) {
@@ -196,6 +201,8 @@ namespace WHIP_LRU.Server {
 							}
 							catch (Exception e) {
 								LOG.Warn($"[WHIP_SERVER] Exception caught from request handler while processing message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+								Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
+								return;
 							}
 						} break;
 						case State.Challenged:
@@ -225,6 +232,8 @@ namespace WHIP_LRU.Server {
 							}
 							catch (Exception e) {
 								LOG.Warn($"[WHIP_SERVER] Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+								Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+								return;
 							}
 						} break;
 					}
@@ -237,7 +246,18 @@ namespace WHIP_LRU.Server {
 				}
 			}
 			else {
-				LOG.Debug($"[WHIP_SERVER] Zero bytes received from {handler.RemoteEndPoint} on {handler.LocalEndPoint}. Client must have closed the connection.");
+				string client = "unknown";
+				try {
+					client = handler.RemoteEndPoint.ToString();
+				}
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+				catch (Exception) {
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+				}
+
+				LOG.Debug($"[WHIP_SERVER] Zero bytes received from {client} on {handler.LocalEndPoint}. Client must have closed the connection.");
+				handler.Disconnect(false);
+				return;
 			}
 		}
 
@@ -262,10 +282,15 @@ namespace WHIP_LRU.Server {
 				var byteData = response.ToByteArray();
 
 				// Begin sending the data to the remote device.  
-				handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendCallback, handler);
+				if (handler.Connected) {
+					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendCallback, handler);
+				}
+			}
+			else if (handler.Connected) {
+				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendCallback, handler);
 			}
 			else {
-				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendCallback, handler);
+				LOG.Debug("[WHIP_SERVER] Client disconnected before response could be sent.");
 			}
 		}
 
