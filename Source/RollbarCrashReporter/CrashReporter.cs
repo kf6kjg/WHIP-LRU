@@ -38,7 +38,7 @@ namespace RollbarCrashReporter {
 			XmlConfigurator.Configure();
 
 			if (args.Length < 1) {
-				LOG.Fatal($"[CRASH_REPORTER] Missing number of characters to read from stdin.\n\n{GenerateBootMessage()}");
+				LOG.Fatal($"Missing number of characters to read from stdin.\n\n{GenerateBootMessage()}");
 				Console.WriteLine("Missing number of characters to read from stdin.");
 				Environment.Exit(1);
 			}

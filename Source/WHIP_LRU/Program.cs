@@ -43,12 +43,12 @@ namespace WHIP_LRU {
 			if (string.IsNullOrEmpty(logConfigFile)) {
 				XmlConfigurator.Configure();
 				LogBootMessage();
-				LOG.Info("[MAIN] Configured log4net using ./WHIP_LRU.exe.config as the default.");
+				LOG.Info("Configured log4net using ./WHIP_LRU.exe.config as the default.");
 			}
 			else {
 				XmlConfigurator.Configure(new FileInfo(logConfigFile));
 				LogBootMessage();
-				LOG.Info($"[MAIN] Configured log4net using \"{logConfigFile}\" as configuration file.");
+				LOG.Info($"Configured log4net using \"{logConfigFile}\" as configuration file.");
 			}
 
 			// Configure nIni aliases and locale
@@ -135,13 +135,13 @@ namespace WHIP_LRU {
 			var found_at_given_path = false;
 
 			try {
-				LOG.Info($"[MAIN] Attempting to read configuration file {Path.GetFullPath(iniFileName)}");
+				LOG.Info($"Attempting to read configuration file {Path.GetFullPath(iniFileName)}");
 				startupConfig.ConfigSource.Merge(new IniConfigSource(iniFileName));
-				LOG.Info($"[MAIN] Success reading configuration file.");
+				LOG.Info($"Success reading configuration file.");
 				found_at_given_path = true;
 			}
 			catch {
-				LOG.Warn($"[MAIN] Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
+				LOG.Warn($"Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
 			}
 
 			if (!found_at_given_path) {
@@ -149,12 +149,12 @@ namespace WHIP_LRU {
 				iniFileName = Path.Combine(EXECUTABLE_DIRECTORY, iniFileName);
 
 				try {
-					LOG.Info($"[MAIN] Attempting to read configuration file from installation path {Path.GetFullPath(iniFileName)}");
+					LOG.Info($"Attempting to read configuration file from installation path {Path.GetFullPath(iniFileName)}");
 					startupConfig.ConfigSource.Merge(new IniConfigSource(iniFileName));
-					LOG.Info($"[MAIN] Success reading configuration file.");
+					LOG.Info($"Success reading configuration file.");
 				}
 				catch {
-					LOG.Fatal($"[MAIN] Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
+					LOG.Fatal($"Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
 					throw;
 				}
 			}
@@ -186,7 +186,7 @@ namespace WHIP_LRU {
 					msg = $"InnerException: {ex.InnerException}\n";
 				}
 
-				msg = $"[MAIN] APPLICATION EXCEPTION DETECTED: {e}\n" +
+				msg = $"APPLICATION EXCEPTION DETECTED: {e}\n" +
 					"\n" +
 					$"Exception: {e.ExceptionObject}\n" +
 					msg +
@@ -215,7 +215,7 @@ namespace WHIP_LRU {
 				}
 			}
 			catch (Exception ex) {
-				LOG.Error("[MAIN] Exception launching CrashReporter.", ex);
+				LOG.Error("Exception launching CrashReporter.", ex);
 			}
 			finally {
 				_isHandlingException = false;

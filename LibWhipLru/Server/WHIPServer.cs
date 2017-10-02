@@ -99,7 +99,7 @@ namespace WHIP_LRU.Server {
 				_allDone.Reset();
 
 				// Start an asynchronous socket to listen for connections.  
-				LOG.Debug("[WHIP_SERVER] Waiting for a connection...");
+				LOG.Debug("Waiting for a connection...");
 				listener.BeginAccept(AcceptCallback, listener);
 
 				// Wait until a connection is made before continuing.  
@@ -126,7 +126,7 @@ namespace WHIP_LRU.Server {
 			try {
 				handler = listener.EndAccept(ar);
 
-				LOG.Debug($"[WHIP_SERVER] Accepting connection from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
+				LOG.Debug($"Accepting connection from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
 
 				// Create the state object.  
 				state = new StateObject();
@@ -136,11 +136,11 @@ namespace WHIP_LRU.Server {
 				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 			}
 			catch (Exception e) {
-				LOG.Warn("[WHIP_SERVER] Exception caught while setting up to receive data from client.", e);
+				LOG.Warn("Exception caught while setting up to receive data from client.", e);
 				return;
 			}
 
-			LOG.Debug($"[WHIP_SERVER] Sending challenge to {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
+			LOG.Debug($"Sending challenge to {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
 
 			var response = new AuthChallengeMsg();
 
@@ -152,7 +152,7 @@ namespace WHIP_LRU.Server {
 				Send(handler, response);
 			}
 			catch (Exception e) {
-				LOG.Warn($"[WHIP_SERVER] Exception caught responding to client connection request from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+				LOG.Warn($"Exception caught responding to client connection request from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
 			}
 		}
 
@@ -168,20 +168,20 @@ namespace WHIP_LRU.Server {
 				bytesRead = handler.EndReceive(ar);
 			}
 			catch (Exception e) {
-				LOG.Warn($"[WHIP_SERVER] Exception caught reading data.", e);
+				LOG.Warn($"Exception caught reading data.", e);
 				Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 				return;
 			}
 
 			if (bytesRead > 0) {
-				LOG.Debug($"[WHIP_SERVER] Reading {bytesRead} bytes from {handler.RemoteEndPoint} on {handler.LocalEndPoint}. Connection in state {state.State}.");
+				LOG.Debug($"Reading {bytesRead} bytes from {handler.RemoteEndPoint} on {handler.LocalEndPoint}. Connection in state {state.State}.");
 
 				var complete = false;
 				try {
 					complete = state.Message.AddRange(state.Buffer.Take(bytesRead));
 				}
 				catch (Exception e) {
-					LOG.Warn($"[WHIP_SERVER] Exception caught while extracting data from inbound message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.", e);
+					LOG.Warn($"Exception caught while extracting data from inbound message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.", e);
 					Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 					return;
 				}
@@ -194,13 +194,13 @@ namespace WHIP_LRU.Server {
 							// There might be more data, so store the data received so far.
 							var message = state.Message as ClientRequestMsg;
 
-							LOG.Debug($"[WHIP_SERVER] Request message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} completed: {message?.GetHeaderSummary()}");
+							LOG.Debug($"Request message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} completed: {message?.GetHeaderSummary()}");
 
 							try {
 								_requestHandler(message, RequestResponseCallback, state);
 							}
 							catch (Exception e) {
-								LOG.Warn($"[WHIP_SERVER] Exception caught from request handler while processing message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+								LOG.Warn($"Exception caught from request handler while processing message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
 								Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
 								return;
 							}
@@ -212,7 +212,7 @@ namespace WHIP_LRU.Server {
 
 							var hashCorrect = message?.ChallengeHash == state.CorrectChallengeHash;
 
-							LOG.Debug($"[WHIP_SERVER] Auth response from {handler.RemoteEndPoint} on {handler.LocalEndPoint} completed: " + (hashCorrect ? "Hash correct." : "Hash not correct, auth failed."));
+							LOG.Debug($"Auth response from {handler.RemoteEndPoint} on {handler.LocalEndPoint} completed: " + (hashCorrect ? "Hash correct." : "Hash not correct, auth failed."));
 
 							response = new AuthStatusMsg(hashCorrect ? AuthStatusMsg.StatusType.AS_SUCCESS : AuthStatusMsg.StatusType.AS_FAILURE);
 
@@ -231,7 +231,7 @@ namespace WHIP_LRU.Server {
 								}
 							}
 							catch (Exception e) {
-								LOG.Warn($"[WHIP_SERVER] Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+								LOG.Warn($"Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
 								Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 								return;
 							}
@@ -240,7 +240,7 @@ namespace WHIP_LRU.Server {
 				}
 				else {
 					// Not all data received. Get more.  
-					LOG.Debug($"[WHIP_SERVER] Message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} incomplete, getting next packet.");
+					LOG.Debug($"Message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} incomplete, getting next packet.");
 
 					handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
 				}
@@ -255,7 +255,7 @@ namespace WHIP_LRU.Server {
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 				}
 
-				LOG.Debug($"[WHIP_SERVER] Zero bytes received from {client} on {handler.LocalEndPoint}. Client must have closed the connection.");
+				LOG.Debug($"Zero bytes received from {client} on {handler.LocalEndPoint}. Client must have closed the connection.");
 				handler.Disconnect(false);
 				return;
 			}
@@ -265,14 +265,14 @@ namespace WHIP_LRU.Server {
 			var state = (StateObject)context;
 			var handler = state.WorkSocket;
 
-			LOG.Debug($"[WHIP_SERVER] Replying to request message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}: {response.GetHeaderSummary()}");
+			LOG.Debug($"Replying to request message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}: {response.GetHeaderSummary()}");
 
 			try {
 				Send(handler, response);
 				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 			}
 			catch (Exception e) {
-				LOG.Warn($"[WHIP_SERVER] Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+				LOG.Warn($"Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
 			}
 		}
 
@@ -290,7 +290,7 @@ namespace WHIP_LRU.Server {
 				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendCallback, handler);
 			}
 			else {
-				LOG.Debug("[WHIP_SERVER] Client disconnected before response could be sent.");
+				LOG.Debug("Client disconnected before response could be sent.");
 			}
 		}
 
@@ -301,10 +301,10 @@ namespace WHIP_LRU.Server {
 
 				// Complete sending the data to the remote device.  
 				var bytesSent = handler.EndSend(ar);
-				LOG.Debug($"[WHIP_SERVER] Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
+				LOG.Debug($"Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}.");
 			}
 			catch (Exception e) {
-				LOG.Warn($"[WHIP_SERVER] Problem responding to client.", e);
+				LOG.Warn($"Problem responding to client.", e);
 			}
 		}
 
@@ -328,13 +328,13 @@ namespace WHIP_LRU.Server {
 
 				// Complete sending the data to the remote device.  
 				var bytesSent = handler.EndSend(ar);
-				LOG.Debug($"[WHIP_SERVER] Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}, and closing the connection.");
+				LOG.Debug($"Sent {bytesSent} bytes to {handler.RemoteEndPoint} on {handler.LocalEndPoint}, and closing the connection.");
 
 				handler.Shutdown(SocketShutdown.Both);
 				handler.Close();
 			}
 			catch (Exception e) {
-				LOG.Warn($"[WHIP_SERVER] Problem responding to client.", e);
+				LOG.Warn($"Problem responding to client.", e);
 			}
 		}
 
