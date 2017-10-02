@@ -168,7 +168,7 @@ namespace WHIP_LRU.Server {
 				bytesRead = handler.EndReceive(ar);
 			}
 			catch (Exception e) {
-				LOG.Warn($"Exception caught reading data.", e);
+				LOG.Warn($"Exception caught reading data in state {state.State}.", e);
 				Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 				return;
@@ -182,7 +182,7 @@ namespace WHIP_LRU.Server {
 					complete = state.Message.AddRange(state.Buffer.Take(bytesRead));
 				}
 				catch (Exception e) {
-					LOG.Warn($"Exception caught while extracting data from inbound message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}.", e);
+					LOG.Warn($"Exception caught while extracting data from inbound message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} in state {state.State}.", e);
 					Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 					handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 					return;
@@ -234,7 +234,7 @@ namespace WHIP_LRU.Server {
 								}
 							}
 							catch (Exception e) {
-								LOG.Warn($"Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+								LOG.Warn($"Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint} in state {state.State}.", e);
 								Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 								handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 								return;
@@ -244,7 +244,7 @@ namespace WHIP_LRU.Server {
 				}
 				else {
 					// Not all data received. Get more.  
-					LOG.Debug($"Message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} incomplete, getting next packet.");
+					LOG.Debug($"Message from {handler.RemoteEndPoint} on {handler.LocalEndPoint} incomplete, getting next packet. In state {state.State}.");
 
 					handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
 				}
@@ -259,7 +259,7 @@ namespace WHIP_LRU.Server {
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 				}
 
-				LOG.Debug($"Zero bytes received from {client} on {handler.LocalEndPoint}. Client must have closed the connection.");
+				LOG.Debug($"Zero bytes received from {client} on {handler.LocalEndPoint} in state {state.State}. Client must have closed the connection.");
 			}
 		}
 
@@ -267,14 +267,14 @@ namespace WHIP_LRU.Server {
 			var state = (StateObject)context;
 			var handler = state.WorkSocket;
 
-			LOG.Debug($"Replying to request message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}: {response.GetHeaderSummary()}");
+			LOG.Debug($"Replying to request message from {handler.RemoteEndPoint} on {handler.LocalEndPoint}: {response.GetHeaderSummary()} in state {state.State}.");
 
 			try {
 				Send(handler, response);
 				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 			}
 			catch (Exception e) {
-				LOG.Warn($"Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint}", e);
+				LOG.Warn($"Exception caught responding to client from {handler.RemoteEndPoint} on {handler.LocalEndPoint} in state {state.State}.", e);
 			}
 		}
 
