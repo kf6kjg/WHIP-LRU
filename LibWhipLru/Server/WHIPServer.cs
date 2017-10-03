@@ -23,6 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -104,7 +105,7 @@ namespace WHIP_LRU.Server {
 
 				// Start an asynchronous socket to listen for connections.  
 				LOG.Debug($"{_localEndPoint} - Waiting for a connection...");
-				listener.BeginAccept(AcceptCallback, listener);
+				listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
 
 				// Wait until a connection is made before continuing.  
 				_allDone.WaitOne();
@@ -148,8 +149,7 @@ namespace WHIP_LRU.Server {
 				state.WorkSocket = handler;
 				state.ClientData = client;
 				state.State = State.Challenged;
-				state.Message = new AuthResponseMsg();
-				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+				StartReceive(state, new AuthResponseMsg(), ReadCallback);
 			}
 			catch (Exception e) {
 				LOG.Warn($"{_localEndPoint}, {client}, {state.State} - Exception caught while setting up to receive data from client.", e);
@@ -172,6 +172,22 @@ namespace WHIP_LRU.Server {
 			}
 		}
 
+		private void StartReceive(StateObject state, IByteArrayAppendable message, AsyncCallback callback) {
+			Contract.Requires(callback != null);
+			Contract.Requires(state != null);
+			Contract.Requires(message != null);
+
+			state.Message = message;
+			state.WorkSocket.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(ReadCallback), state);
+		}
+
+		private void ContinueReceive(StateObject state, AsyncCallback callback) {
+			Contract.Requires(callback != null);
+			Contract.Requires(state != null);
+
+			state.WorkSocket.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(ReadCallback), state);
+		}
+
 		private void ReadCallback(IAsyncResult ar) {
 			// Retrieve the state object and the handler socket  
 			// from the asynchronous state object.  
@@ -186,7 +202,7 @@ namespace WHIP_LRU.Server {
 			catch (Exception e) {
 				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught reading data.", e);
 				Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
-				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+				StartReceive(state, state.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
 				return;
 			}
 
@@ -200,7 +216,7 @@ namespace WHIP_LRU.Server {
 				catch (Exception e) {
 					LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught while extracting data from inbound message.", e);
 					Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
-					handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+					StartReceive(state, state.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
 					return;
 				}
 
@@ -220,7 +236,7 @@ namespace WHIP_LRU.Server {
 							catch (Exception e) {
 								LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught from request handler while processing message.", e);
 								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
-								handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+								StartReceive(state, new ClientRequestMsg(), ReadCallback);
 								return;
 							}
 						} break;
@@ -243,7 +259,7 @@ namespace WHIP_LRU.Server {
 							try {
 								if (hashCorrect) {
 									Send(state, response);
-									handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+									StartReceive(state, new ClientRequestMsg(), ReadCallback);
 								}
 								else {
 									SendAndClose(state, response);
@@ -252,7 +268,7 @@ namespace WHIP_LRU.Server {
 							catch (Exception e) {
 								LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding to client.", e);
 								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
-								handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+								StartReceive(state, new ClientRequestMsg(), ReadCallback);
 								return;
 							}
 						} break;
@@ -262,7 +278,7 @@ namespace WHIP_LRU.Server {
 					// Not all data received. Get more.  
 					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Message incomplete, getting next packet.");
 
-					handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
+					ContinueReceive(state, ReadCallback);
 				}
 			}
 			else {
@@ -278,7 +294,7 @@ namespace WHIP_LRU.Server {
 
 			try {
 				Send(state, response);
-				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
+				StartReceive(state, new ClientRequestMsg(), ReadCallback);
 			}
 			catch (Exception e) {
 				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding to client.", e);
@@ -295,7 +311,7 @@ namespace WHIP_LRU.Server {
 				// Begin sending the data to the remote device.  
 				if (handler.Connected) {
 					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending {byteData.Length} bytes.");
-					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendCallback, state);
+					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), state);
 				}
 				else {
 					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Could not send {byteData.Length} bytes because no longer connected.");
@@ -303,7 +319,7 @@ namespace WHIP_LRU.Server {
 			}
 			else if (handler.Connected) {
 				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending nothing.");
-				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendCallback, state);
+				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, new AsyncCallback(SendCallback), state);
 			}
 			else {
 				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Client disconnected before response could be sent.");
@@ -335,7 +351,7 @@ namespace WHIP_LRU.Server {
 				// Begin sending the data to the remote device.  
 				if (handler.Connected) {
 					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending {byteData.Length} bytes and then closing connection.");
-					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendAndCloseCallback, state);
+					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendAndCloseCallback), state);
 				}
 				else {
 					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Could not send {byteData.Length} bytes and then close connection because no longer connected.");
@@ -343,7 +359,7 @@ namespace WHIP_LRU.Server {
 			}
 			else if (handler.Connected) {
 				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending nothing and then closing connection.");
-				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendAndCloseCallback, state);
+				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, new AsyncCallback(SendAndCloseCallback), state);
 			}
 			else {
 				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Client disconnected before response could be sent and the connection closed.");

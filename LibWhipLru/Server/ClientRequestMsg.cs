@@ -48,39 +48,41 @@ namespace WHIP_LRU.Server {
 		}
 
 		public bool AddRange(IEnumerable<byte> data) {
-			if (!IsReady) { // Refuse to append more data once loaded.
-				_rawMessageData.AddRange(data);
+			if (IsReady) { // Refuse to append more data once loaded.
+				throw new System.InvalidOperationException("You cannot reuse messages!");
+			}
 
-				if (_rawMessageData.Count >= HEADER_SIZE) {
-					var header = _rawMessageData.Take(HEADER_SIZE).ToArray();
+			_rawMessageData.AddRange(data);
 
-					// We've enough of the header to determine size.
-					var dataSize = InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC);
-					var packetSize = HEADER_SIZE + dataSize;
+			if (_rawMessageData.Count >= HEADER_SIZE) {
+				var header = _rawMessageData.Take(HEADER_SIZE).ToArray();
 
-					if (packetSize > REQUEST_TYPE_LOC && _rawMessageData.Count >= packetSize) {
-						// Load the class up with the data.
-						var type = header[REQUEST_TYPE_LOC];
-						if (typeof(RequestType).IsEnumDefined(type)) {
-							Type = (RequestType)type;
-						}
-						else {
-							throw new AssetProtocolError($"Invalid result type in server response. Header summary: {GetHeaderSummary(header)}");
-						}
+				// We've enough of the header to determine size.
+				var dataSize = InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC);
+				var packetSize = HEADER_SIZE + dataSize;
 
-						var idString = Encoding.ASCII.GetString(header, UUID_TAG_LOCATION, UUID_LEN);
-						UUID id;
-						if (UUID.TryParse(idString, out id)) {
-							AssetId = id;
-						}
-						else {
-							throw new AssetProtocolError($"Invalid UUID in server response. Header summary: {GetHeaderSummary(header)}");
-						}
-
-						IsReady = true;
-
-						// If all the expected data has arrived, return true, else false.
+				if (packetSize > REQUEST_TYPE_LOC && _rawMessageData.Count >= packetSize) {
+					// Load the class up with the data.
+					var type = header[REQUEST_TYPE_LOC];
+					if (typeof(RequestType).IsEnumDefined(type)) {
+						Type = (RequestType)type;
 					}
+					else {
+						throw new AssetProtocolError($"Invalid result type in server response. Header summary: {GetHeaderSummary(header)}");
+					}
+
+					var idString = Encoding.ASCII.GetString(header, UUID_TAG_LOCATION, UUID_LEN);
+					UUID id;
+					if (UUID.TryParse(idString, out id)) {
+						AssetId = id;
+					}
+					else {
+						throw new AssetProtocolError($"Invalid UUID in server response. Header summary: {GetHeaderSummary(header)}");
+					}
+
+					IsReady = true;
+
+					// If all the expected data has arrived, return true, else false.
 				}
 			}
 
