@@ -53,6 +53,8 @@ namespace WHIP_LRU.Server {
 		private RequestReceivedDelegate _requestHandler;
 
 		public WHIPServer(RequestReceivedDelegate requestHandler, string address = DEFAULT_ADDRESS, uint port = DEFAULT_PORT, string password = DEFAULT_PASSWORD) {
+			LOG.Debug($"{address}:{port} - Initializing server.");
+
 			IPAddress addr;
 			if (string.IsNullOrWhiteSpace(address) || address == DEFAULT_ADDRESS) {
 				addr = IPAddress.Any;
@@ -86,6 +88,8 @@ namespace WHIP_LRU.Server {
 		/// Start the server listening.  Note that all kinds of exceptions can be thrown.
 		/// </summary>
 		public void Start() {
+			LOG.Debug($"{_localEndPoint} - Starting server.");
+
 			// Create a TCP/IP socket.  
 			var listener = new Socket(_localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
@@ -99,7 +103,7 @@ namespace WHIP_LRU.Server {
 				_allDone.Reset();
 
 				// Start an asynchronous socket to listen for connections.  
-				LOG.Debug("Waiting for a connection...");
+				LOG.Debug($"{_localEndPoint} - Waiting for a connection...");
 				listener.BeginAccept(AcceptCallback, listener);
 
 				// Wait until a connection is made before continuing.  
@@ -108,6 +112,8 @@ namespace WHIP_LRU.Server {
 		}
 
 		public void Stop() {
+			LOG.Debug($"{_localEndPoint} - Stopping server.");
+
 			_isRunning = false;
 			_allDone.Set();
 		}
@@ -135,21 +141,22 @@ namespace WHIP_LRU.Server {
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 				}
 
-				LOG.Debug($"Accepting connection from {client} on {handler.LocalEndPoint}.");
+				LOG.Debug($"{_localEndPoint}, {client}, Acceptance - Accepting connection.");
 
 				// Create the state object.  
 				state = new StateObject();
 				state.WorkSocket = handler;
+				state.ClientData = client;
 				state.State = State.Challenged;
 				state.Message = new AuthResponseMsg();
 				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 			}
 			catch (Exception e) {
-				LOG.Warn("Exception caught while setting up to receive data from client.", e);
+				LOG.Warn($"{_localEndPoint}, {client}, {state.State} - Exception caught while setting up to receive data from client.", e);
 				return;
 			}
 
-			LOG.Debug($"Sending challenge to {client} on {handler.LocalEndPoint}.");
+			LOG.Debug($"{_localEndPoint}, {client}, {state.State} - Sending challenge.");
 
 			var response = new AuthChallengeMsg();
 
@@ -158,10 +165,10 @@ namespace WHIP_LRU.Server {
 			state.CorrectChallengeHash = AuthResponseMsg.ComputeChallengeHash(challenge, _password);
 
 			try {
-				Send(handler, response);
+				Send(state, response);
 			}
 			catch (Exception e) {
-				LOG.Warn($"Exception caught responding to client connection request from {client} on {handler.LocalEndPoint}", e);
+				LOG.Warn($"{_localEndPoint}, {client}, {state.State} - Exception caught responding to client connection request.", e);
 			}
 		}
 
@@ -171,37 +178,28 @@ namespace WHIP_LRU.Server {
 			var state = (StateObject)ar.AsyncState;
 			var handler = state.WorkSocket;
 
-			string client = "unknown";
-			try {
-				client = handler.RemoteEndPoint.ToString();
-			}
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-			catch (Exception) {
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-			}
-
 			// Read data from the client socket.   
 			int bytesRead = 0;
 			try {
 				bytesRead = handler.EndReceive(ar);
 			}
 			catch (Exception e) {
-				LOG.Warn($"Exception caught reading data in state {state.State}.", e);
-				Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught reading data.", e);
+				Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 				return;
 			}
 
 			if (bytesRead > 0) {
-				LOG.Debug($"Reading {bytesRead} bytes from {client} on {handler.LocalEndPoint}. Connection in state {state.State}.");
+				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Reading {bytesRead} bytes.");
 
 				var complete = false;
 				try {
 					complete = state.Message.AddRange(state.Buffer.Take(bytesRead));
 				}
 				catch (Exception e) {
-					LOG.Warn($"Exception caught while extracting data from inbound message from {client} on {handler.LocalEndPoint} in state {state.State}.", e);
-					Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+					LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught while extracting data from inbound message.", e);
+					Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 					handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 					return;
 				}
@@ -214,14 +212,14 @@ namespace WHIP_LRU.Server {
 							// There might be more data, so store the data received so far.
 							var message = state.Message as ClientRequestMsg;
 
-							LOG.Debug($"Request message from {client} on {handler.LocalEndPoint} completed: {message?.GetHeaderSummary()}");
+							LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Request message completed: {message?.GetHeaderSummary()}");
 
 							try {
 								_requestHandler(message, RequestResponseCallback, state);
 							}
 							catch (Exception e) {
-								LOG.Warn($"Exception caught from request handler while processing message from {client} on {handler.LocalEndPoint}", e);
-								Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
+								LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught from request handler while processing message.", e);
+								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
 								handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 								return;
 							}
@@ -233,7 +231,7 @@ namespace WHIP_LRU.Server {
 
 							var hashCorrect = message?.ChallengeHash == state.CorrectChallengeHash;
 
-							LOG.Debug($"Auth response from {client} on {handler.LocalEndPoint} completed: " + (hashCorrect ? "Hash correct." : "Hash not correct, auth failed."));
+							LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Auth response completed: " + (hashCorrect ? "Hash correct." : "Hash not correct, auth failed."));
 
 							response = new AuthStatusMsg(hashCorrect ? AuthStatusMsg.StatusType.AS_SUCCESS : AuthStatusMsg.StatusType.AS_FAILURE);
 
@@ -244,16 +242,16 @@ namespace WHIP_LRU.Server {
 
 							try {
 								if (hashCorrect) {
-									Send(handler, response);
+									Send(state, response);
 									handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 								}
 								else {
-									SendAndClose(handler, response);
+									SendAndClose(state, response);
 								}
 							}
 							catch (Exception e) {
-								LOG.Warn($"Exception caught responding to client from {client} on {handler.LocalEndPoint} in state {state.State}.", e);
-								Send(handler, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+								LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding to client.", e);
+								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 								handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 								return;
 							}
@@ -262,13 +260,13 @@ namespace WHIP_LRU.Server {
 				}
 				else {
 					// Not all data received. Get more.  
-					LOG.Debug($"Message from {client} on {handler.LocalEndPoint} incomplete, getting next packet. In state {state.State}.");
+					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Message incomplete, getting next packet.");
 
 					handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, 0, ReadCallback, state);
 				}
 			}
 			else {
-				LOG.Debug($"Zero bytes received from {client} on {handler.LocalEndPoint} in state {state.State}. Client must have closed the connection.");
+				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Zero bytes received. Client must have closed the connection.");
 			}
 		}
 
@@ -276,35 +274,19 @@ namespace WHIP_LRU.Server {
 			var state = (StateObject)context;
 			var handler = state.WorkSocket;
 
-			string client = "unknown";
-			try {
-				client = handler.RemoteEndPoint.ToString();
-			}
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-			catch (Exception) {
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-			}
-
-			LOG.Debug($"Replying to request message from {client} on {handler.LocalEndPoint}: {response.GetHeaderSummary()} in state {state.State}.");
+			LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Replying to request message: {response.GetHeaderSummary()}.");
 
 			try {
-				Send(handler, response);
+				Send(state, response);
 				handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, ReadCallback, state);
 			}
 			catch (Exception e) {
-				LOG.Warn($"Exception caught responding to client from {client} on {handler.LocalEndPoint} in state {state.State}.", e);
+				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding to client.", e);
 			}
 		}
 
-		private void Send(Socket handler, IByteArraySerializable response) {
-			string client = "unknown";
-			try {
-				client = handler.RemoteEndPoint.ToString();
-			}
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-			catch (Exception) {
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-			}
+		private void Send(StateObject state, IByteArraySerializable response) {
+			var handler = state.WorkSocket;
 
 			if (response != null) {
 				// Convert the string data to byte data using ASCII encoding.  
@@ -312,54 +294,39 @@ namespace WHIP_LRU.Server {
 
 				// Begin sending the data to the remote device.  
 				if (handler.Connected) {
-					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendCallback, handler);
-					LOG.Debug($"Sending {byteData.Length} bytes to {client} on {handler.LocalEndPoint}.");
+					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending {byteData.Length} bytes.");
+					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendCallback, state);
 				}
 				else {
-					LOG.Debug($"Could not send {byteData.Length} bytes to {client} on {handler.LocalEndPoint} because no longer connected.");
+					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Could not send {byteData.Length} bytes because no longer connected.");
 				}
 			}
 			else if (handler.Connected) {
-				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendCallback, handler);
-				LOG.Debug($"Sending nothing to {client} on {handler.LocalEndPoint}.");
+				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending nothing.");
+				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendCallback, state);
 			}
 			else {
-				LOG.Debug("Client disconnected before response could be sent.");
+				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Client disconnected before response could be sent.");
 			}
 		}
 
 		private void SendCallback(IAsyncResult ar) {
 			// Retrieve the socket from the state object.  
-			var handler = (Socket)ar.AsyncState;
-
-			string client = "unknown";
-			try {
-				client = handler.RemoteEndPoint.ToString();
-			}
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-			catch (Exception) {
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-			}
+			var state = (StateObject)ar.AsyncState;
+			var handler = state.WorkSocket;
 
 			try {
 				// Complete sending the data to the remote device.  
 				var bytesSent = handler.EndSend(ar);
-				LOG.Debug($"Sent {bytesSent} bytes to {client} on {handler.LocalEndPoint}.");
+				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sent {bytesSent} bytes.");
 			}
 			catch (Exception e) {
-				LOG.Warn($"Problem responding to {client} on {handler.LocalEndPoint}.", e);
+				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding.", e);
 			}
 		}
 
-		private void SendAndClose(Socket handler, IByteArraySerializable response) {
-			string client = "unknown";
-			try {
-				client = handler.RemoteEndPoint.ToString();
-			}
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-			catch (Exception) {
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-			}
+		private void SendAndClose(StateObject state, IByteArraySerializable response) {
+			var handler = state.WorkSocket;
 
 			if (response != null) {
 				// Convert the string data to byte data using ASCII encoding.  
@@ -367,45 +334,37 @@ namespace WHIP_LRU.Server {
 
 				// Begin sending the data to the remote device.  
 				if (handler.Connected) {
-					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendAndCloseCallback, handler);
-					LOG.Debug($"Sending {byteData.Length} bytes to {client} on {handler.LocalEndPoint} and then closing connection.");
+					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending {byteData.Length} bytes and then closing connection.");
+					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, SendAndCloseCallback, state);
 				}
 				else {
-					LOG.Debug($"Could not send {byteData.Length} bytes to {client} on {handler.LocalEndPoint} and then close connection because no longer connected.");
+					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Could not send {byteData.Length} bytes and then close connection because no longer connected.");
 				}
 			}
 			else if (handler.Connected) {
-				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendAndCloseCallback, handler);
-				LOG.Debug($"Sending nothing to {client} on {handler.LocalEndPoint} and then closing connection.");
+				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending nothing and then closing connection.");
+				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, SendAndCloseCallback, state);
 			}
 			else {
-				LOG.Debug($"Client {client} disconnected before response could be sent and the connection closed.");
+				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Client disconnected before response could be sent and the connection closed.");
 			}
 		}
 
 		private void SendAndCloseCallback(IAsyncResult ar) {
 			// Retrieve the socket from the state object.  
-			var handler = (Socket)ar.AsyncState;
-
-			string client = "unknown";
-			try {
-				client = handler.RemoteEndPoint.ToString();
-			}
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-			catch (Exception) {
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-			}
+			var state = (StateObject)ar.AsyncState;
+			var handler = state.WorkSocket;
 
 			try {
 				// Complete sending the data to the remote device.  
 				var bytesSent = handler.EndSend(ar);
-				LOG.Debug($"Sent {bytesSent} bytes to {client} on {handler.LocalEndPoint}, and am closing the connection.");
+				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sent {bytesSent} bytes, and am closing the connection.");
 
 				handler.Shutdown(SocketShutdown.Both);
 				handler.Close();
 			}
 			catch (Exception e) {
-				LOG.Warn($"Problem responding to {client} or closing the connection.", e);
+				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding or closing the connection.", e);
 			}
 		}
 
@@ -416,6 +375,9 @@ namespace WHIP_LRU.Server {
 
 			// Client  socket.  
 			public Socket WorkSocket;
+
+			// Client info
+			public string ClientData;
 
 			// Receive buffer.  
 			public byte[] Buffer = new byte[BUFFER_SIZE];

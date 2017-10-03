@@ -48,9 +48,9 @@ namespace LibWhipLru {
 		private uint _port;
 		private string _password;
 
-		private bool _isRunning = true;
-
 		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null) {
+			LOG.Debug($"{address}:{port} - Initializing service.");
+
 			_address = address;
 			_port = port;
 			_password = password;
@@ -73,6 +73,8 @@ namespace LibWhipLru {
 		/// Starts up the service in a seperate thread.
 		/// </summary>
 		public void Start() {
+			LOG.Debug($"{_address}:{_port} - Starting service");
+
 			_server = new WHIPServer(RequestReceivedDelegate, _address, _port, _password);
 			_serviceThread = new Thread(_server.Start);
 			_serviceThread.IsBackground = true;
@@ -90,6 +92,8 @@ namespace LibWhipLru {
 		}
 
 		public void Stop() {
+			LOG.Debug($"{_address}:{_port} - Stopping service.");
+
 			try {
 				_server?.Dispose();
 				Thread.Sleep(100);
