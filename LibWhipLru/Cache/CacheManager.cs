@@ -23,6 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Caching;
@@ -41,6 +42,8 @@ namespace WHIP_LRU.Cache {
 		private readonly CacheItemPolicy _activeIdsPolicy;
 		private readonly ChattelReader _assetReader;
 		private readonly ChattelWriter _assetWriter;
+
+		public IEnumerable<string> ActiveIds => _activeIds?.GetValues("activeIds")?.Keys;
 
 		// TODO: write a negative cache to store IDs that are failures.  Remember to remove any ODs that wind up being Put.  Don't need to disk-backup this.
 

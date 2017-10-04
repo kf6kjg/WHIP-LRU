@@ -31,6 +31,7 @@ using System.Text;
 using System.Threading;
 using Chattel;
 using log4net;
+using WHIP_LRU.Cache;
 using WHIP_LRU.Server;
 using WHIP_LRU.Util;
 
@@ -38,6 +39,7 @@ namespace LibWhipLru {
 	public class WhipLru {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		private CacheManager _cacheManager;
 		private ChattelReader _assetReader;
 		private ChattelWriter _assetWriter;
 		private PIDFileManager _pidFileManager;
@@ -48,7 +50,7 @@ namespace LibWhipLru {
 		private uint _port;
 		private string _password;
 
-		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null) {
+		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null, CacheManager cacheManager = null) {
 			LOG.Debug($"{address}:{port} - Initializing service.");
 
 			_address = address;
@@ -65,6 +67,8 @@ namespace LibWhipLru {
 				chattelConfigWrite.DisableCache(); // Force caching off no matter how the INI is set. Doing caching differently here.
 				_assetWriter = new ChattelWriter(chattelConfigWrite);
 			}
+
+			_cacheManager = cacheManager;
 
 			_pidFileManager?.SetStatus(PIDFileManager.Status.Ready);
 		}
@@ -122,6 +126,8 @@ namespace LibWhipLru {
 					response = HandleGetStatus();
 				break;
 				case ClientRequestMsg.RequestType.RT_STORED_ASSET_IDS_GET:
+					response = HandleGetStoredAssetIds(request.AssetId.ToString().Substring(0, 3));
+				break;
 				case ClientRequestMsg.RequestType.RT_TEST:
 				default:
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
@@ -129,6 +135,8 @@ namespace LibWhipLru {
 			}
 			responseHandler(response, context);
 		}
+
+		#region Handlers
 
 		private ServerResponseMsg HandleGetStatus() {
 			var output = new StringBuilder();
@@ -174,5 +182,13 @@ namespace LibWhipLru {
 			LOG.Debug($"Sending:\n{output}");
 			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, OpenMetaverse.UUID.Zero, output.ToString());
 		}
+
+		private ServerResponseMsg HandleGetStoredAssetIds(string prefix) {
+			var ids = _cacheManager?.ActiveIds.Where(uuid => uuid.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
+
+			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, OpenMetaverse.UUID.Zero, string.Join(",", ids));
+		}
+
+		#endregion
 	}
 }
