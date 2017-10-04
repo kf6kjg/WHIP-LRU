@@ -293,7 +293,7 @@ namespace UnitTests.Tests {
 			var response = new ServerResponseMsg(_socket);
 
 			var statusInfo = response.ErrorMessage;
-			Assert.That(statusInfo.Contains("ACTIVE"), $"Expected to find 'ACTIVE' in the following:\n{statusInfo}");
+			Assert.That(statusInfo.StartsWith("WHIP Server Status", StringComparison.InvariantCulture), $"Expected to find 'WHIP Server Status' in the following:\n{statusInfo}");
 		}
 
 		[Test]
