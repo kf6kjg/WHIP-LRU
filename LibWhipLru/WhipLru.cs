@@ -119,7 +119,7 @@ namespace LibWhipLru {
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
 				break;
 				case ClientRequestMsg.RequestType.RT_STATUS_GET:
-					response = HandleStatusGet();
+					response = HandleGetStatus();
 				break;
 				case ClientRequestMsg.RequestType.RT_STORED_ASSET_IDS_GET:
 				case ClientRequestMsg.RequestType.RT_TEST:
@@ -130,7 +130,7 @@ namespace LibWhipLru {
 			responseHandler(response, context);
 		}
 
-		private ServerResponseMsg HandleStatusGet() {
+		private ServerResponseMsg HandleGetStatus() {
 			var output = new StringBuilder();
 
 			var connections = _server?.ActiveConnections;
