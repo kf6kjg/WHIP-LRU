@@ -90,6 +90,7 @@
     <Compile Include="Cache\CacheException.cs" />
     <Compile Include="Cache\CacheManager.cs" />
     <Compile Include="Util\PIDFileManager.cs" />
+    <Compile Include="Server\ClientInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Server\" />

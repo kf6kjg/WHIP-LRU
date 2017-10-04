@@ -23,6 +23,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net;
@@ -50,6 +52,9 @@ namespace WHIP_LRU.Server {
 		private IPEndPoint _localEndPoint;
 		private string _password;
 		private int _port;
+
+		private ConcurrentDictionary<string, ClientInfo> _activeConnections = new ConcurrentDictionary<string, ClientInfo>();
+		public IEnumerable<ClientInfo> ActiveConnections => _activeConnections.Values; // Automatic lock and snapshot each access.
 
 		private RequestReceivedDelegate _requestHandler;
 
@@ -125,51 +130,58 @@ namespace WHIP_LRU.Server {
 			// Signal the main thread to continue.  
 			_allDone.Set();
 
+			LOG.Debug($"{_localEndPoint}, unknown, Acceptance - Accepting connection.");
+
 			// Get the socket that handles the client request.  
 			var listener = (Socket)ar.AsyncState;
 
-			Socket handler = null;
-			StateObject state = null;
-			string client = "unknown";
+			// Create the state object.  
+			var state = new StateObject() {
+				Client = new ClientInfo() {
+					State = State.Acceptance,
+					RequestInfo = "(connecting)",
+					RemoteEndpoint = string.Empty,
+					Started = DateTimeOffset.UtcNow,
+				},
+				WorkSocket = null,
+			};
+
 			try {
-				handler = listener.EndAccept(ar);
-
-				try {
-					client = handler.RemoteEndPoint.ToString();
-				}
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-				catch (Exception) {
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-				}
-
-				LOG.Debug($"{_localEndPoint}, {client}, Acceptance - Accepting connection.");
-
-				// Create the state object.  
-				state = new StateObject();
-				state.WorkSocket = handler;
-				state.ClientData = client;
-				state.State = State.Challenged;
-				StartReceive(state, new AuthResponseMsg(), ReadCallback);
+				state.WorkSocket = listener.EndAccept(ar);
 			}
 			catch (Exception e) {
-				LOG.Warn($"{_localEndPoint}, {client}, {state.State} - Exception caught while setting up to receive data from client.", e);
+				LOG.Warn($"{_localEndPoint}, unknown, {state.Client.State} - Exception caught while making connection with client.", e);
 				return;
 			}
 
-			LOG.Debug($"{_localEndPoint}, {client}, {state.State} - Sending challenge.");
+			try {
+				state.Client.RemoteEndpoint = state.WorkSocket.RemoteEndPoint.ToString();
+			}
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+			catch (Exception) {
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+			}
 
 			var response = new AuthChallengeMsg();
-
 			var challenge = response.GetChallenge();
-
 			state.CorrectChallengeHash = AuthResponseMsg.ComputeChallengeHash(challenge, _password);
+
+			state.Client.State = State.Challenged;
+			state.Client.RequestInfo = null;
+			StartReceive(state, new AuthResponseMsg(), ReadCallback);
+
+			LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sending challenge.");
 
 			try {
 				Send(state, response);
 			}
 			catch (Exception e) {
-				LOG.Warn($"{_localEndPoint}, {client}, {state.State} - Exception caught responding to client connection request.", e);
+				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding to client connection request.", e);
+				return;
 			}
+
+			// If all that worked, add the client to the bag, they are in progress.
+			_activeConnections.AddOrUpdate(state.Client.RemoteEndpoint, state.Client, (key, client) => state.Client);
 		}
 
 		private void StartReceive(StateObject state, IByteArrayAppendable message, AsyncCallback callback) {
@@ -177,6 +189,7 @@ namespace WHIP_LRU.Server {
 			Contract.Requires(state != null);
 			Contract.Requires(message != null);
 
+			state.Client.RequestInfo = null;
 			state.Message = message;
 			state.WorkSocket.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(ReadCallback), state);
 		}
@@ -200,41 +213,42 @@ namespace WHIP_LRU.Server {
 				bytesRead = handler.EndReceive(ar);
 			}
 			catch (Exception e) {
-				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught reading data.", e);
+				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught reading data.", e);
 				Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
-				StartReceive(state, state.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
+				StartReceive(state, state.Client.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
 				return;
 			}
 
 			if (bytesRead > 0) {
-				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Reading {bytesRead} bytes.");
+				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Reading {bytesRead} bytes.");
 
 				var complete = false;
 				try {
 					complete = state.Message.AddRange(state.Buffer.Take(bytesRead));
 				}
 				catch (Exception e) {
-					LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught while extracting data from inbound message.", e);
+					LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught while extracting data from inbound message.", e);
 					Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
-					StartReceive(state, state.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
+					StartReceive(state, state.Client.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
 					return;
 				}
 
 				if (complete) {
 					IByteArraySerializable response = null;
 
-					switch (state.State) {
+					switch (state.Client.State) {
 						case State.Ready: {
 							// There might be more data, so store the data received so far.
 							var message = state.Message as ClientRequestMsg;
 
-							LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Request message completed: {message?.GetHeaderSummary()}");
+							state.Client.RequestInfo = $"{message.Type.ToString().Substring(3)} {message.AssetId}"; // Substring removes the "RT_"
+							LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Request message completed: {message?.GetHeaderSummary()}");
 
 							try {
 								_requestHandler(message, RequestResponseCallback, state);
 							}
 							catch (Exception e) {
-								LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught from request handler while processing message.", e);
+								LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught from request handler while processing message.", e);
 								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
 								StartReceive(state, new ClientRequestMsg(), ReadCallback);
 								return;
@@ -247,13 +261,13 @@ namespace WHIP_LRU.Server {
 
 							var hashCorrect = message?.ChallengeHash == state.CorrectChallengeHash;
 
-							LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Auth response completed: " + (hashCorrect ? "Hash correct." : "Hash not correct, auth failed."));
+							LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Auth response completed: " + (hashCorrect ? "Hash correct." : "Hash not correct, auth failed."));
 
 							response = new AuthStatusMsg(hashCorrect ? AuthStatusMsg.StatusType.AS_SUCCESS : AuthStatusMsg.StatusType.AS_FAILURE);
 
 							if (hashCorrect) {
 								state.Message = new ClientRequestMsg();
-								state.State = State.Ready;
+								state.Client.State = State.Ready;
 							}
 
 							try {
@@ -266,7 +280,7 @@ namespace WHIP_LRU.Server {
 								}
 							}
 							catch (Exception e) {
-								LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding to client.", e);
+								LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding to client.", e);
 								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
 								StartReceive(state, new ClientRequestMsg(), ReadCallback);
 								return;
@@ -276,28 +290,30 @@ namespace WHIP_LRU.Server {
 				}
 				else {
 					// Not all data received. Get more.  
-					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Message incomplete, getting next packet.");
+					LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Message incomplete, getting next packet.");
 
 					ContinueReceive(state, ReadCallback);
 				}
 			}
 			else {
-				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Zero bytes received. Client must have closed the connection.");
+				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Zero bytes received. Client must have closed the connection.");
+				state.Client.State = State.Disconnected;
+				ClientInfo junk;
+				_activeConnections.TryRemove(state.Client.RemoteEndpoint, out junk);
 			}
 		}
 
 		private void RequestResponseCallback(ServerResponseMsg response, object context) {
 			var state = (StateObject)context;
-			var handler = state.WorkSocket;
 
-			LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Replying to request message: {response.GetHeaderSummary()}.");
+			LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Replying to request message: {response.GetHeaderSummary()}.");
 
 			try {
 				Send(state, response);
 				StartReceive(state, new ClientRequestMsg(), ReadCallback);
 			}
 			catch (Exception e) {
-				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding to client.", e);
+				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding to client.", e);
 			}
 		}
 
@@ -310,19 +326,24 @@ namespace WHIP_LRU.Server {
 
 				// Begin sending the data to the remote device.  
 				if (handler.Connected) {
-					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending {byteData.Length} bytes.");
+					LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sending {byteData.Length} bytes.");
 					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), state);
 				}
 				else {
-					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Could not send {byteData.Length} bytes because no longer connected.");
+					LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Could not send {byteData.Length} bytes because no longer connected.");
 				}
 			}
 			else if (handler.Connected) {
-				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending nothing.");
+				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sending nothing.");
 				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, new AsyncCallback(SendCallback), state);
 			}
 			else {
-				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Client disconnected before response could be sent.");
+				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Client disconnected before response could be sent.");
+				state.Client.State = State.Disconnected;
+				ClientInfo junk;
+				_activeConnections.TryRemove(state.Client.RemoteEndpoint, out junk);
+				handler.Shutdown(SocketShutdown.Both);
+				handler.Close();
 			}
 		}
 
@@ -334,10 +355,10 @@ namespace WHIP_LRU.Server {
 			try {
 				// Complete sending the data to the remote device.  
 				var bytesSent = handler.EndSend(ar);
-				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sent {bytesSent} bytes.");
+				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sent {bytesSent} bytes.");
 			}
 			catch (Exception e) {
-				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding.", e);
+				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding.", e);
 			}
 		}
 
@@ -350,19 +371,24 @@ namespace WHIP_LRU.Server {
 
 				// Begin sending the data to the remote device.  
 				if (handler.Connected) {
-					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending {byteData.Length} bytes and then closing connection.");
+					LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sending {byteData.Length} bytes and then closing connection.");
 					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendAndCloseCallback), state);
 				}
 				else {
-					LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Could not send {byteData.Length} bytes and then close connection because no longer connected.");
+					LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Could not send {byteData.Length} bytes and then close connection because no longer connected.");
 				}
 			}
 			else if (handler.Connected) {
-				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sending nothing and then closing connection.");
+				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sending nothing and then closing connection.");
 				handler.BeginSend(new byte[] { }, 0, 0, SocketFlags.None, new AsyncCallback(SendAndCloseCallback), state);
 			}
 			else {
-				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Client disconnected before response could be sent and the connection closed.");
+				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Client disconnected before response could be sent and the connection closed.");
+				state.Client.State = State.Disconnected;
+				ClientInfo junk;
+				_activeConnections.TryRemove(state.Client.RemoteEndpoint, out junk);
+				handler.Shutdown(SocketShutdown.Both);
+				handler.Close();
 			}
 		}
 
@@ -374,14 +400,18 @@ namespace WHIP_LRU.Server {
 			try {
 				// Complete sending the data to the remote device.  
 				var bytesSent = handler.EndSend(ar);
-				LOG.Debug($"{_localEndPoint}, {state.ClientData}, {state.State} - Sent {bytesSent} bytes, and am closing the connection.");
+				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sent {bytesSent} bytes, and am closing the connection.");
 
 				handler.Shutdown(SocketShutdown.Both);
 				handler.Close();
 			}
 			catch (Exception e) {
-				LOG.Warn($"{_localEndPoint}, {state.ClientData}, {state.State} - Exception caught responding or closing the connection.", e);
+				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding or closing the connection.", e);
 			}
+
+			state.Client.State = State.Disconnected;
+			ClientInfo junk;
+			_activeConnections.TryRemove(state.Client.RemoteEndpoint, out junk);
 		}
 
 		// State object for reading client data asynchronously  
@@ -392,25 +422,17 @@ namespace WHIP_LRU.Server {
 			// Client  socket.  
 			public Socket WorkSocket;
 
-			// Client info
-			public string ClientData;
-
 			// Receive buffer.  
 			public byte[] Buffer = new byte[BUFFER_SIZE];
 
 			// Received data.  
 			public IByteArrayAppendable Message;
 
-			// Current communications state
-			public State State;
+			// Current client state. Shared with the ActiveConnections bag.
+			public ClientInfo Client;
 
 			// The expected response to the challenge
 			public string CorrectChallengeHash;
-		}
-
-		private enum State {
-			Challenged,
-			Ready,
 		}
 
 		#endregion

@@ -24,13 +24,13 @@
 // THE SOFTWARE.
 
 using System;
-using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using Chattel;
 using log4net;
-using Nini.Config;
 using WHIP_LRU.Server;
 using WHIP_LRU.Util;
 
@@ -108,8 +108,71 @@ namespace LibWhipLru {
 
 		private void RequestReceivedDelegate(ClientRequestMsg request, WHIPServer.RequestResponseDelegate responseHandler, object context) {
 			// TODO: do this for real.  The response is done across a callback with the context pointer passed through so that I can queue these things and get back to them.
+			ServerResponseMsg response;
 
-			responseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero), context);
+			switch (request.Type) {
+				case ClientRequestMsg.RequestType.RT_GET:
+				case ClientRequestMsg.RequestType.RT_GET_DONTCACHE:
+				case ClientRequestMsg.RequestType.RT_MAINT_PURGELOCALS:
+				case ClientRequestMsg.RequestType.RT_PURGE:
+				case ClientRequestMsg.RequestType.RT_PUT:
+					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
+				break;
+				case ClientRequestMsg.RequestType.RT_STATUS_GET:
+					response = HandleStatusGet();
+				break;
+				case ClientRequestMsg.RequestType.RT_STORED_ASSET_IDS_GET:
+				case ClientRequestMsg.RequestType.RT_TEST:
+				default:
+					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
+				break;
+			}
+			responseHandler(response, context);
+		}
+
+		private ServerResponseMsg HandleStatusGet() {
+			var output = new StringBuilder();
+
+			var connections = _server?.ActiveConnections;
+
+			output.Append($@"WHIP Server Status
+
+-General
+  Clients Connected: {connections.Count()}
+-Client Status
+");
+			foreach (var clientInfo in connections) {
+				output.Append($"  {clientInfo.RemoteEndpoint}: ");
+
+				var connectionSeconds = (DateTimeOffset.UtcNow - clientInfo.Started).TotalSeconds;
+
+				if (clientInfo.State == State.Acceptance) {
+					output.Append("Unauthenticated");
+				}
+				if (clientInfo.State == State.Disconnected) {
+					output.Append("DISCONNECTED");
+				}
+				else if (clientInfo.RequestInfo != null) {
+					output.Append($"ACTIVE {connectionSeconds} [{clientInfo.RequestInfo}]");
+				}
+				else {
+					output.Append($"IDLE {connectionSeconds}");
+				}
+
+				output.Append("\n");
+			}
+
+			output.Append($@"-VFS Backend
+  Disk queue size: 
+  Avg Disk Queue Wait: ms
+  Avg Disk Op Latency: ms
+-VFS Queue Items
+");
+			//for each assetrequest in queue
+			//	output.Append($"  {assetrequest.description}\n") // description is based on the type of request, could be "GET {uuid}", "PURGE", etc...
+
+			LOG.Debug($"Sending:\n{output}");
+			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, OpenMetaverse.UUID.Zero, output.ToString());
 		}
 	}
 }
