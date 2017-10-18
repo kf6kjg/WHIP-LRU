@@ -31,7 +31,7 @@ using LibWhipLru;
 using log4net.Config;
 using Nini.Config;
 using NUnit.Framework;
-using WHIP_LRU.Server;
+using LibWhipLru.Server;
 
 namespace UnitTests {
 	[SetUpFixture]
@@ -60,7 +60,7 @@ namespace UnitTests {
 			configSource.Merge(new IniConfigSource(Constants.INI_PATH));
 
 			// Start booting server
-			var pidFileManager = new WHIP_LRU.Util.PIDFileManager(Constants.PID_FILE_PATH);
+			var pidFileManager = new LibWhipLru.Util.PIDFileManager(Constants.PID_FILE_PATH);
 
 			var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
 			var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);

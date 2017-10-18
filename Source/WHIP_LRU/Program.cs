@@ -9,8 +9,8 @@ using log4net.Config;
 using Mono.Unix;
 using Mono.Unix.Native;
 using Nini.Config;
-using WHIP_LRU.Server;
-using WHIP_LRU.Util;
+using LibWhipLru.Server;
+using LibWhipLru.Util;
 
 namespace WHIP_LRU {
 	class Application {
