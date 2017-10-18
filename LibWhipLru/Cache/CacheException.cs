@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-namespace WHIP_LRU.Cache {
+namespace LibWhipLru.Cache {
 	public class CacheException : Exception {
 		public CacheException() {
 		}

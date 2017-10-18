@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace WHIP_LRU.Server {
+namespace LibWhipLru.Server {
 	public interface IByteArraySerializable {
 		byte[] ToByteArray();
 	}

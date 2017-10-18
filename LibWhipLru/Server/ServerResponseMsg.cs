@@ -28,7 +28,7 @@ using System.Text;
 using InWorldz.Whip.Client;
 using OpenMetaverse;
 
-namespace WHIP_LRU.Server {
+namespace LibWhipLru.Server {
 	public class ServerResponseMsg : IByteArraySerializable {
 		private const short DATA_SZ_TAG_LOC = HEADER_SIZE - 4;
 		private const short HEADER_SIZE = 37;

@@ -28,7 +28,7 @@ using OpenMetaverse;
 using InWorldz.Whip.Client;
 using System.Text;
 
-namespace WHIP_LRU.Server {
+namespace LibWhipLru.Server {
 	public class ClientRequestMsg : IByteArrayAppendable {
 		private const short REQUEST_TYPE_LOC = 0;
 		private const short DATA_SIZE_MARKER_LOC = 33;

@@ -31,9 +31,9 @@ using System.Text;
 using System.Threading;
 using Chattel;
 using log4net;
-using WHIP_LRU.Cache;
-using WHIP_LRU.Server;
-using WHIP_LRU.Util;
+using LibWhipLru.Cache;
+using LibWhipLru.Server;
+using LibWhipLru.Util;
 
 namespace LibWhipLru {
 	public class WhipLru {

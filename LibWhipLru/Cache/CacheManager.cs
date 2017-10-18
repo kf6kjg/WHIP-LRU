@@ -32,7 +32,7 @@ using InWorldz.Data.Assets.Stratus;
 using LightningDB;
 using log4net;
 
-namespace WHIP_LRU.Cache {
+namespace LibWhipLru.Cache {
 	public class CacheManager : IDisposable {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 

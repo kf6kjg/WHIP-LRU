@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
-namespace WHIP_LRU.Server {
+namespace LibWhipLru.Server {
 	public class ClientInfo {
 		public string RemoteEndpoint { get; internal set; }
 

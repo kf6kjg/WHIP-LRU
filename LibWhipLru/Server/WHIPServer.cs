@@ -34,7 +34,7 @@ using System.Threading;
 using log4net;
 using OpenMetaverse;
 
-namespace WHIP_LRU.Server {
+namespace LibWhipLru.Server {
 	public class WHIPServer : IDisposable {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 

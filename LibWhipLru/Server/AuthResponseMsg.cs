@@ -28,7 +28,7 @@ using System.Security.Cryptography;
 using System.Text;
 using InWorldz.Whip.Client;
 
-namespace WHIP_LRU.Server {
+namespace LibWhipLru.Server {
 	public class AuthResponseMsg : IByteArrayAppendable {
 		private const short MESSAGE_SIZE = 41;
 		private const byte PACKET_IDENTIFIER = 0;

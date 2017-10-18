@@ -25,7 +25,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace WHIP_LRU.Server {
+namespace LibWhipLru.Server {
 	public class AuthChallengeMsg : IByteArraySerializable {
 		private const short MESSAGE_SIZE = 8;
 		private const byte PACKET_IDENTIFIER = 0;

@@ -31,7 +31,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace WHIP_LRU.Util {
+namespace LibWhipLru.Util {
 	/// <summary>
 	/// Creates a file with this processes PID and status as the given pidfile or, if null, processname.pid
 	/// </summary>
