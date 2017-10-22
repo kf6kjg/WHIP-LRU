@@ -184,7 +184,7 @@ namespace LibWhipLru {
 		}
 
 		private ServerResponseMsg HandleGetStoredAssetIds(string prefix) {
-			var ids = _cacheManager?.ActiveIds.Where(uuid => uuid.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
+			var ids = _cacheManager?.ActiveIds(prefix);
 
 			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, OpenMetaverse.UUID.Zero, string.Join(",", ids));
 		}

@@ -101,6 +101,7 @@
     <Compile Include="Cache\CacheManager.cs" />
     <Compile Include="Util\PIDFileManager.cs" />
     <Compile Include="Server\ClientInfo.cs" />
+    <Compile Include="Cache\OrderedGuidCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Server\" />

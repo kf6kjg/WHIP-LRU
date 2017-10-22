@@ -38,23 +38,26 @@ namespace LibWhipLru.Cache {
 
 		private LightningEnvironment _dbenv;
 
-		private readonly MemoryCache _activeIds;
-		private readonly CacheItemPolicy _activeIdsPolicy;
+		private readonly OrderedGuidCache _activeIds;
 		private readonly ChattelReader _assetReader;
 		private readonly ChattelWriter _assetWriter;
 
-		public IEnumerable<string> ActiveIds => _activeIds?.GetValues("activeIds")?.Keys;
+		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
 
 		// TODO: write a negative cache to store IDs that are failures.  Remember to remove any ODs that wind up being Put.  Don't need to disk-backup this.
 
-		// TODO: restore _activeIds from the LMDB on startup.  It's OK that they get a longer lease on life.
+		// TODO: restore _activeIds from the LMDB on startup.
 
-		public CacheManager(string pathToDatabaseFolder, TimeSpan entryDuration, ChattelReader assetReader, ChattelWriter assetWriter) {
+		// TODO: keep and restore on restart a list of assets that haven't yet been uploaded.
+
+		// TODO: Have a way to detect a maximum (disk size, record count, something) and when that's reached remove enough items to gain more space than is needed to insert the new item.
+
+		public CacheManager(string pathToDatabaseFolder, float freeDiskSpacePercentage, ChattelReader assetReader, ChattelWriter assetWriter) {
 			if (string.IsNullOrWhiteSpace(pathToDatabaseFolder)) {
 				throw new ArgumentNullException(nameof(pathToDatabaseFolder), "No database path means no go.");
 			}
-			if (entryDuration.Minutes < 1) {
-				throw new ArgumentOutOfRangeException(nameof(entryDuration), "Duration MUST be at least 1 minute - and even that's probably too short.");
+			if (freeDiskSpacePercentage < 0f || freeDiskSpacePercentage > 1f) {
+				throw new ArgumentOutOfRangeException(nameof(freeDiskSpacePercentage), "Must be in range 0.0 to 1.0 inclusive.");
 			}
 			try {
 				_dbenv = new LightningEnvironment(pathToDatabaseFolder);
@@ -65,12 +68,7 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentException($"Given path invalid: '{pathToDatabaseFolder}'", nameof(pathToDatabaseFolder), e);
 			}
 
-			_activeIds = new MemoryCache("activeIds");
-
-			_activeIdsPolicy = new CacheItemPolicy {
-				RemovedCallback = new CacheEntryRemovedCallback(CacheRemovedCallback),
-				SlidingExpiration = entryDuration,
-			};
+			_activeIds = new OrderedGuidCache();
 
 			_assetReader = assetReader;
 			_assetWriter = assetWriter;
@@ -79,7 +77,7 @@ namespace LibWhipLru.Cache {
 		public void PutAsset(StratusAsset asset) {
 			var assetId = asset.Id.ToString();
 
-			if (!_activeIds.Contains(assetId)) {
+			if (!_activeIds.Contains(asset.Id)) {
 				// The asset ID didn't exist in the cache, so let's add it to the local and remote storage.
 
 				using (var memStream = new MemoryStream()) {
@@ -97,10 +95,12 @@ namespace LibWhipLru.Cache {
 						throw new CacheException("Problem opening database to put asset.", e);
 					}
 				}
-			}
 
-			// Update or set the expiration time.
-			_activeIds.Set(assetId, null, _activeIdsPolicy);
+				// TODO: put the asset ID into an output queue.
+
+				// TODO: detect if some form of asset storage limit has been hit, call _activeIds.Remove(int, out int) to gain some space.
+
+			}
 		}
 
 		/* TODO
@@ -108,11 +108,6 @@ namespace LibWhipLru.Cache {
 
 		}
 		*/
-
-		private void CacheRemovedCallback(CacheEntryRemovedArguments arguments) {
-			// TODO: Remove the entry from the cache.
-			//arguments.CacheItem.Key
-		}
 
 		#region IDisposable Support
 
