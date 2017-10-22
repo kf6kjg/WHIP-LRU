@@ -23,10 +23,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Caching;
+using System.Threading;
+using System.Threading.Tasks;
 using Chattel;
 using InWorldz.Data.Assets.Stratus;
 using LightningDB;
@@ -37,10 +41,17 @@ namespace LibWhipLru.Cache {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private LightningEnvironment _dbenv;
+		private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
 		private readonly OrderedGuidCache _activeIds;
 		private readonly ChattelReader _assetReader;
 		private readonly ChattelWriter _assetWriter;
+
+		/// <summary>
+		/// The assets failing disk storage.  Used to feed the try-again thread.  However any assets in here have no chance of survival if a crash happens.
+		/// </summary>
+		private readonly BlockingCollection<StratusAsset> _assetsFailingStorage = new BlockingCollection<StratusAsset>();
+		private readonly Thread _localAssetStoreTask;
 
 		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
 
@@ -50,7 +61,7 @@ namespace LibWhipLru.Cache {
 
 		// TODO: keep and restore on restart a list of assets that haven't yet been uploaded.
 
-		// TODO: Have a way to detect a maximum (disk size, record count, something) and when that's reached remove enough items to gain more space than is needed to insert the new item.
+		// BUG: how to sanely handle a PUT of an asset that's NOT in local storage but IS in remote storage?  Asking remote every time is inviting disaster...
 
 		public CacheManager(string pathToDatabaseFolder, float freeDiskSpacePercentage, ChattelReader assetReader, ChattelWriter assetWriter) {
 			if (string.IsNullOrWhiteSpace(pathToDatabaseFolder)) {
@@ -72,6 +83,42 @@ namespace LibWhipLru.Cache {
 
 			_assetReader = assetReader;
 			_assetWriter = assetWriter;
+
+			_localAssetStoreTask = new Thread(() => {
+				var crashExceptions = new List<Exception>();
+				var safeExit = false;
+
+				while (crashExceptions.Count < 10) {
+					try {
+						var token = _cancellationTokenSource.Token;
+						foreach (var asset in _assetsFailingStorage.GetConsumingEnumerable()) {
+							if (token.IsCancellationRequested) break;
+							LOG.Debug($"Attempting to locally store {asset.Id} again.");
+							PutAsset(asset);
+							crashExceptions.Clear(); // Success means ignore the past.
+						}
+						if (token.IsCancellationRequested) {
+							safeExit = true;
+							break;
+						}
+					}
+					catch (Exception e) {
+						if (e is OperationCanceledException) {
+							safeExit = true;
+							break;
+						}
+
+						LOG.Warn($"Unhandled exception in localAssetStoreTask thread. Thread restarting.", e);
+						crashExceptions.Add(e);
+					}
+				}
+
+				if (!safeExit && crashExceptions.Count > 0) {
+					LOG.Error("Multiple crashes in localAssetStoreTask thread.", new AggregateException("Multiple crashes in localAssetStoreTask thread.", crashExceptions));
+				}
+			});
+
+			_localAssetStoreTask.Start();
 		}
 
 		public void PutAsset(StratusAsset asset) {
@@ -79,6 +126,7 @@ namespace LibWhipLru.Cache {
 
 			if (!_activeIds.Contains(asset.Id)) {
 				// The asset ID didn't exist in the cache, so let's add it to the local and remote storage.
+				LightningException lightningException = null;
 
 				using (var memStream = new MemoryStream()) {
 					ProtoBuf.Serializer.Serialize(memStream, asset);
@@ -92,14 +140,56 @@ namespace LibWhipLru.Cache {
 						}
 					}
 					catch (LightningException e) {
-						throw new CacheException("Problem opening database to put asset.", e);
+						lightningException = e;
 					}
 				}
 
-				// TODO: put the asset ID into an output queue.
+				if (lightningException != null) {
+					switch (lightningException.StatusCode) {
+						case -30799:
+							//LightningDB.Native.Lmdb.MDB_KEYEXIST: Not available in lib ATM...
+							// Ignorable.
+							LOG.Info($"According to local storage asset {asset.Id} already exists.", lightningException);
+							lightningException = null;
+							break;
+						case LightningDB.Native.Lmdb.MDB_DBS_FULL:
+						case LightningDB.Native.Lmdb.MDB_MAP_FULL:
+							LOG.Warn($"Got storage space full during local asset storage for {asset.Id}, clearing some room...", lightningException);
 
-				// TODO: detect if some form of asset storage limit has been hit, call _activeIds.Remove(int, out int) to gain some space.
+							int bytesRemoved;
+							var removedAssetIds = _activeIds.Remove(asset.Data.Length * 3, out bytesRemoved);
 
+							try {
+								using (var tx = _dbenv.BeginTransaction()) {
+									foreach (var assetId in removedAssetIds) {
+										using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+											tx.Delete(db, System.Text.Encoding.UTF8.GetBytes(assetId.ToString()));
+											tx.Commit();
+										}
+									}
+								}
+							}
+							catch (LightningException e) {
+								LOG.Warn($"Had an exception while attempting to clear some space in the local asset store.", e);
+							}
+
+							// Place the asset where we can try it again.
+							_assetsFailingStorage.Add(asset);
+							break;
+						default:
+							LOG.Warn($"Got an unexpected exception during local asset storage for {asset.Id}.", lightningException);
+							_assetsFailingStorage.Add(asset);
+							break;
+					}
+				}
+
+				if (lightningException == null) {
+					// TODO: put the asset ID into an output queue.
+
+				}
+			}
+			else {
+				LOG.Info($"Dropped store of duplicate asset {asset.Id}");
 			}
 		}
 
@@ -119,6 +209,10 @@ namespace LibWhipLru.Cache {
 					// dispose managed state (managed objects).
 					_dbenv.Dispose();
 					_dbenv = null;
+					_assetsFailingStorage.CompleteAdding();
+					_cancellationTokenSource.Cancel();
+					_cancellationTokenSource.Dispose();
+					_cancellationTokenSource = null;
 				}
 
 				// TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
