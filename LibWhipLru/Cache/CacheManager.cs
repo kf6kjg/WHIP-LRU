@@ -75,7 +75,7 @@ namespace LibWhipLru.Cache {
 		}
 
 		public void PutAsset(StratusAsset asset) {
-			var assetId = asset.Id.ToString();
+			Contract.Requires(asset != null);
 
 			if (!_activeIds.Contains(asset.Id)) {
 				// The asset ID didn't exist in the cache, so let's add it to the local and remote storage.
@@ -86,8 +86,8 @@ namespace LibWhipLru.Cache {
 
 					try {
 						using (var tx = _dbenv.BeginTransaction())
-						using (var db = tx.OpenDatabase($"assetstore-{assetId.Substring(0, 3)}", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
-							tx.Put(db, System.Text.Encoding.UTF8.GetBytes(assetId), memStream.GetBuffer());
+						using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+							tx.Put(db, System.Text.Encoding.UTF8.GetBytes(asset.Id.ToString()), memStream.GetBuffer());
 							tx.Commit();
 						}
 					}
