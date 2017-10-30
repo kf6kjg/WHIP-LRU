@@ -1,4 +1,4 @@
-﻿// CacheException.cs
+﻿// IdWriteCacheNode.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -24,14 +24,37 @@
 // THE SOFTWARE.
 using System;
 namespace LibWhipLru.Cache {
-	public class CacheException : Exception {
-		public CacheException() {
+	internal class IdWriteCacheNode {
+		public static uint BYTE_SIZE = 17;
+
+		public ulong FileOffset { get; private set; }
+		public bool IsAvailable { get; set; } // 1 byte
+		public Guid AssetId { get; set; } // 16 bytes
+
+		public IdWriteCacheNode(byte[] bytes, ulong sourceOffset) {
+			if (bytes == null) {
+				throw new ArgumentNullException(nameof(bytes));
+			}
+			if (bytes.Length < BYTE_SIZE) {
+				throw new ArgumentOutOfRangeException(nameof(bytes), $"Must have at least {BYTE_SIZE} bytes!");
+			}
+
+			FileOffset = sourceOffset;
+			IsAvailable = bytes[0] == 0;
+
+			var guidBytes = new byte[16];
+			Buffer.BlockCopy(bytes, 0, guidBytes, 0, 16);
+			AssetId = new Guid(guidBytes);
 		}
 
-		public CacheException(string message) : base(message) {
+		public byte[] ToByteArray() {
+			var outBytes = new byte[17];
+
+			outBytes[0] = IsAvailable ? (byte)0 : (byte)1;
+
+			Buffer.BlockCopy(AssetId.ToByteArray(), 0, outBytes, 1, 16);
+
+			return outBytes;
 		}
-	
-		public CacheException(string message, Exception e) : base(message, e) {
-		}
-}
+	}
 }
