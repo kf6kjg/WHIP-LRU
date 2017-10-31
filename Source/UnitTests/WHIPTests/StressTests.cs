@@ -24,13 +24,11 @@
 // THE SOFTWARE.
 
 using System;
-using System.Diagnostics.Contracts;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using InWorldz.Whip.Client;
 using NUnit.Framework;
 
-namespace UnitTests.Tests {
+namespace UnitTests.WHIPTests {
 	[TestFixture]
 	public class StressTests {
 		private Socket _socket;

@@ -29,7 +29,7 @@ using System.Security.Cryptography;
 using InWorldz.Whip.Client;
 using NUnit.Framework;
 
-namespace UnitTests.Tests {
+namespace UnitTests.WHIPTests {
 	[TestFixture]
 	public class AuthTests {
 		public const byte CHALLENGE_PACKET_IDENTIFIER = 0;

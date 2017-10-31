@@ -30,7 +30,7 @@ using System.Threading;
 using InWorldz.Whip.Client;
 using NUnit.Framework;
 
-namespace UnitTests.Tests {
+namespace UnitTests.WHIPTests {
 	[TestFixture]
 	public class FullProtocolTests {
 		private Socket _socket;

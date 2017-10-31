@@ -87,11 +87,11 @@
   <ItemGroup>
     <Compile Include="Setup.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="Tests\ServiceTests.cs" />
-    <Compile Include="Tests\AuthTests.cs" />
-    <Compile Include="Tests\GetPutTests.cs" />
-    <Compile Include="Tests\FullProtocolTests.cs" />
-    <Compile Include="Tests\StressTests.cs" />
+    <Compile Include="WHIPTests\ServiceTests.cs" />
+    <Compile Include="WHIPTests\AuthTests.cs" />
+    <Compile Include="WHIPTests\GetPutTests.cs" />
+    <Compile Include="WHIPTests\FullProtocolTests.cs" />
+    <Compile Include="WHIPTests\StressTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -103,7 +103,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Tests\" />
+    <Folder Include="WHIPTests\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LibWhipLru\LibWhipLru.csproj">
