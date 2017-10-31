@@ -31,7 +31,7 @@ namespace LibWhipLru.Cache {
 		public bool IsAvailable { get; set; } // 1 byte
 		public Guid AssetId { get; set; } // 16 bytes
 
-		public IdWriteCacheNode(byte[] bytes, ulong sourceOffset) {
+		public IdWriteCacheNode(byte[] bytes, ulong fileOffset) {
 			if (bytes == null) {
 				throw new ArgumentNullException(nameof(bytes));
 			}
@@ -39,7 +39,7 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentOutOfRangeException(nameof(bytes), $"Must have at least {BYTE_SIZE} bytes!");
 			}
 
-			FileOffset = sourceOffset;
+			FileOffset = fileOffset;
 			IsAvailable = bytes[0] == 0;
 
 			var guidBytes = new byte[16];
