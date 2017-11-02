@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "Source\UnitTes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "log4net.RollbarNET", "Source\log4net.RollbarNET\log4net.RollbarNET.csproj", "{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibWhipLru", "LibWhipLru\LibWhipLru.csproj", "{C8143368-E4E5-430E-8E21-EE78A923F4DF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibWhipLru", "Source\LibWhipLru\LibWhipLru.csproj", "{C8143368-E4E5-430E-8E21-EE78A923F4DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
