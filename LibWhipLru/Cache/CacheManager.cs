@@ -62,7 +62,7 @@ namespace LibWhipLru.Cache {
 		private BlockingCollection<IdWriteCacheNode> _assetsToWriteToRemoteStorage;
 		private IdWriteCacheNode[] _writeCacheNodes;
 		private IdWriteCacheNode _nextAvailableWriteCacheNode;
-		private object _writeCacheNodeLock;
+		private readonly object _writeCacheNodeLock = new object();
 		private readonly Thread _remoteAssetStoreTask;
 
 
@@ -97,6 +97,7 @@ namespace LibWhipLru.Cache {
 			_assetWriter = assetWriter;
 
 			_pathToWriteCacheFile = pathToWriteCacheFile;
+			_assetsToWriteToRemoteStorage = new BlockingCollection<IdWriteCacheNode>();
 
 			// If the file doesn't exist, create it and zero the needed records.
 			if (!File.Exists(pathToWriteCacheFile)) {
