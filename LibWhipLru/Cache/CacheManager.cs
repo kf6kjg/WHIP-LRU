@@ -117,7 +117,7 @@ namespace LibWhipLru.Cache {
 						fileStream.WriteByte(0); // First byte is always the status: 0 means it's an open slot.
 					}
 				}
-				LOG.Info($"Write cache formatting complete.");
+				LOG.Debug($"Write cache formatting complete.");
 			}
 
 			LOG.Info($"Reading write cache from file '{pathToWriteCacheFile}'");
@@ -160,7 +160,7 @@ namespace LibWhipLru.Cache {
 					_writeCacheNodes = nodes.ToArray();
 				}
 			}
-			LOG.Info($"Reading write cache complete.");
+			LOG.Debug($"Reading write cache complete.");
 
 			// Allows assets that failed first attempt at local or remote storage to be tried again.
 			_localAssetStoreRetryTask = new Thread(() => {
