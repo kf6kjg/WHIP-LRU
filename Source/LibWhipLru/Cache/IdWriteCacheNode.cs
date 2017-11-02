@@ -43,7 +43,7 @@ namespace LibWhipLru.Cache {
 			IsAvailable = bytes[0] == 0;
 
 			var guidBytes = new byte[16];
-			Buffer.BlockCopy(bytes, 0, guidBytes, 0, 16);
+			Buffer.BlockCopy(bytes, 1, guidBytes, 0, 16);
 			AssetId = new Guid(guidBytes);
 		}
 
