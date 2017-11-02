@@ -69,8 +69,6 @@ namespace LibWhipLru.Cache {
 
 		// TODO: write a negative cache to store IDs that are failures.  Remember to remove any IDs that wind up being Put.  Don't need to disk-backup this.
 
-		// TODO: restore _activeIds from the LMDB on startup.
-
 		public CacheManager(
 			string pathToDatabaseFolder,
 			ulong maxAssetCacheDiskSpaceByteCount,
@@ -98,6 +96,30 @@ namespace LibWhipLru.Cache {
 
 			_pathToWriteCacheFile = pathToWriteCacheFile;
 			_assetsToWriteToRemoteStorage = new BlockingCollection<IdWriteCacheNode>();
+
+			LOG.Info($"Restoring index from DB.'");
+			try {
+				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
+				using (var db = tx.OpenDatabase("assetstore")) {
+					// Probably not the most effecient way to do this.
+					var assetData = tx.CreateCursor(db)
+						.Select(kvp => {
+							var str = Encoding.UTF8.GetString(kvp.Key);
+							Guid assetId;
+							return Guid.TryParse(str, out assetId) ? new Tuple<Guid, int>(assetId, kvp.Value.Length) : null;
+						})
+						.Where(assetId => assetId != null)
+					;
+
+					foreach (var assetDatum in assetData) {
+						_activeIds.TryAdd(assetDatum.Item1, assetDatum.Item2);
+					}
+				}
+			}
+			catch (Exception e) {
+				throw new CacheException($"Attempting to restor index from db threw an exception!", e);
+			}
+			LOG.Debug($"Restoring index complete.'");
 
 			// If the file doesn't exist, create it and zero the needed records.
 			if (!File.Exists(pathToWriteCacheFile)) {
