@@ -284,6 +284,10 @@ namespace LibWhipLru.Cache {
 		public void PutAsset(StratusAsset asset) {
 			Contract.Requires(asset != null);
 
+			if (asset.Id == Guid.Empty) {
+				throw new ArgumentException("Asset cannot have zero ID.", nameof(asset));
+			}
+
 			if (!_activeIds.Contains(asset.Id)) {
 				// The asset ID didn't exist in the cache, so let's add it to the local and remote storage.
 				var lightningException = WriteAssetToDisk(asset);
@@ -336,6 +340,10 @@ namespace LibWhipLru.Cache {
 		}
 
 		public StratusAsset GetAsset(Guid assetId) {
+			if (assetId == Guid.Empty) {
+				throw new ArgumentException("Asset ID cannot be zero.", nameof(assetId));
+			}
+
 			try {
 				return ReadAssetFromDisk(assetId);
 			}
