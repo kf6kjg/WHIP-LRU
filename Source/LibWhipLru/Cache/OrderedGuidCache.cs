@@ -85,6 +85,7 @@ namespace LibWhipLru.Cache {
 				}
 
 				if (TryRemove(ma.Id)) {
+					removed.Add(ma.Id);
 					sizeCleared += ma.Size;
 				}
 			}
