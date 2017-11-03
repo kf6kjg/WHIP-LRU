@@ -106,7 +106,7 @@ namespace LibWhipLru.Cache {
 						.Select(kvp => {
 							var str = Encoding.UTF8.GetString(kvp.Key);
 							Guid assetId;
-							return Guid.TryParse(str, out assetId) ? new Tuple<Guid, int>(assetId, kvp.Value.Length) : null;
+							return Guid.TryParse(str, out assetId) ? new Tuple<Guid, uint>(assetId, (uint)kvp.Value.Length) : null;
 						})
 						.Where(assetId => assetId != null)
 					;
@@ -384,7 +384,7 @@ namespace LibWhipLru.Cache {
 				case LightningDB.Native.Lmdb.MDB_MAP_FULL:
 					LOG.Warn($"Got storage space full during local asset storage for {asset.Id}, clearing some room...", lightningException);
 
-					int bytesRemoved;
+					uint bytesRemoved;
 					var removedAssetIds = _activeIds.Remove(asset.Data.Length * 3, out bytesRemoved);
 
 					try {

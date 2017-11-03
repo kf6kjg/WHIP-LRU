@@ -36,9 +36,9 @@ namespace LibWhipLru.Cache {
 			cache = new ConcurrentDictionary<Guid, MetaAsset>();
 		}
 
-		public int Count => cache.Count;
+		public uint Count => (uint)cache.Count;
 
-		public bool TryAdd(Guid uuid, int size) => cache.TryAdd(uuid, new MetaAsset{ Id = uuid, LastAccessed = DateTimeOffset.UtcNow, Size = size, });
+		public bool TryAdd(Guid uuid, uint size) => cache.TryAdd(uuid, new MetaAsset{ Id = uuid, LastAccessed = DateTimeOffset.UtcNow, Size = size, });
 
 		public void Clear() => cache.Clear();
 
@@ -73,7 +73,7 @@ namespace LibWhipLru.Cache {
 		/// This is an expensive and slow operation.
 		/// </summary>
 		/// <param name="size">Size</param>
-		public IEnumerable<Guid> Remove(int size, out int sizeCleared) {
+		public IEnumerable<Guid> Remove(int size, out uint sizeCleared) {
 			var sorted = cache.Values.OrderBy(ma => ma.LastAccessed);
 
 			var removed = new List<Guid>();
@@ -95,7 +95,7 @@ namespace LibWhipLru.Cache {
 		private class MetaAsset {
 			public Guid Id { get; set; }
 			public DateTimeOffset LastAccessed { get; set;}
-			public int Size { get; set; }
+			public uint Size { get; set; }
 		}
 	}
 }
