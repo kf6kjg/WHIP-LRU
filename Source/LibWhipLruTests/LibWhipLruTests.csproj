@@ -47,6 +47,7 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Cache\TestIdWriteCacheNode.cs" />
     <Compile Include="RandomUtil.cs" />
+    <Compile Include="Cache\TestOrderedGuidCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cache\" />
