@@ -92,7 +92,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\LibWhipLru\LibWhipLru.csproj">
+    <ProjectReference Include="..\LibWhipLru\LibWhipLru.csproj">
       <Project>{C8143368-E4E5-430E-8E21-EE78A923F4DF}</Project>
       <Name>LibWhipLru</Name>
     </ProjectReference>
