@@ -268,7 +268,7 @@ namespace LibWhipLruTests.Cache {
 			Thread.Sleep(100);
 
 			uint sizeCleared;
-			var removed = cache.Remove(3, out sizeCleared);
+			cache.Remove(3, out sizeCleared);
 
 			Assert.False(cache.Contains(guidRemoved1));
 			Assert.False(cache.Contains(guidRemoved2));
@@ -304,7 +304,7 @@ namespace LibWhipLruTests.Cache {
 			Thread.Sleep(100);
 
 			uint sizeCleared;
-			var removed = cache.Remove(3, out sizeCleared);
+			cache.Remove(3, out sizeCleared);
 
 			Assert.True(cache.Contains(guidStays1));
 			Assert.True(cache.Contains(guidStays2));
