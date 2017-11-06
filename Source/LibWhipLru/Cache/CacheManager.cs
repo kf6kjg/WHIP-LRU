@@ -278,7 +278,8 @@ namespace LibWhipLru.Cache {
 		/// <summary>
 		/// Attempts to put the asset into the local disk storage and the remote storage system.
 		/// 
-		/// Does not ever throw. Any exceptions thrown are bugs to be fixed as they mean data loss.
+		/// Does not ever throw on a valid storage attempt. Any exceptions thrown are bugs to be fixed as they mean data loss.
+		/// The exceptions are if the asset cannot be serialized for some inane reason or if you passed an asset with a zero ID.  Either of those cases are considered invalid storage attempts.
 		/// </summary>
 		/// <param name="asset">The asset to store.</param>
 		public void PutAsset(StratusAsset asset) {
@@ -288,8 +289,10 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentException("Asset cannot have zero ID.", nameof(asset));
 			}
 
-			if (!_activeIds.Contains(asset.Id)) {
-				// The asset ID didn't exist in the cache, so let's add it to the local and remote storage.
+			// Why must this method never throw on a valid asset store attempt? It HAS TO WORK: if an asset fails all forms and attempts to store it and send it upstream it will be lost forever. That makes customers VERY cranky.
+
+			if (!_activeIds.Contains(asset.Id)) { // The asset ID didn't exist in the cache, so let's add it to the local and remote storage.
+				// First step: get it in the local disk cache.
 				var lightningException = WriteAssetToDisk(asset);
 
 				// If it's safely in local get it on the upload path to remote.
@@ -318,7 +321,7 @@ namespace LibWhipLru.Cache {
 					// Queue up for remote storage.
 					_assetsToWriteToRemoteStorage.Add(writeCacheNode);
 
-					// Write to cache file. In this way if we crash after this point we can recover.
+					// Write to writecache file. In this way if we crash after this point we can recover.
 					try {
 						using (var mmf = MemoryMappedFile.CreateFromFile(_pathToWriteCacheFile, FileMode.Open, "whiplruwritecache")) {
 							using (var accessor = mmf.CreateViewAccessor((long)writeCacheNode.FileOffset, IdWriteCacheNode.BYTE_SIZE)) {
@@ -333,12 +336,22 @@ namespace LibWhipLru.Cache {
 						// As long as the queue thread processes the asset this should be OK.
 					}
 				}
+				else {
+					LOG.Warn($"There was a ", lightningException);
+				}
 			}
 			else {
 				LOG.Info($"Dropped store of duplicate asset {asset.Id}");
 			}
 		}
 
+		/// <summary>
+		/// Retrieves the asset. Tries the local cache first, then moves on to the remote storage systems.
+		/// 
+		/// Can throw, but only if there were problems with the remote storage calls.
+		/// </summary>
+		/// <returns>The asset.</returns>
+		/// <param name="assetId">Asset identifier.</param>
 		public StratusAsset GetAsset(Guid assetId) {
 			if (assetId == Guid.Empty) {
 				throw new ArgumentException("Asset ID cannot be zero.", nameof(assetId));
@@ -353,7 +366,7 @@ namespace LibWhipLru.Cache {
 
 			var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
 
-			WriteAssetToDisk(asset); // Don't care if this has a problem.
+			WriteAssetToDisk(asset); // Don't care if this reports a problem.
 
 			return asset;
 		}
@@ -361,10 +374,11 @@ namespace LibWhipLru.Cache {
 		#region Disk IO tools
 
 		private LightningException WriteAssetToDisk(StratusAsset asset) {
+			// Remember it's important that this method does not throw exceptions.
 			LightningException lightningException;
 
 			using (var memStream = new MemoryStream()) {
-				ProtoBuf.Serializer.Serialize(memStream, asset);
+				ProtoBuf.Serializer.Serialize(memStream, asset); // This can throw, but only if something is VERY and irrecoverably wrong.
 				memStream.Position = 0;
 
 				try {
