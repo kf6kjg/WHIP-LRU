@@ -219,60 +219,64 @@ namespace LibWhipLru.Cache {
 				}
 			});
 
-			_remoteAssetStoreTask = new Thread(() => {
-				var crashExceptions = new List<Exception>();
-				var safeExit = false;
-
-				while (crashExceptions.Count < 10) {
-					try {
-						var token = _cancellationTokenSource.Token;
-						foreach (var assetCacheNode in _assetsToWriteToRemoteStorage.GetConsumingEnumerable()) {
-							if (token.IsCancellationRequested) break;
-							LOG.Debug($"Attempting to remotely store {assetCacheNode.AssetId}.");
-
-							var asset = ReadAssetFromDisk(assetCacheNode.AssetId);
-
-							try {
-								_assetWriter.PutAssetSync(asset);
-							}
-							catch (AssetExistsException) {
-								// Ignore these.
-								LOG.Info($"Remote server reports that the asset with ID {assetCacheNode.AssetId} already exists.");
-							}
-
-							// Clear the byte on disk before clearing in memory.
-							using (var mmf = MemoryMappedFile.CreateFromFile(pathToWriteCacheFile, FileMode.Open, "whiplruwritecache")) {
-								using (var accessor = mmf.CreateViewAccessor((long)assetCacheNode.FileOffset, IdWriteCacheNode.BYTE_SIZE)) {
-									accessor.Write(0, (byte)0);
-								}
-							}
-							assetCacheNode.IsAvailable = true;
-
-							crashExceptions.Clear(); // Success means ignore the past.
-						}
-						if (token.IsCancellationRequested) {
-							safeExit = true;
-							break;
-						}
-					}
-					catch (Exception e) {
-						if (e is OperationCanceledException) {
-							safeExit = true;
-							break;
-						}
-
-						LOG.Warn($"Unhandled exception in localAssetStoreTask thread. Thread restarting.", e);
-						crashExceptions.Add(e);
-					}
-				}
-
-				if (!safeExit && crashExceptions.Count > 0) {
-					LOG.Error("Multiple crashes in localAssetStoreTask thread.", new AggregateException("Multiple crashes in localAssetStoreTask thread.", crashExceptions));
-				}
-			});
-
 			_localAssetStoreRetryTask.Start();
-			_remoteAssetStoreTask.Start();
+
+			// Set up the task for storing the assets to the remote server.
+			if (_assetWriter != null) {
+				_remoteAssetStoreTask = new Thread(() => {
+					var crashExceptions = new List<Exception>();
+					var safeExit = false;
+
+					while (crashExceptions.Count < 10) {
+						try {
+							var token = _cancellationTokenSource.Token;
+							foreach (var assetCacheNode in _assetsToWriteToRemoteStorage.GetConsumingEnumerable()) {
+								if (token.IsCancellationRequested) break;
+								LOG.Debug($"Attempting to remotely store {assetCacheNode.AssetId}.");
+
+								var asset = ReadAssetFromDisk(assetCacheNode.AssetId);
+
+								try {
+									_assetWriter.PutAssetSync(asset);
+								}
+								catch (AssetExistsException) {
+									// Ignore these.
+									LOG.Info($"Remote server reports that the asset with ID {assetCacheNode.AssetId} already exists.");
+								}
+
+								// Clear the byte on disk before clearing in memory.
+								using (var mmf = MemoryMappedFile.CreateFromFile(pathToWriteCacheFile, FileMode.Open, "whiplruwritecache")) {
+									using (var accessor = mmf.CreateViewAccessor((long)assetCacheNode.FileOffset, IdWriteCacheNode.BYTE_SIZE)) {
+										accessor.Write(0, (byte)0);
+									}
+								}
+								assetCacheNode.IsAvailable = true;
+
+								crashExceptions.Clear(); // Success means ignore the past.
+							}
+							if (token.IsCancellationRequested) {
+								safeExit = true;
+								break;
+							}
+						}
+						catch (Exception e) {
+							if (e is OperationCanceledException) {
+								safeExit = true;
+								break;
+							}
+
+							LOG.Warn($"Unhandled exception in localAssetStoreTask thread. Thread restarting.", e);
+							crashExceptions.Add(e);
+						}
+					}
+
+					if (!safeExit && crashExceptions.Count > 0) {
+						LOG.Error("Multiple crashes in localAssetStoreTask thread.", new AggregateException("Multiple crashes in localAssetStoreTask thread.", crashExceptions));
+					}
+				});
+
+				_remoteAssetStoreTask.Start();
+			}
 		}
 
 		/// <summary>
@@ -347,8 +351,9 @@ namespace LibWhipLru.Cache {
 
 		/// <summary>
 		/// Retrieves the asset. Tries the local cache first, then moves on to the remote storage systems.
+		/// If neither could find the data, or if there is no remote storage set up, null is returned.
 		/// 
-		/// Can throw, but only if there were problems with the remote storage calls.
+		/// Can throw, but only if there were problems with the remote storage calls or you passed a zero ID.
 		/// </summary>
 		/// <returns>The asset.</returns>
 		/// <param name="assetId">Asset identifier.</param>
@@ -364,11 +369,15 @@ namespace LibWhipLru.Cache {
 				// Cache miss. Bummer.
 			}
 
-			var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
+			if (_assetReader != null) {
+				var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
 
-			WriteAssetToDisk(asset); // Don't care if this reports a problem.
+				WriteAssetToDisk(asset); // Don't care if this reports a problem.
 
-			return asset;
+				return asset;
+			}
+
+			return null;
 		}
 
 		#region Disk IO tools
