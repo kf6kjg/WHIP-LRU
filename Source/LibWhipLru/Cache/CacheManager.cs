@@ -82,6 +82,8 @@ namespace LibWhipLru.Cache {
 			}
 			try {
 				_dbenv = new LightningEnvironment(pathToDatabaseFolder);
+				_dbenv.MapSize = (long)maxAssetCacheDiskSpaceByteCount;
+				_dbenv.MaxDatabases = 1;
 
 				_dbenv.Open(EnvironmentOpenFlags.None, UnixAccessMode.OwnerRead | UnixAccessMode.OwnerWrite);
 			}
@@ -100,7 +102,7 @@ namespace LibWhipLru.Cache {
 			LOG.Info($"Restoring index from DB.'");
 			try {
 				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
-				using (var db = tx.OpenDatabase("assetstore")) {
+				using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
 					// Probably not the most effecient way to do this.
 					var assetData = tx.CreateCursor(db)
 						.Select(kvp => {
@@ -117,7 +119,7 @@ namespace LibWhipLru.Cache {
 				}
 			}
 			catch (Exception e) {
-				throw new CacheException($"Attempting to restor index from db threw an exception!", e);
+				throw new CacheException($"Attempting to restore index from db threw an exception!", e);
 			}
 			LOG.Debug($"Restoring index complete.'");
 

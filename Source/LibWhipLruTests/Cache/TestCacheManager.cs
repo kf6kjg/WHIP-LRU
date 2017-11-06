@@ -32,9 +32,9 @@ using NUnit.Framework;
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	public class TestCacheManager {
-		private const string DATABASE_FOLDER_PATH = "test";
+		private readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test";
 		private const ulong DATABASE_MAX_SIZE_BYTES = 1024 * 4;
-		private const string WRITE_CACHE_FILE_PATH = "test.whipwcache";
+		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.whipwcache";
 		private const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 
 		[OneTimeTearDown]
