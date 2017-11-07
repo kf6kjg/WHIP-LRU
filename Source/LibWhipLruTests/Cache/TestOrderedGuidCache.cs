@@ -170,7 +170,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestRemoveEmptyReturnsEmptyAndZero() {
 			var cache = new OrderedGuidCache();
-			uint sizeCleared;
+			ulong sizeCleared;
 			var removed = cache.Remove(100, out sizeCleared);
 			Assert.IsEmpty(removed);
 			Assert.AreEqual(0, sizeCleared);
@@ -183,7 +183,7 @@ namespace LibWhipLruTests.Cache {
 			cache.TryAdd(Guid.NewGuid(), 4);
 			cache.TryAdd(Guid.NewGuid(), 8);
 
-			uint sizeCleared;
+			ulong sizeCleared;
 			cache.Remove(5, out sizeCleared);
 
 			Assert.Less(cache.Count, 3);
@@ -196,7 +196,7 @@ namespace LibWhipLruTests.Cache {
 			cache.TryAdd(Guid.NewGuid(), 4);
 			cache.TryAdd(Guid.NewGuid(), 8);
 
-			uint sizeCleared;
+			ulong sizeCleared;
 			cache.Remove(5, out sizeCleared);
 
 			Assert.AreEqual(6, sizeCleared);
@@ -231,7 +231,7 @@ namespace LibWhipLruTests.Cache {
 			cache.ItemsWithPrefix(guidStays2.ToString().Substring(0, 3));
 			Thread.Sleep(100);
 
-			uint sizeCleared;
+			ulong sizeCleared;
 			var removed = cache.Remove(3, out sizeCleared);
 
 			Assert.That(removed, Contains.Item(guidRemoved1));
@@ -267,7 +267,7 @@ namespace LibWhipLruTests.Cache {
 			cache.ItemsWithPrefix(guidStays2.ToString().Substring(0, 3));
 			Thread.Sleep(100);
 
-			uint sizeCleared;
+			ulong sizeCleared;
 			cache.Remove(3, out sizeCleared);
 
 			Assert.False(cache.Contains(guidRemoved1));
@@ -303,7 +303,7 @@ namespace LibWhipLruTests.Cache {
 			cache.ItemsWithPrefix(guidStays2.ToString().Substring(0, 3));
 			Thread.Sleep(100);
 
-			uint sizeCleared;
+			ulong sizeCleared;
 			cache.Remove(3, out sizeCleared);
 
 			Assert.True(cache.Contains(guidStays1));
