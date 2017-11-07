@@ -37,6 +37,11 @@ namespace LibWhipLruTests.Cache {
 		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.whipwcache";
 		private const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 
+		[SetUp]
+		public void BeforeEveryTest() {
+			Directory.CreateDirectory(DATABASE_FOLDER_PATH);
+		}
+
 		[TearDown]
 		public void CleanupAfterEveryTest() {
 			File.Delete(WRITE_CACHE_FILE_PATH);
