@@ -101,7 +101,7 @@ namespace LibWhipLru.Cache {
 
 			LOG.Info($"Restoring index from DB.'");
 			try {
-				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
+				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.None))
 				using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
 					// Probably not the most effecient way to do this.
 					var assetData = tx.CreateCursor(db)
