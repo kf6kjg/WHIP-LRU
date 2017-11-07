@@ -291,6 +291,10 @@ namespace LibWhipLru.Cache {
 		public void PutAsset(StratusAsset asset) {
 			Contract.Requires(asset != null);
 
+			if (asset == null) {
+				throw new ArgumentNullException(nameof(asset));
+			}
+
 			if (asset.Id == Guid.Empty) {
 				throw new ArgumentException("Asset cannot have zero ID.", nameof(asset));
 			}
@@ -343,7 +347,7 @@ namespace LibWhipLru.Cache {
 					}
 				}
 				else {
-					LOG.Warn($"There was a ", lightningException);
+					LOG.Warn($"There was an exception writing asset {asset.Id} to the local DB. Asset has been queued for retry. Termination of WHIP-LRU could result in data loss!", lightningException);
 				}
 			}
 			else {
