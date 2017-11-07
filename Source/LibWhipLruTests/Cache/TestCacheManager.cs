@@ -25,6 +25,7 @@
 using System;
 using System.IO;
 using System.Text;
+using InWorldz.Data.Assets.Stratus;
 using LibWhipLru.Cache;
 using NUnit.Framework;
 
@@ -34,7 +35,7 @@ namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	public class TestCacheManager {
 		private readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test";
-		private const ulong DATABASE_MAX_SIZE_BYTES = 4/*Min value to get tests to run*/ * 4096/*page size as determined by `getconf PAGE_SIZE`*/;
+		private const ulong DATABASE_MAX_SIZE_BYTES = 8/*Min value to get tests to run*/ * 4096/*page size as determined by `getconf PAGE_SIZE`*/;
 		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.whipwcache";
 		private const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 		private readonly byte[] WRITE_CACHE_MAGIC_NUMBER = Encoding.ASCII.GetBytes("WHIPLRU1");
@@ -166,6 +167,104 @@ namespace LibWhipLruTests.Cache {
 					fs.Close();
 				}
 			}
+		}
+
+		#endregion
+
+		#region Putting assets
+
+		[Test]
+		public void TestPutAssetAssetNullThrowsArgNullException() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			Assert.Throws<ArgumentNullException>(() => mgr.PutAsset(null));
+		}
+
+		[Test]
+		public void TestPutAssetEmptyIdThrowsArgException() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.Empty,
+			};
+
+			Assert.Throws<ArgumentException>(() => mgr.PutAsset(asset));
+		}
+
+		[Test]
+		public void TestPutAssetDoesntThrowFirstTime() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			Assert.DoesNotThrow(() => mgr.PutAsset(asset));
+		}
+
+		[Test]
+		public void TestPutAssetDoesntThrowDuplicate() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			mgr.PutAsset(asset);
+			Assert.DoesNotThrow(() => mgr.PutAsset(asset));
+		}
+
+		[Test]
+		public void TestPutAssetDoesntThrowMultiple() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			Assert.DoesNotThrow(() => mgr.PutAsset(new StratusAsset {
+				Id = Guid.NewGuid(),
+			}));
+			Assert.DoesNotThrow(() => mgr.PutAsset(new StratusAsset {
+				Id = Guid.NewGuid(),
+			}));
+			Assert.DoesNotThrow(() => mgr.PutAsset(new StratusAsset {
+				Id = Guid.NewGuid(),
+			}));
+			Assert.DoesNotThrow(() => mgr.PutAsset(new StratusAsset {
+				Id = Guid.NewGuid(),
+			}));
 		}
 
 		#endregion
