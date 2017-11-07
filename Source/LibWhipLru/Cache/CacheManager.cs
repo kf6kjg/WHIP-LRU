@@ -392,8 +392,11 @@ namespace LibWhipLru.Cache {
 			// Remember it's important that this method does not throw exceptions.
 			LightningException lightningException;
 
+			ulong spaceNeeded;
+
 			using (var memStream = new MemoryStream()) {
 				ProtoBuf.Serializer.Serialize(memStream, asset); // This can throw, but only if something is VERY and irrecoverably wrong.
+				spaceNeeded = (ulong)memStream.Length;
 				memStream.Position = 0;
 
 				try {
@@ -421,8 +424,8 @@ namespace LibWhipLru.Cache {
 				case LightningDB.Native.Lmdb.MDB_MAP_FULL:
 					LOG.Warn($"Got storage space full during local asset storage for {asset.Id}, clearing some room...", lightningException);
 
-					uint bytesRemoved;
-					var removedAssetIds = _activeIds.Remove(asset.Data.Length * 3, out bytesRemoved);
+					ulong bytesRemoved;
+					var removedAssetIds = _activeIds.Remove(spaceNeeded * 2, out bytesRemoved);
 
 					try {
 						using (var tx = _dbenv.BeginTransaction()) {
