@@ -307,24 +307,7 @@ namespace LibWhipLru.Cache {
 
 				// If it's safely in local get it on the upload path to remote.
 				if (lightningException == null) {
-					IdWriteCacheNode writeCacheNode;
-
-					lock (_writeCacheNodeLock) {
-						writeCacheNode = _nextAvailableWriteCacheNode;
-						writeCacheNode.IsAvailable = false;
-						_nextAvailableWriteCacheNode = null;
-
-						while (_nextAvailableWriteCacheNode == null) {
-							try {
-								_nextAvailableWriteCacheNode = _writeCacheNodes.First(node => node.IsAvailable);
-							}
-							catch (InvalidOperationException) {
-								// No available nodes found, which means we are out of ability to safely continue until one becomes available...
-								_nextAvailableWriteCacheNode = null;
-								Thread.Sleep(100);
-							}
-						}
-					}
+					var writeCacheNode = GetNextAvailableWriteCacheNode();
 
 					writeCacheNode.AssetId = asset.Id;
 
@@ -473,6 +456,42 @@ namespace LibWhipLru.Cache {
 			catch (ProtoBuf.ProtoException e) {
 				throw new CacheException($"Attempting to deserialize locally stored asset with ID {assetId} threw an exception!", e);
 			}
+		}
+
+		private IdWriteCacheNode GetNextAvailableWriteCacheNode() {
+			IdWriteCacheNode writeCacheNode;
+
+			lock (_writeCacheNodeLock) {
+				// If we've not bootstrapped, do so.
+				while (_nextAvailableWriteCacheNode == null) {
+					try {
+						_nextAvailableWriteCacheNode = _writeCacheNodes.First(node => node.IsAvailable);
+					}
+					catch (InvalidOperationException) {
+						// No available nodes found, which means we are out of ability to safely continue until one becomes available...
+						_nextAvailableWriteCacheNode = null;
+						Thread.Sleep(100);
+					}
+				}
+
+				writeCacheNode = _nextAvailableWriteCacheNode;
+				writeCacheNode.IsAvailable = false;
+				_nextAvailableWriteCacheNode = null;
+
+				// Find the next one.
+				while (_nextAvailableWriteCacheNode == null) {
+					try {
+						_nextAvailableWriteCacheNode = _writeCacheNodes.First(node => node.IsAvailable);
+					}
+					catch (InvalidOperationException) {
+						// No available nodes found, which means we are out of ability to safely continue until one becomes available...
+						_nextAvailableWriteCacheNode = null;
+						Thread.Sleep(100);
+					}
+				}
+			}
+
+			return writeCacheNode;
 		}
 
 		#endregion
