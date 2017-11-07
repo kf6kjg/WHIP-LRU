@@ -24,10 +24,10 @@
 // THE SOFTWARE.
 using System;
 using System.IO;
-using System.Linq;
-using System.Threading;
 using LibWhipLru.Cache;
 using NUnit.Framework;
+
+#pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
@@ -37,11 +37,13 @@ namespace LibWhipLruTests.Cache {
 		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.whipwcache";
 		private const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 
-		[OneTimeTearDown]
-		public void CleanupAfter() {
+		[TearDown]
+		public void CleanupAfterEveryTest() {
 			File.Delete(WRITE_CACHE_FILE_PATH);
 			Directory.Delete(DATABASE_FOLDER_PATH, true);
 		}
+
+		#region Ctor
 
 		[Test]
 		public void TestCtorDoesNotThrow() {
@@ -56,7 +58,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestCtorBlankDBPathArgNullException() {
+		public void TestCtorDBPathBlankThrowsArgNullException() {
 			Assert.Throws<ArgumentNullException>(() => new CacheManager(
 				"",
 				DATABASE_MAX_SIZE_BYTES,
@@ -68,7 +70,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestCtorNullDBPathArgNullException() {
+		public void TestCtorDBPathNullThrowsArgNullException() {
 			Assert.Throws<ArgumentNullException>(() => new CacheManager(
 				null,
 				DATABASE_MAX_SIZE_BYTES,
@@ -78,5 +80,7 @@ namespace LibWhipLruTests.Cache {
 				null
 			));
 		}
+
+		#endregion
 	}
 }
