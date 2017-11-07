@@ -24,6 +24,7 @@
 // THE SOFTWARE.
 using System;
 using System.IO;
+using System.Text;
 using LibWhipLru.Cache;
 using NUnit.Framework;
 
@@ -36,6 +37,7 @@ namespace LibWhipLruTests.Cache {
 		private const ulong DATABASE_MAX_SIZE_BYTES = 4/*Min value to get tests to run*/ * 4096/*page size as determined by `getconf PAGE_SIZE`*/;
 		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.whipwcache";
 		private const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
+		private readonly byte[] WRITE_CACHE_MAGIC_NUMBER = Encoding.ASCII.GetBytes("WHIPLRU1");
 
 		[SetUp]
 		public void BeforeEveryTest() {
@@ -84,6 +86,86 @@ namespace LibWhipLruTests.Cache {
 				null,
 				null
 			));
+		}
+
+		[Test]
+		public void TestCtorCreatesWriteCacheFile() {
+			new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			FileAssert.Exists(WRITE_CACHE_FILE_PATH);
+		}
+
+		[Test]
+		public void TestCtorCreatesWriteCacheFileWithCorrectMagicNumber() {
+			new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			var buffer = new byte[WRITE_CACHE_MAGIC_NUMBER.Length];
+			using (var fs = new FileStream(WRITE_CACHE_FILE_PATH, FileMode.Open, FileAccess.Read)) {
+				fs.Read(buffer, 0, buffer.Length);
+				fs.Close();
+			}
+
+			Assert.AreEqual(WRITE_CACHE_MAGIC_NUMBER, buffer);
+		}
+
+		[Test]
+		public void TestCtorCreatesWriteCacheFileWithCorrectRecordCount() {
+			new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			var dataLength = new FileInfo(WRITE_CACHE_FILE_PATH).Length - WRITE_CACHE_MAGIC_NUMBER.Length;
+			var recordCount = dataLength / IdWriteCacheNode.BYTE_SIZE;
+
+			Assert.AreEqual(WRITE_CACHE_MAX_RECORD_COUNT, recordCount);
+		}
+
+		[Test]
+		public void TestCtorCreatesWriteCacheFileWithRecordsAllAvailable() {
+			new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			using (var fs = new FileStream(WRITE_CACHE_FILE_PATH, FileMode.Open, FileAccess.Read)) {
+				try {
+					// Skip the header
+					fs.Seek(WRITE_CACHE_MAGIC_NUMBER.Length, SeekOrigin.Begin);
+
+					// Check each row.
+					for (var recordIndex = 0; recordIndex < WRITE_CACHE_MAX_RECORD_COUNT; ++recordIndex) {
+						var buffer = new byte[IdWriteCacheNode.BYTE_SIZE];
+						fs.Read(buffer, 0, buffer.Length);
+						Assert.AreEqual(0, buffer[0], $"Record #{recordIndex + 1} is not marked as available!");
+					}
+				}
+				finally {
+					fs.Close();
+				}
+			}
 		}
 
 		#endregion

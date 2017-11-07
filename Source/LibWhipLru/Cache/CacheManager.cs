@@ -57,7 +57,7 @@ namespace LibWhipLru.Cache {
 		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
 
 		// Storage for assets that are WIP for remote storage.
-		private static byte[] WRITE_CACHE_MAGIC_NUMBER = Encoding.ASCII.GetBytes("WHIPLRU1");
+		private static readonly byte[] WRITE_CACHE_MAGIC_NUMBER = Encoding.ASCII.GetBytes("WHIPLRU1");
 		private string _pathToWriteCacheFile;
 		private BlockingCollection<IdWriteCacheNode> _assetsToWriteToRemoteStorage;
 		private IdWriteCacheNode[] _writeCacheNodes;
