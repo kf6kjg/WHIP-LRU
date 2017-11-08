@@ -286,7 +286,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestGetUnknownAssetDoesntThrow() {
+		public void TestGetAssetUnknownDoesntThrow() {
 			var mgr = new CacheManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
@@ -300,7 +300,21 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestGetAssetDoesntThrow() {
+		public void TestGetAssetUnknownIsNull() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			Assert.IsNull(mgr.GetAsset(Guid.NewGuid()));
+		}
+
+		[Test]
+		public void TestGetAssetKnownDoesntThrow() {
 			var mgr = new CacheManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
@@ -317,6 +331,50 @@ namespace LibWhipLruTests.Cache {
 			});
 
 			Assert.DoesNotThrow(() => mgr.GetAsset(id));
+		}
+
+		[Test]
+		public void TestGetAssetKnownIsNotNull() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			var id = Guid.NewGuid();
+
+			mgr.PutAsset(new StratusAsset {
+				Id = id,
+			});
+
+			var resultAsset = mgr.GetAsset(id);
+
+			Assert.IsNotNull(mgr.GetAsset(id));
+		}
+
+		[Test]
+		public void TestGetAssetKnownHasSameId() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			var id = Guid.NewGuid();
+
+			mgr.PutAsset(new StratusAsset {
+				Id = id,
+			});
+
+			var resultAsset = mgr.GetAsset(id);
+
+			Assert.AreEqual(id, resultAsset.Id);
 		}
 
 		#endregion
