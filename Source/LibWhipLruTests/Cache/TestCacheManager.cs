@@ -268,5 +268,57 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		#endregion
+
+		#region Get Assets
+
+		[Test]
+		public void TestGetAssetEmptyIdThrowsArgException() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			Assert.Throws<ArgumentException>(() => mgr.GetAsset(Guid.Empty));
+		}
+
+		[Test]
+		public void TestGetUnknownAssetDoesntThrow() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			Assert.DoesNotThrow(() => mgr.GetAsset(Guid.NewGuid()));
+		}
+
+		[Test]
+		public void TestGetAssetDoesntThrow() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				null,
+				null
+			);
+
+			var id = Guid.NewGuid();
+
+			mgr.PutAsset(new StratusAsset {
+				Id = id,
+			});
+
+			Assert.DoesNotThrow(() => mgr.GetAsset(id));
+		}
+
+		#endregion
 	}
 }
