@@ -28,7 +28,7 @@ using System.IO;
 using log4net.Config;
 using NUnit.Framework;
 
-namespace UnitTests {
+namespace LibWhipLruTests {
 	[SetUpFixture]
 	public sealed class Setup {
 		[OneTimeSetUp]

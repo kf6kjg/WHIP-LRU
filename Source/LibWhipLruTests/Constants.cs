@@ -25,7 +25,7 @@
 using System.IO;
 using NUnit.Framework;
 
-namespace UnitTests {
+namespace LibWhipLruTests {
 	internal static class Constants {
 		public static readonly string EXECUTABLE_DIRECTORY;
 
