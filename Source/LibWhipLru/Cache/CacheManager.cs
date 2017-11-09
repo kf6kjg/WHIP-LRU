@@ -354,7 +354,8 @@ namespace LibWhipLru.Cache {
 			try {
 				return ReadAssetFromDisk(assetId);
 			}
-			catch (CacheException) {
+			catch (CacheException e) {
+				LOG.Debug("Simple cache miss or error in the cache system, see inner exception.", e);
 				// Cache miss. Bummer.
 			}
 
