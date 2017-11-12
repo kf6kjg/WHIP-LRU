@@ -22,6 +22,8 @@ namespace WHIP_LRU {
 
 		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
 
+		private static readonly bool ON_POSIX_COMPLAINT_OS = Type.GetType("Mono.Runtime") != null; // A potentially invalid assumption: that Mono means running on a POSIX-compliant system.
+
 		public static int Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
 			AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -71,11 +73,16 @@ namespace WHIP_LRU {
 				whipLru?.Stop();
 			};
 
-			var signals = new UnixSignal[]{
-				new UnixSignal(Signum.SIGINT),
-				new UnixSignal(Signum.SIGTERM),
-				new UnixSignal(Signum.SIGHUP),
-			};
+
+			UnixSignal[] signals = null;
+			if (ON_POSIX_COMPLAINT_OS)
+			{
+				signals = new UnixSignal[]{
+					new UnixSignal(Signum.SIGINT),
+					new UnixSignal(Signum.SIGTERM),
+					new UnixSignal(Signum.SIGHUP),
+				};
+			}
 
 			while (isRunning) {
 				// Read in the ini file
@@ -94,17 +101,21 @@ namespace WHIP_LRU {
 
 				whipLru.Start();
 
-				var signalIndex = UnixSignal.WaitAny(signals, -1);
+				if (signals != null)
+				{
+					var signalIndex = UnixSignal.WaitAny(signals, -1);
 
-				switch (signals[signalIndex].Signum) {
-					case Signum.SIGHUP:
-						whipLru.Stop();
-					break;
-					case Signum.SIGINT:
-					case Signum.SIGKILL:
-						isRunning = false;
-						whipLru.Stop();
-					break;
+					switch (signals[signalIndex].Signum)
+					{
+						case Signum.SIGHUP:
+							whipLru.Stop();
+						break;
+						case Signum.SIGINT:
+						case Signum.SIGKILL:
+							isRunning = false;
+							whipLru.Stop();
+						break;
+					}
 				}
 			}
 
