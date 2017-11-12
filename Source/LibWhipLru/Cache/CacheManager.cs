@@ -383,10 +383,13 @@ namespace LibWhipLru.Cache {
 				spaceNeeded = (ulong)memStream.Length;
 				memStream.Position = 0;
 
+				var buffer = new byte[spaceNeeded];
+
+				Buffer.BlockCopy(memStream.GetBuffer(), 0, buffer, 0, (int)spaceNeeded);
 				try {
 					using (var tx = _dbenv.BeginTransaction())
 					using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
-						tx.Put(db, Encoding.UTF8.GetBytes(asset.Id.ToString()), memStream.GetBuffer());
+						tx.Put(db, Encoding.UTF8.GetBytes(asset.Id.ToString()), buffer);
 						tx.Commit();
 					}
 
