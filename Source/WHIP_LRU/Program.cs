@@ -93,9 +93,9 @@ namespace WHIP_LRU {
 
 				var serverConfig = configSource.Configs["Server"];
 
-				var address = serverConfig.GetString("Address", WHIPServer.DEFAULT_ADDRESS);
-				var port = (uint)serverConfig.GetInt("Port", (int)WHIPServer.DEFAULT_PORT);
-				var password = serverConfig.GetString("Password", WHIPServer.DEFAULT_PASSWORD);
+				var address = serverConfig?.GetString("Address", WHIPServer.DEFAULT_ADDRESS) ?? WHIPServer.DEFAULT_ADDRESS;
+				var port = (uint?)serverConfig?.GetInt("Port", (int)WHIPServer.DEFAULT_PORT) ?? WHIPServer.DEFAULT_PORT;
+				var password = serverConfig?.GetString("Password", WHIPServer.DEFAULT_PASSWORD) ?? WHIPServer.DEFAULT_PASSWORD;
 
 				whipLru = new WhipLru(address, port, password, pidFileManager, chattelConfigRead, chattelConfigWrite);
 
@@ -166,7 +166,6 @@ namespace WHIP_LRU {
 				}
 				catch {
 					LOG.Fatal($"Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
-					throw;
 				}
 			}
 		}
