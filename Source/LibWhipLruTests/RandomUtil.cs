@@ -23,6 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Text;
 
 namespace LibWhipLruTests {
 	public static class RandomUtil {
@@ -38,10 +39,28 @@ namespace LibWhipLruTests {
 			return data[0];
 		}
 
+		public static sbyte NextSByte() {
+			var data = new byte[1];
+			Rnd.NextBytes(data);
+			return (sbyte)data[0];
+		}
+
+		public static uint NextUInt() {
+			var data = new byte[sizeof(uint)];
+			Rnd.NextBytes(data);
+			return BitConverter.ToUInt32(data, 0);
+		}
+
 		public static ulong NextULong() {
 			var data = new byte[sizeof(ulong)];
 			Rnd.NextBytes(data);
 			return BitConverter.ToUInt64(data, 0);
+		}
+
+		public static string StringUTF8(uint length) {
+			var data = new byte[sizeof(uint) * length];
+			Rnd.NextBytes(data);
+			return Encoding.UTF8.GetString(data).Substring(0, (int)length);
 		}
 	}
 }
