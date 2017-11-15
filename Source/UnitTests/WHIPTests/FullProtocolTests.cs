@@ -193,7 +193,7 @@ namespace UnitTests.WHIPTests {
 		[Timeout(60000)]
 		public void TestOperationPURGEWithValidIdReturnsOk() {
 			var asset = CreateAndPutAsset(_socket);
-			Assert.NotNull(asset, "Failure storing asset for test.");
+			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, asset.Uuid);
 			request.Send(_socket);
@@ -209,7 +209,7 @@ namespace UnitTests.WHIPTests {
 		[Timeout(60000)]
 		public void TestOperationPURGEWithValidIdRemovedItem() {
 			var asset = CreateAndPutAsset(_socket);
-			Assert.NotNull(asset, "Failure storing asset for test.");
+			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
 			var purgeRequest = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, asset.Uuid);
 			purgeRequest.Send(_socket);
@@ -238,13 +238,14 @@ namespace UnitTests.WHIPTests {
 		[Timeout(60000)]
 		public void TestOperationPUTWithDuplicateIdReturnsError() {
 			var asset = CreateAndPutAsset(_socket);
+			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
 			var data = asset.Serialize().data;
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
+			Thread.Sleep(100);
 			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
@@ -270,7 +271,7 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
+			Thread.Sleep(100);
 			Assert.NotZero(_socket.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(_socket);
@@ -317,7 +318,7 @@ namespace UnitTests.WHIPTests {
 		[Timeout(60000)]
 		public void TestOperationSTORED_ASSET_IDS_GETHasExpectedEntry() {
 			var asset = CreateAndPutAsset(_socket);
-			Assert.NotNull(asset, "Failure storing asset for test.");
+			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
 			var assetRangeId = asset.Uuid.Substring(0, 3) + Guid.Empty.ToString().Substring(3);
 
@@ -337,7 +338,7 @@ namespace UnitTests.WHIPTests {
 		[Timeout(60000)]
 		public void TestOperationSTORED_ASSET_IDS_GETReturnsOk() {
 			var asset = CreateAndPutAsset(_socket);
-			Assert.NotNull(asset, "Failure storing asset for test.");
+			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
 			var assetRangeId = asset.Uuid.Substring(0, 3) + Guid.Empty.ToString().Substring(3);
 
@@ -389,7 +390,7 @@ namespace UnitTests.WHIPTests {
 		[Timeout(60000)]
 		public void TestOperationTESTWithValidIdReturnsFound() {
 			var asset = CreateAndPutAsset(_socket);
-			Assert.NotNull(asset, "Failure storing asset for test.");
+			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, asset.Uuid);
 			request.Send(_socket);
@@ -422,7 +423,7 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
 			request.Send(conn);
 
-			Thread.Sleep(10);
+			Thread.Sleep(100);
 			Assert.NotZero(conn.Available, "Got nothing from the server!");
 
 			var response = new ServerResponseMsg(conn);

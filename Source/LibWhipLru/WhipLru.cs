@@ -34,14 +34,19 @@ using log4net;
 using LibWhipLru.Cache;
 using LibWhipLru.Server;
 using LibWhipLru.Util;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+using InWorldz.Data.Assets.Stratus;
+using System.Globalization;
 
 namespace LibWhipLru {
 	public class WhipLru {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		// Unix-epoch starts at January 1st 1970, 00:00:00 UTC. And all our times in the server are (or at least should be) in UTC.
+		private static readonly DateTime UNIX_EPOCH = DateTime.ParseExact("1970-01-01 00:00:00 +0", "yyyy-MM-dd hh:mm:ss z", DateTimeFormatInfo.InvariantInfo).ToUniversalTime();
+
 		private readonly CacheManager _cacheManager;
-		private readonly ChattelReader _assetReader;
-		private readonly ChattelWriter _assetWriter;
 		private readonly PIDFileManager _pidFileManager;
 		private WHIPServer _server;
 		private Thread _serviceThread;
@@ -49,6 +54,9 @@ namespace LibWhipLru {
 		private string _address;
 		private uint _port;
 		private string _password;
+
+		private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+		private BlockingCollection<Request> _requests;
 
 		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, CacheManager cacheManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null) {
 			if (address == null) {
@@ -71,13 +79,11 @@ namespace LibWhipLru {
 
 			if (chattelConfigRead != null) {
 				chattelConfigRead.DisableCache(); // Force caching off no matter how the INI is set. Doing caching differently here.
-				_assetReader = new ChattelReader(chattelConfigRead);
-				_cacheManager.SetChattelReader(_assetReader);
+				_cacheManager.SetChattelReader(new ChattelReader(chattelConfigRead));
 			}
 			if (chattelConfigWrite != null) {
 				chattelConfigWrite.DisableCache(); // Force caching off no matter how the INI is set. Doing caching differently here.
-				_assetWriter = new ChattelWriter(chattelConfigWrite);
-				_cacheManager.SetChattelWriter(_assetWriter);
+				_cacheManager.SetChattelWriter(new ChattelWriter(chattelConfigWrite));
 			}
 
 			_pidFileManager?.SetStatus(PIDFileManager.Status.Ready);
@@ -87,6 +93,9 @@ namespace LibWhipLru {
 		/// Starts up the service in a seperate thread.
 		/// </summary>
 		public void Start() {
+			if (_server != null) {
+				throw new InvalidOperationException("Cannot start a running service without stopping it first!");
+			}
 			LOG.Debug($"{_address}:{_port} - Starting service");
 
 			_server = new WHIPServer(RequestReceivedDelegate, _address, _port, _password);
@@ -103,6 +112,15 @@ namespace LibWhipLru {
 			catch (Exception e) {
 				LOG.Warn("Exception during server execution, automatically restarting.", e);
 			}
+
+			_requests = new BlockingCollection<Request>();
+
+			var parallelOptions = new ParallelOptions {
+				MaxDegreeOfParallelism = 4, // Keeps memory use from spiraling out of control, see https://canbilgin.wordpress.com/2017/02/05/curious-case-of-parallel-foreach-with-blockingcollection/
+				CancellationToken = _cancellationTokenSource.Token,
+			};
+
+			Task.Factory.StartNew(() => Parallel.ForEach(_requests.GetConsumingEnumerable(), parallelOptions, ProcessRequest));
 		}
 
 		public void Stop() {
@@ -118,32 +136,46 @@ namespace LibWhipLru {
 				_serviceThread = null;
 				_pidFileManager?.SetStatus(PIDFileManager.Status.Ready);
 			}
+
+			_requests.CompleteAdding();
 		}
 
 		private void RequestReceivedDelegate(ClientRequestMsg request, WHIPServer.RequestResponseDelegate responseHandler, object context) {
-			// TODO: do this for real.  The response is done across a callback with the context pointer passed through so that I can queue these things and get back to them.
+			// Queue up for processing.
+			_requests.Add(new Request() {
+				context = context,
+				request = request,
+				responseHandler = responseHandler,
+			});
+		}
+
+		private void ProcessRequest(Request req) {
+			// WARNING: this method is being executed in its own thread, and may even be being executed in parallel in multiple threads.
+
 			ServerResponseMsg response;
 
-			switch (request.Type) {
+			switch (req.request.Type) {
 				case ClientRequestMsg.RequestType.RT_GET:
 				case ClientRequestMsg.RequestType.RT_GET_DONTCACHE:
 				case ClientRequestMsg.RequestType.RT_MAINT_PURGELOCALS:
 				case ClientRequestMsg.RequestType.RT_PURGE:
-				case ClientRequestMsg.RequestType.RT_PUT:
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
-				break;
+					break;
+				case ClientRequestMsg.RequestType.RT_PUT:
+					response = HandlePutAsset(req.request.AssetId.Guid, req.request.Data);
+					break;
 				case ClientRequestMsg.RequestType.RT_STATUS_GET:
 					response = HandleGetStatus();
-				break;
+					break;
 				case ClientRequestMsg.RequestType.RT_STORED_ASSET_IDS_GET:
-					response = HandleGetStoredAssetIds(request.AssetId.ToString().Substring(0, 3));
-				break;
+					response = HandleGetStoredAssetIds(req.request.AssetId.ToString().Substring(0, 3));
+					break;
 				case ClientRequestMsg.RequestType.RT_TEST:
 				default:
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
-				break;
+					break;
 			}
-			responseHandler(response, context);
+			req.responseHandler(response, req.context);
 		}
 
 		#region Handlers
@@ -199,6 +231,53 @@ namespace LibWhipLru {
 			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, OpenMetaverse.UUID.Zero, string.Join(",", ids));
 		}
 
+		private ServerResponseMsg HandlePutAsset(Guid assetId, byte[] data) {
+			if (assetId == Guid.Empty) {
+				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, new OpenMetaverse.UUID(assetId), "Zero UUID not allowed.");
+			}
+
+			InWorldz.Whip.Client.Asset whipAsset;
+
+			try {
+				var rawData = new InWorldz.Whip.Client.AppendableByteArray(data.Length);
+				rawData.Append(data);
+				whipAsset = new InWorldz.Whip.Client.Asset(rawData);
+			}
+			catch (Exception e) {
+				LOG.Debug($"Exception reading data for asset {assetId}", e);
+				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, new OpenMetaverse.UUID(assetId), "Error processing request.");
+			}
+
+			var asset = new StratusAsset {
+				CreateTime = UnixToUTCDateTime(whipAsset.CreateTime),
+				Data = whipAsset.Data,
+				Description = whipAsset.Description,
+				Id = assetId,
+				Local = whipAsset.Local,
+				Name = whipAsset.Name,
+				Temporary = whipAsset.Temporary,
+				Type = (sbyte)whipAsset.Type,
+			};
+
+			switch (_cacheManager.PutAsset(asset)) {
+				case CacheManager.PutResult.DONE:
+				case CacheManager.PutResult.WIP:
+					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, new OpenMetaverse.UUID(assetId));
+				default:
+					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, new OpenMetaverse.UUID(assetId), "Duplicate assets are not allowed.");
+			}
+		}
+
 		#endregion
+
+		private static DateTime UnixToUTCDateTime(long seconds) {
+			return UNIX_EPOCH.AddSeconds(seconds);
+		}
+
+		private class Request {
+			public ClientRequestMsg request { get; set; }
+			public WHIPServer.RequestResponseDelegate responseHandler { get; set; }
+			public object context { get; set; }
+		}
 	}
 }

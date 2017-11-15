@@ -37,7 +37,7 @@ namespace UnitTests {
 	[SetUpFixture]
 	public sealed class Setup {
 		private readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test";
-		private const ulong DATABASE_MAX_SIZE_BYTES = 8/*Min value to get tests to run*/ * 4096/*page size as determined by `getconf PAGE_SIZE`*/;
+		private const ulong DATABASE_MAX_SIZE_BYTES = 64 * 4096/*page size as determined by `getconf PAGE_SIZE`*/;
 		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.whipwcache";
 		private const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 
@@ -64,6 +64,8 @@ namespace UnitTests {
 			// Read in the ini file
 			configSource.Merge(new IniConfigSource(Constants.INI_PATH));
 
+			Directory.Delete(DATABASE_FOLDER_PATH, true);
+			File.Delete(WRITE_CACHE_FILE_PATH);
 			Directory.CreateDirectory(DATABASE_FOLDER_PATH);
 
 			// Start booting server

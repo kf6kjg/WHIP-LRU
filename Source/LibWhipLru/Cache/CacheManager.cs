@@ -292,7 +292,7 @@ namespace LibWhipLru.Cache {
 		/// The exceptions are if the asset cannot be serialized for some inane reason or if you passed an asset with a zero ID.  Either of those cases are considered invalid storage attempts.
 		/// </summary>
 		/// <param name="asset">The asset to store.</param>
-		public void PutAsset(StratusAsset asset) {
+		public PutResult PutAsset(StratusAsset asset) {
 			Contract.Requires(asset != null);
 
 			if (asset == null) {
@@ -331,15 +331,20 @@ namespace LibWhipLru.Cache {
 					catch (Exception e) {
 						LOG.Warn($"Failed to write asset ID {asset.Id} to disk-based write cache!", e);
 						// As long as the queue thread processes the asset this should be OK.
+						return PutResult.WIP;
 					}
 				}
 				else {
 					LOG.Warn($"There was an exception writing asset {asset.Id} to the local DB. Asset has been queued for retry. Termination of WHIP-LRU could result in data loss!", lightningException);
+					return PutResult.WIP;
 				}
 			}
 			else {
 				LOG.Info($"Dropped store of duplicate asset {asset.Id}");
+				return PutResult.DUPLICATE;
 			}
+
+			return PutResult.DONE;
 		}
 
 		/// <summary>
@@ -519,6 +524,12 @@ namespace LibWhipLru.Cache {
 		}
 
 		#endregion
+
+		public enum PutResult {
+			DONE,
+			DUPLICATE,
+			WIP,
+		}
 
 		#region IDisposable Support
 
