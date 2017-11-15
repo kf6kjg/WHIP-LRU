@@ -39,10 +39,10 @@ namespace LibWhipLru {
 	public class WhipLru {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private CacheManager _cacheManager;
-		private ChattelReader _assetReader;
-		private ChattelWriter _assetWriter;
-		private PIDFileManager _pidFileManager;
+		private readonly CacheManager _cacheManager;
+		private readonly ChattelReader _assetReader;
+		private readonly ChattelWriter _assetWriter;
+		private readonly PIDFileManager _pidFileManager;
 		private WHIPServer _server;
 		private Thread _serviceThread;
 
@@ -90,9 +90,9 @@ namespace LibWhipLru {
 			LOG.Debug($"{_address}:{_port} - Starting service");
 
 			_server = new WHIPServer(RequestReceivedDelegate, _address, _port, _password);
-			_serviceThread = new Thread(_server.Start);
-			_serviceThread.IsBackground = true;
-
+			_serviceThread = new Thread(_server.Start) {
+				IsBackground = true
+			};
 			try {
 				_serviceThread.Start();
 				_pidFileManager?.SetStatus(PIDFileManager.Status.Running);

@@ -44,7 +44,7 @@ namespace LibWhipLru.Cache {
 		public static readonly string DEFAULT_DB_FOLDER_PATH = "cache";
 		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = 1024UL * 1024UL * 1024UL * 1024UL/*1TB*/;
 		public static readonly string DEFAULT_WC_FILE_PATH = "whip_lru.whipwcache";
-		public static readonly uint DEFAULT_WC_RECORD_COUNT = 1024U * 1024U * 1024U/*1GB*/ / LibWhipLru.Cache.IdWriteCacheNode.BYTE_SIZE;
+		public static readonly uint DEFAULT_WC_RECORD_COUNT = 1024U * 1024U * 1024U/*1GB*/ / IdWriteCacheNode.BYTE_SIZE;
 
 		private LightningEnvironment _dbenv;
 		private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -84,9 +84,10 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentNullException(nameof(pathToDatabaseFolder), "No database path means no go.");
 			}
 			try {
-				_dbenv = new LightningEnvironment(pathToDatabaseFolder);
-				_dbenv.MapSize = (long)maxAssetCacheDiskSpaceByteCount;
-				_dbenv.MaxDatabases = 1;
+				_dbenv = new LightningEnvironment(pathToDatabaseFolder) {
+					MapSize = (long)maxAssetCacheDiskSpaceByteCount,
+					MaxDatabases = 1,
+				};
 
 				_dbenv.Open(EnvironmentOpenFlags.None, UnixAccessMode.OwnerRead | UnixAccessMode.OwnerWrite);
 			}
@@ -130,7 +131,7 @@ namespace LibWhipLru.Cache {
 			if (!File.Exists(pathToWriteCacheFile)) {
 				LOG.Info($"Write cache file doesn't exist, creating and formatting file '{pathToWriteCacheFile}'");
 				using (var fileStream = new FileStream(pathToWriteCacheFile, FileMode.Create, FileAccess.Write, FileShare.None)) {
-					var maxLength = WRITE_CACHE_MAGIC_NUMBER.Length + (long)(maxWriteCacheRecordCount * IdWriteCacheNode.BYTE_SIZE);
+					var maxLength = WRITE_CACHE_MAGIC_NUMBER.Length + ((long)maxWriteCacheRecordCount * IdWriteCacheNode.BYTE_SIZE);
 					fileStream.SetLength(maxLength);
 					// On some FSs the file is all 0s at this point, but it behooves us to make sure of the critical points.
 
@@ -519,7 +520,7 @@ namespace LibWhipLru.Cache {
 
 		#region IDisposable Support
 
-		private bool disposedValue = false; // To detect redundant calls
+		private bool disposedValue; // To detect redundant calls
 
 		protected virtual void Dispose(bool disposing) {
 			if (!disposedValue) {

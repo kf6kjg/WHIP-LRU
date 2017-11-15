@@ -52,7 +52,7 @@ namespace LibWhipLru.Util {
 				PidFile = $"{Path.GetFileName(thisProcess.MainModule.FileName)}.pid";
 			}
 
-			this.SetStatus(Status.Init);
+			SetStatus(Status.Init);
 		}
 
 		public void SetStatus(Status status) {

@@ -101,7 +101,7 @@ namespace LibWhipLru.Server {
 
 			// Bind the socket to the local endpoint and listen for incoming connections.  
 			listener.Bind(_localEndPoint);
-			listener.Listen(100);
+			listener.Listen(100); // This is the maximum number of simultanious clients....  TODO: revisit this and maybe make it condifgurable.
 
 			_isRunning = true;
 			while (_isRunning) {

@@ -11,6 +11,7 @@ using Mono.Unix.Native;
 using Nini.Config;
 using LibWhipLru.Server;
 using LibWhipLru.Util;
+using LibWhipLru.Cache;
 
 namespace WHIP_LRU {
 	class Application {
@@ -95,16 +96,19 @@ namespace WHIP_LRU {
 
 				var address = serverConfig?.GetString("Address", WHIPServer.DEFAULT_ADDRESS) ?? WHIPServer.DEFAULT_ADDRESS;
 				var port = (uint?)serverConfig?.GetInt("Port", (int)WHIPServer.DEFAULT_PORT) ?? WHIPServer.DEFAULT_PORT;
-				var password = serverConfig?.GetString("Password", WHIPServer.DEFAULT_PASSWORD) ?? WHIPServer.DEFAULT_PASSWORD;
+				var password = serverConfig?.GetString("Password", WHIPServer.DEFAULT_PASSWORD);
+				if (password == null) { // Would only be null if serverConfig was null or DEFAULT_PASSWORD is null.  Why not use the ?? operator? Compiler didn't like it.
+					password = WHIPServer.DEFAULT_PASSWORD;
+				}
 
 				var cacheConfig = configSource.Configs["Cache"];
 
-				var pathToDatabaseFolder = cacheConfig?.GetString("DatabaseFolderPath", LibWhipLru.Cache.CacheManager.DEFAULT_DB_FOLDER_PATH) ?? LibWhipLru.Cache.CacheManager.DEFAULT_DB_FOLDER_PATH;
-				var maxAssetCacheDiskSpaceByteCount = (ulong?)cacheConfig?.GetLong("MaxDiskSpace", (long)LibWhipLru.Cache.CacheManager.DEFAULT_DB_MAX_DISK_BYTES) ?? LibWhipLru.Cache.CacheManager.DEFAULT_DB_MAX_DISK_BYTES;
-				var pathToWriteCacheFile = cacheConfig?.GetString("WriteCacheFilePath", LibWhipLru.Cache.CacheManager.DEFAULT_WC_FILE_PATH) ?? LibWhipLru.Cache.CacheManager.DEFAULT_WC_FILE_PATH;
-				var maxWriteCacheRecordCount = (uint?)cacheConfig?.GetInt("WriteCacheMaxRecords", (int)LibWhipLru.Cache.CacheManager.DEFAULT_WC_RECORD_COUNT) ?? LibWhipLru.Cache.CacheManager.DEFAULT_WC_RECORD_COUNT;
+				var pathToDatabaseFolder = cacheConfig?.GetString("DatabaseFolderPath", CacheManager.DEFAULT_DB_FOLDER_PATH) ?? CacheManager.DEFAULT_DB_FOLDER_PATH;
+				var maxAssetCacheDiskSpaceByteCount = (ulong?)cacheConfig?.GetLong("MaxDiskSpace", (long)CacheManager.DEFAULT_DB_MAX_DISK_BYTES) ?? CacheManager.DEFAULT_DB_MAX_DISK_BYTES;
+				var pathToWriteCacheFile = cacheConfig?.GetString("WriteCacheFilePath", CacheManager.DEFAULT_WC_FILE_PATH) ?? CacheManager.DEFAULT_WC_FILE_PATH;
+				var maxWriteCacheRecordCount = (uint?)cacheConfig?.GetInt("WriteCacheMaxRecords", (int)CacheManager.DEFAULT_WC_RECORD_COUNT) ?? CacheManager.DEFAULT_WC_RECORD_COUNT;
 
-				var cacheManager = new LibWhipLru.Cache.CacheManager(
+				var cacheManager = new CacheManager(
 					pathToDatabaseFolder,
 					maxAssetCacheDiskSpaceByteCount,
 					pathToWriteCacheFile,
