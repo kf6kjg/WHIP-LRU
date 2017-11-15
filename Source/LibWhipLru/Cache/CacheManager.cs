@@ -411,6 +411,8 @@ namespace LibWhipLru.Cache {
 						tx.Commit();
 					}
 
+					_activeIds.TryAdd(asset.Id, spaceNeeded);
+
 					return null;
 				}
 				catch (LightningException e) {
