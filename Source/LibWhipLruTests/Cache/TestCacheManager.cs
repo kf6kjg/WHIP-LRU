@@ -34,9 +34,9 @@ using NUnit.Framework;
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	public class TestCacheManager {
-		private readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test";
+		private readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_cm";
 		private const ulong DATABASE_MAX_SIZE_BYTES = 8/*Min value to get tests to run*/ * 4096/*page size as determined by `getconf PAGE_SIZE`*/;
-		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.whipwcache";
+		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_cm.whipwcache";
 		private const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 		private readonly byte[] WRITE_CACHE_MAGIC_NUMBER = Encoding.ASCII.GetBytes("WHIPLRU1");
 
@@ -59,9 +59,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			));
 		}
 
@@ -71,9 +69,7 @@ namespace LibWhipLruTests.Cache {
 				"",
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			));
 		}
 
@@ -83,9 +79,7 @@ namespace LibWhipLruTests.Cache {
 				null,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			));
 		}
 
@@ -95,9 +89,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			FileAssert.Exists(WRITE_CACHE_FILE_PATH);
@@ -109,9 +101,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			var buffer = new byte[WRITE_CACHE_MAGIC_NUMBER.Length];
@@ -129,9 +119,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			var dataLength = new FileInfo(WRITE_CACHE_FILE_PATH).Length - WRITE_CACHE_MAGIC_NUMBER.Length;
@@ -146,9 +134,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			using (var fs = new FileStream(WRITE_CACHE_FILE_PATH, FileMode.Open, FileAccess.Read)) {
@@ -179,9 +165,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			Assert.Throws<ArgumentNullException>(() => mgr.PutAsset(null));
@@ -193,9 +177,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			var asset = new StratusAsset {
@@ -211,9 +193,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			var asset = new StratusAsset {
@@ -229,9 +209,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			var asset = new StratusAsset {
@@ -248,9 +226,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			Assert.DoesNotThrow(() => mgr.PutAsset(new StratusAsset {
@@ -277,9 +253,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			Assert.Throws<ArgumentException>(() => mgr.GetAsset(Guid.Empty));
@@ -291,9 +265,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			Assert.DoesNotThrow(() => mgr.GetAsset(Guid.NewGuid()));
@@ -305,9 +277,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			Assert.IsNull(mgr.GetAsset(Guid.NewGuid()));
@@ -319,9 +289,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			var id = Guid.NewGuid();
@@ -339,9 +307,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			var id = Guid.NewGuid();
@@ -361,9 +327,7 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
+				WRITE_CACHE_MAX_RECORD_COUNT
 			);
 
 			var id = Guid.NewGuid();
@@ -375,44 +339,6 @@ namespace LibWhipLruTests.Cache {
 			var resultAsset = mgr.GetAsset(id);
 
 			Assert.AreEqual(id, resultAsset.Id);
-		}
-
-		[Test]
-		public void TestGetAssetKnownIsIdentical() {
-			var mgr = new CacheManager(
-				DATABASE_FOLDER_PATH,
-				DATABASE_MAX_SIZE_BYTES,
-				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				null,
-				null
-			);
-
-			var baseAsset = new StratusAsset {
-				CreateTime = DateTime.UtcNow,
-				Data = new byte[] { 128, 42 },
-				Description = RandomUtil.StringUTF8(128),
-				Id = Guid.NewGuid(),
-				Local = false,
-				Name = RandomUtil.StringUTF8(32),
-				StorageFlags = RandomUtil.NextUInt(),
-				Temporary = false,
-				Type = RandomUtil.NextSByte(),
-			};
-
-			mgr.PutAsset(baseAsset);
-
-			var resultAsset = mgr.GetAsset(baseAsset.Id);
-
-			Assert.AreEqual(baseAsset.CreateTime, resultAsset.CreateTime);
-			Assert.AreEqual(baseAsset.Description, resultAsset.Description);
-			Assert.AreEqual(baseAsset.Data, resultAsset.Data);
-			Assert.AreEqual(baseAsset.Id, resultAsset.Id);
-			Assert.AreEqual(baseAsset.Local, resultAsset.Local);
-			Assert.AreEqual(baseAsset.Name, resultAsset.Name);
-			Assert.AreEqual(baseAsset.StorageFlags, resultAsset.StorageFlags);
-			Assert.AreEqual(baseAsset.Temporary, resultAsset.Temporary);
-			Assert.AreEqual(baseAsset.Type, resultAsset.Type);
 		}
 
 		#endregion

@@ -50,25 +50,35 @@ namespace LibWhipLru {
 		private uint _port;
 		private string _password;
 
-		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null, CacheManager cacheManager = null) {
+		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, CacheManager cacheManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null) {
+			if (address == null) {
+				throw new ArgumentNullException(nameof(address));
+			}
+			if (pidFileManager == null) {
+				throw new ArgumentNullException(nameof(pidFileManager));
+			}
+			if (cacheManager == null) {
+				throw new ArgumentNullException(nameof(cacheManager));
+			}
 			LOG.Debug($"{address}:{port} - Initializing service.");
 
 			_address = address;
 			_port = port;
 			_password = password;
 
+			_cacheManager = cacheManager;
 			_pidFileManager = pidFileManager;
 
 			if (chattelConfigRead != null) {
 				chattelConfigRead.DisableCache(); // Force caching off no matter how the INI is set. Doing caching differently here.
 				_assetReader = new ChattelReader(chattelConfigRead);
+				_cacheManager.SetChattelReader(_assetReader);
 			}
 			if (chattelConfigWrite != null) {
 				chattelConfigWrite.DisableCache(); // Force caching off no matter how the INI is set. Doing caching differently here.
 				_assetWriter = new ChattelWriter(chattelConfigWrite);
+				_cacheManager.SetChattelWriter(_assetWriter);
 			}
-
-			_cacheManager = cacheManager;
 
 			_pidFileManager?.SetStatus(PIDFileManager.Status.Ready);
 		}

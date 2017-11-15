@@ -42,7 +42,7 @@ namespace LibWhipLru.Server {
 		public const string DEFAULT_PASSWORD = null;
 		public const uint DEFAULT_PORT = 32700;
 
-		// Thread signal.  
+		// Thread signal.
 		private ManualResetEvent _allDone = new ManualResetEvent(false);
 
 		public delegate void RequestReceivedDelegate(ClientRequestMsg request, RequestResponseDelegate responseHandler, object context);

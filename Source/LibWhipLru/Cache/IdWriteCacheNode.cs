@@ -25,7 +25,7 @@
 using System;
 namespace LibWhipLru.Cache {
 	internal class IdWriteCacheNode {
-		public static uint BYTE_SIZE = 17;
+		public static readonly uint BYTE_SIZE = 17;
 
 		public ulong FileOffset { get; private set; }
 		public bool IsAvailable { get; set; } // 1 byte

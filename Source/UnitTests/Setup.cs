@@ -36,6 +36,11 @@ using LibWhipLru.Server;
 namespace UnitTests {
 	[SetUpFixture]
 	public sealed class Setup {
+		private readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test";
+		private const ulong DATABASE_MAX_SIZE_BYTES = 8/*Min value to get tests to run*/ * 4096/*page size as determined by `getconf PAGE_SIZE`*/;
+		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.whipwcache";
+		private const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
+
 		private WhipLru _service;
 
 		[OneTimeSetUp]
@@ -59,13 +64,22 @@ namespace UnitTests {
 			// Read in the ini file
 			configSource.Merge(new IniConfigSource(Constants.INI_PATH));
 
+			Directory.CreateDirectory(DATABASE_FOLDER_PATH);
+
 			// Start booting server
 			var pidFileManager = new LibWhipLru.Util.PIDFileManager(Constants.PID_FILE_PATH);
 
 			var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
 			var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);
 
-			_service = new WhipLru(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT, Constants.PASSWORD, pidFileManager, chattelConfigRead, chattelConfigWrite);
+			var cacheManager = new LibWhipLru.Cache.CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT
+			);
+
+			_service = new WhipLru(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT, Constants.PASSWORD, pidFileManager, cacheManager, chattelConfigRead, chattelConfigWrite);
 
 			_service.Start();
 		}

@@ -41,12 +41,17 @@ namespace LibWhipLru.Cache {
 	public class CacheManager : IDisposable {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		public static readonly string DEFAULT_DB_FOLDER_PATH = "cache";
+		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = 1024UL * 1024UL * 1024UL * 1024UL/*1TB*/;
+		public static readonly string DEFAULT_WC_FILE_PATH = "whip_lru.whipwcache";
+		public static readonly uint DEFAULT_WC_RECORD_COUNT = 1024U * 1024U * 1024U/*1GB*/ / LibWhipLru.Cache.IdWriteCacheNode.BYTE_SIZE;
+
 		private LightningEnvironment _dbenv;
 		private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
 		private readonly OrderedGuidCache _activeIds;
-		private readonly ChattelReader _assetReader;
-		private readonly ChattelWriter _assetWriter;
+		private ChattelReader _assetReader;
+		private ChattelWriter _assetWriter;
 
 		/// <summary>
 		/// The assets failing disk storage.  Used to feed the try-again thread.  However any assets in here have no chance of survival if a crash happens.
@@ -73,9 +78,7 @@ namespace LibWhipLru.Cache {
 			string pathToDatabaseFolder,
 			ulong maxAssetCacheDiskSpaceByteCount,
 			string pathToWriteCacheFile,
-			uint maxWriteCacheRecordCount,
-			ChattelReader assetReader,
-			ChattelWriter assetWriter
+			uint maxWriteCacheRecordCount
 		) {
 			if (string.IsNullOrWhiteSpace(pathToDatabaseFolder)) {
 				throw new ArgumentNullException(nameof(pathToDatabaseFolder), "No database path means no go.");
@@ -93,13 +96,13 @@ namespace LibWhipLru.Cache {
 
 			_activeIds = new OrderedGuidCache();
 
-			_assetReader = assetReader;
-			_assetWriter = assetWriter;
+			_assetReader = null;
+			_assetWriter = null;
 
 			_pathToWriteCacheFile = pathToWriteCacheFile;
 			_assetsToWriteToRemoteStorage = new BlockingCollection<IdWriteCacheNode>();
 
-			LOG.Info($"Restoring index from DB.'");
+			LOG.Info($"Restoring index from DB.");
 			try {
 				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.None))
 				using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
@@ -121,7 +124,7 @@ namespace LibWhipLru.Cache {
 			catch (Exception e) {
 				throw new CacheException($"Attempting to restore index from db threw an exception!", e);
 			}
-			LOG.Debug($"Restoring index complete.'");
+			LOG.Debug($"Restoring index complete.");
 
 			// If the file doesn't exist, create it and zero the needed records.
 			if (!File.Exists(pathToWriteCacheFile)) {
@@ -368,6 +371,20 @@ namespace LibWhipLru.Cache {
 			}
 
 			return null;
+		}
+
+		internal void SetChattelReader(ChattelReader reader) {
+			if (_assetWriter != null) {
+				throw new CacheException("Cannot change asset reader once initialized.");
+			}
+			_assetReader = reader;
+		}
+
+		internal void SetChattelWriter(ChattelWriter writer) {
+			if (_assetWriter != null) {
+				throw new CacheException("Cannot change asset writer once initialized.");
+			}
+			_assetWriter = writer;
 		}
 
 		#region Disk IO tools

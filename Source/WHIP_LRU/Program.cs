@@ -97,7 +97,21 @@ namespace WHIP_LRU {
 				var port = (uint?)serverConfig?.GetInt("Port", (int)WHIPServer.DEFAULT_PORT) ?? WHIPServer.DEFAULT_PORT;
 				var password = serverConfig?.GetString("Password", WHIPServer.DEFAULT_PASSWORD) ?? WHIPServer.DEFAULT_PASSWORD;
 
-				whipLru = new WhipLru(address, port, password, pidFileManager, chattelConfigRead, chattelConfigWrite);
+				var cacheConfig = configSource.Configs["Cache"];
+
+				var pathToDatabaseFolder = cacheConfig?.GetString("DatabaseFolderPath", LibWhipLru.Cache.CacheManager.DEFAULT_DB_FOLDER_PATH) ?? LibWhipLru.Cache.CacheManager.DEFAULT_DB_FOLDER_PATH;
+				var maxAssetCacheDiskSpaceByteCount = (ulong?)cacheConfig?.GetLong("MaxDiskSpace", (long)LibWhipLru.Cache.CacheManager.DEFAULT_DB_MAX_DISK_BYTES) ?? LibWhipLru.Cache.CacheManager.DEFAULT_DB_MAX_DISK_BYTES;
+				var pathToWriteCacheFile = cacheConfig?.GetString("WriteCacheFilePath", LibWhipLru.Cache.CacheManager.DEFAULT_WC_FILE_PATH) ?? LibWhipLru.Cache.CacheManager.DEFAULT_WC_FILE_PATH;
+				var maxWriteCacheRecordCount = (uint?)cacheConfig?.GetInt("WriteCacheMaxRecords", (int)LibWhipLru.Cache.CacheManager.DEFAULT_WC_RECORD_COUNT) ?? LibWhipLru.Cache.CacheManager.DEFAULT_WC_RECORD_COUNT;
+
+				var cacheManager = new LibWhipLru.Cache.CacheManager(
+					pathToDatabaseFolder,
+					maxAssetCacheDiskSpaceByteCount,
+					pathToWriteCacheFile,
+					maxWriteCacheRecordCount
+				);
+
+				whipLru = new WhipLru(address, port, password, pidFileManager, cacheManager, chattelConfigRead, chattelConfigWrite);
 
 				whipLru.Start();
 
