@@ -316,7 +316,7 @@ namespace LibWhipLruTests.Cache {
 				Id = id,
 			});
 
-			var resultAsset = mgr.GetAsset(id);
+			mgr.GetAsset(id);
 
 			Assert.IsNotNull(mgr.GetAsset(id));
 		}
@@ -339,6 +339,42 @@ namespace LibWhipLruTests.Cache {
 			var resultAsset = mgr.GetAsset(id);
 
 			Assert.AreEqual(id, resultAsset.Id);
+		}
+
+		[Test]
+		public void TestGetAssetKnownIsIdentical() {
+			var mgr = new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT
+			);
+
+			var baseAsset = new StratusAsset {
+				CreateTime = DateTime.UtcNow,
+				Data = new byte[] { 128, 42 },
+				Description = RandomUtil.StringUTF8(128),
+				Id = Guid.NewGuid(),
+				Local = false,
+				Name = RandomUtil.StringUTF8(32),
+				StorageFlags = RandomUtil.NextUInt(),
+				Temporary = false,
+				Type = RandomUtil.NextSByte(),
+			};
+
+			mgr.PutAsset(baseAsset);
+
+			var resultAsset = mgr.GetAsset(baseAsset.Id);
+
+			Assert.AreEqual(baseAsset.CreateTime, resultAsset.CreateTime);
+			Assert.AreEqual(baseAsset.Description, resultAsset.Description);
+			Assert.AreEqual(baseAsset.Data, resultAsset.Data);
+			Assert.AreEqual(baseAsset.Id, resultAsset.Id);
+			Assert.AreEqual(baseAsset.Local, resultAsset.Local);
+			Assert.AreEqual(baseAsset.Name, resultAsset.Name);
+			Assert.AreEqual(baseAsset.StorageFlags, resultAsset.StorageFlags);
+			Assert.AreEqual(baseAsset.Temporary, resultAsset.Temporary);
+			Assert.AreEqual(baseAsset.Type, resultAsset.Type);
 		}
 
 		#endregion
