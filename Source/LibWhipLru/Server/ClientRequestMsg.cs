@@ -27,6 +27,7 @@ using System.Linq;
 using OpenMetaverse;
 using InWorldz.Whip.Client;
 using System.Text;
+using static InWorldz.Whip.Client.ClientRequestMsg;
 
 namespace LibWhipLru.Server {
 	public class ClientRequestMsg : IByteArrayAppendable {
@@ -92,16 +93,5 @@ namespace LibWhipLru.Server {
 		private static string GetHeaderSummary(byte[] header) {
 			return $"Type: {header[REQUEST_TYPE_LOC]}, AssetID: {Encoding.ASCII.GetString(header, UUID_TAG_LOCATION, UUID_LEN)}, Size: {InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC)}";
 		}
-
-		public enum RequestType : byte {
-			RT_GET = 10,
-			RT_PUT = 11,
-			RT_PURGE = 12,
-			RT_TEST = 13,
-			RT_MAINT_PURGELOCALS = 14,
-			RT_STATUS_GET = 15,
-			RT_STORED_ASSET_IDS_GET = 16,
-			RT_GET_DONTCACHE = 17,
-		};
 	}
 }

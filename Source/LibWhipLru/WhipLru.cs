@@ -38,6 +38,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using InWorldz.Data.Assets.Stratus;
 using System.Globalization;
+using static InWorldz.Whip.Client.ClientRequestMsg;
 
 namespace LibWhipLru {
 	public class WhipLru {
@@ -155,22 +156,22 @@ namespace LibWhipLru {
 			ServerResponseMsg response;
 
 			switch (req.request.Type) {
-				case ClientRequestMsg.RequestType.RT_GET:
-				case ClientRequestMsg.RequestType.RT_GET_DONTCACHE:
-				case ClientRequestMsg.RequestType.RT_MAINT_PURGELOCALS:
-				case ClientRequestMsg.RequestType.RT_PURGE:
+				case RequestType.GET:
+				case RequestType.GET_DONTCACHE:
+				case RequestType.MAINT_PURGELOCALS:
+				case RequestType.PURGE:
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
 					break;
-				case ClientRequestMsg.RequestType.RT_PUT:
+				case RequestType.PUT:
 					response = HandlePutAsset(req.request.AssetId.Guid, req.request.Data);
 					break;
-				case ClientRequestMsg.RequestType.RT_STATUS_GET:
+				case RequestType.STATUS_GET:
 					response = HandleGetStatus();
 					break;
-				case ClientRequestMsg.RequestType.RT_STORED_ASSET_IDS_GET:
+				case RequestType.STORED_ASSET_IDS_GET:
 					response = HandleGetStoredAssetIds(req.request.AssetId.ToString().Substring(0, 3));
 					break;
-				case ClientRequestMsg.RequestType.RT_TEST:
+				case RequestType.TEST:
 				default:
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
 					break;
