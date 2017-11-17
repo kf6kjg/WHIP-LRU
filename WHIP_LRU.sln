@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibWhipLru", "Source\LibWhi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibWhipLruTests", "Source\LibWhipLruTests\LibWhipLruTests.csproj", "{A488BD7A-3684-4C9D-AB74-4D668F54830E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpeedTests", "Source\SpeedTests\SpeedTests.csproj", "{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +98,18 @@ Global
 		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Release|x64.Build.0 = Release|Any CPU
 		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Release|x86.ActiveCfg = Release|Any CPU
 		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Release|x86.Build.0 = Release|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x64.Build.0 = Debug|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x86.Build.0 = Debug|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Release|x64.ActiveCfg = Release|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Release|x64.Build.0 = Release|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Release|x86.ActiveCfg = Release|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -104,7 +118,6 @@ Global
 		Policies = $0
 		$0.DotNetNamingPolicy = $1
 		$1.DirectoryNamespaceAssociation = PrefixedFlat
-		$1.ResourceNamePolicy = FileFormatDefault
 		$0.TextStylePolicy = $2
 		$2.FileWidth = 120
 		$2.inheritsSet = null
@@ -113,21 +126,9 @@ Global
 		$2.TabWidth = 2
 		$2.IndentWidth = 2
 		$0.CSharpFormattingPolicy = $3
-		$3.IndentSwitchSection = True
-		$3.NewLinesForBracesInTypes = False
-		$3.NewLinesForBracesInMethods = False
-		$3.NewLineForElse = True
-		$3.NewLineForCatch = True
-		$3.NewLineForFinally = True
-		$3.SpacingAfterMethodDeclarationName = False
-		$3.SpaceAfterMethodCallName = False
-		$3.SpaceBeforeOpenSquareBracket = False
-		$3.inheritsSet = Mono
-		$3.inheritsScope = text/x-csharp
 		$3.scope = text/x-csharp
 		$0.StandardHeader = $4
 		$4.Text = @${FileName}\n \nAuthor:\n      ${AuthorName} <${AuthorEmail}>\n\nCopyright (c) ${Year} ${CopyrightHolder}\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.
-		$4.IncludeInNewFiles = True
 		$0.NameConventionPolicy = $5
 		$5.Rules = $6
 		$6.NamingRule = $7
@@ -142,10 +143,7 @@ Global
 		$7.RequiredSuffixes = $9
 		$9.String = Exception
 		$0.VersionControlPolicy = $10
-		$10.inheritsSet = Mono
 		$0.XmlFormattingPolicy = $11
-		$11.inheritsSet = Mono
-		$11.inheritsScope = application/xml
 		$11.scope = application/xml
 	EndGlobalSection
 EndGlobal
