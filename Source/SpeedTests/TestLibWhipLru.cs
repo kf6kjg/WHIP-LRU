@@ -1,9 +1,9 @@
 ﻿// TestLibWhipLru.cs
 //
 // Author:
-//       Ricky C <>
+//       Ricky Curtice <ricky@rwcproductions.com>
 //
-// Copyright (c) 2017 
+// Copyright (c) 2017 Richard Curtice
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Diagnostics;
+using System.Reflection;
+
 namespace SpeedTests {
 	public class TestLibWhipLru {
+		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		public TestLibWhipLru() {
+		}
+
+		public bool RunTests() {
+			var status = true;
+
+			var methodInfos = typeof(TestLibWhipLru).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic);
+			var stopWatch = new Stopwatch();
+			foreach (var methodInfo in methodInfos) {
+				stopWatch.Start();
+
+
+
+				stopWatch.Stop();
+				LOG.Info($"Test  took {stopWatch.ElapsedMilliseconds}ms.");
+			}
+
+			return status;
 		}
 	}
 }

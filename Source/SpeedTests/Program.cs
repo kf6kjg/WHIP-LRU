@@ -1,9 +1,9 @@
 ﻿// Program.cs
 //
 // Author:
-//       Ricky C <>
+//       Ricky Curtice <ricky@rwcproductions.com>
 //
-// Copyright (c) 2017 
+// Copyright (c) 2017 Richard Curtice
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,12 @@ using System;
 
 namespace SpeedTests {
 	class MainClass {
+		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
 		public static void Main(string[] args) {
-			Console.WriteLine("Hello World!");
+			log4net.Config.XmlConfigurator.Configure();
+
+			// TODO: Do some tests
 		}
 	}
 }
