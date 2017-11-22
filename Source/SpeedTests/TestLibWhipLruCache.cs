@@ -82,7 +82,7 @@ namespace SpeedTests {
 
 				try {
 					LOG.Debug($"Starting test {methodInfo.Name}...");
-					stopWatch.Start();
+					stopWatch.Restart();
 
 					ExecuteWithTimeLimit(() => {
 						for (; counter < ITERATION_MAX; ++counter) {
