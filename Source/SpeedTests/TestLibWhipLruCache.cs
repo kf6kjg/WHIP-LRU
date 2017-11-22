@@ -138,6 +138,23 @@ namespace SpeedTests {
 			});
 		}
 
+		private void TestPutNewComplete2MB() {
+			var data = new byte[2097152];
+
+			RandomUtil.Rnd.NextBytes(data);
+
+			_libWhipLruCacheManager.PutAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
+				Id = Guid.NewGuid(),
+				CreateTime = DateTime.UtcNow,
+				Data = data,
+				Description = "Test of a new asset",
+				Local = false,
+				Name = "New Asset",
+				Temporary = false,
+				Type = 7,
+			});
+		}
+
 		#region IDisposable Support
 		private bool disposedValue = false; // To detect redundant calls
 
