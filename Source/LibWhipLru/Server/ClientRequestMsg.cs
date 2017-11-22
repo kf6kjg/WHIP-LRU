@@ -23,7 +23,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System.Collections.Generic;
-using System.Linq;
 using OpenMetaverse;
 using InWorldz.Whip.Client;
 using System.Text;
@@ -39,16 +38,18 @@ namespace LibWhipLru.Server {
 
 		private readonly List<byte> _rawMessageData = new List<byte>();
 
-		public byte[] Data => _rawMessageData?.Skip(HEADER_SIZE).ToArray();
+		public byte[] Data;
 		public UUID AssetId { get; private set; }
 		public bool IsReady { get; private set; }
 		public RequestType Type { get; private set; }
+
+		private int _dataSize;
 
 		public string GetHeaderSummary() {
 			return $"Type: {Type}, AssetID: {AssetId}, Size: {Data?.Length}";
 		}
 
-		public bool AddRange(IEnumerable<byte> data) {
+		public bool AddRange(byte[] data) {
 			if (IsReady) { // Refuse to append more data once loaded.
 				throw new System.InvalidOperationException("You cannot reuse messages!");
 			}
@@ -56,11 +57,11 @@ namespace LibWhipLru.Server {
 			_rawMessageData.AddRange(data);
 
 			if (_rawMessageData.Count >= HEADER_SIZE) {
-				var header = _rawMessageData.Take(HEADER_SIZE).ToArray();
+				var header = _rawMessageData.GetRange(0, HEADER_SIZE).ToArray();
 
 				// We've enough of the header to determine size.
-				var dataSize = InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC);
-				var packetSize = HEADER_SIZE + dataSize;
+				_dataSize = InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC);
+				var packetSize = HEADER_SIZE + _dataSize;
 
 				if (packetSize > REQUEST_TYPE_LOC && _rawMessageData.Count >= packetSize) {
 					// Load the class up with the data.
@@ -80,6 +81,10 @@ namespace LibWhipLru.Server {
 					else {
 						throw new AssetProtocolError($"Invalid UUID in server response. Header summary: {GetHeaderSummary(header)}");
 					}
+
+					Data = _rawMessageData?.GetRange(HEADER_SIZE, _dataSize).ToArray();
+
+					_rawMessageData.Clear();
 
 					IsReady = true;
 

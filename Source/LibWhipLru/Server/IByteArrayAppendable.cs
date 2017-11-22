@@ -27,6 +27,6 @@ using System.Collections.Generic;
 
 namespace LibWhipLru.Server {
 	public interface IByteArrayAppendable {
-		bool AddRange(IEnumerable<byte> data);
+		bool AddRange(byte[] data);
 	}
 }

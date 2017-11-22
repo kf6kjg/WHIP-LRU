@@ -224,7 +224,7 @@ namespace LibWhipLru.Server {
 
 				var complete = false;
 				try {
-					complete = state.Message.AddRange(state.Buffer.Take(bytesRead));
+					complete = state.Message.AddRange(state.Buffer);
 				}
 				catch (Exception e) {
 					LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught while extracting data from inbound message.", e);

@@ -23,7 +23,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using InWorldz.Whip.Client;
@@ -40,12 +39,12 @@ namespace LibWhipLru.Server {
 		public string ChallengeHash { get; private set; }
 		public bool IsReady { get; private set; }
 
-		public bool AddRange(IEnumerable<byte> data) {
+		public bool AddRange(byte[] data) {
 			if (!IsReady) { // Refuse to append more data once loaded.
 				_rawMessageData.AddRange(data);
 
 				if (_rawMessageData.Count >= MESSAGE_SIZE) {
-					var packet = _rawMessageData.Take(MESSAGE_SIZE).ToArray();
+					var packet = _rawMessageData.GetRange(0, MESSAGE_SIZE).ToArray();
 
 					if (packet[0] != PACKET_IDENTIFIER) {
 						throw new AssetProtocolError($"Wrong packet identifier for authentication response: {packet[0]}");
