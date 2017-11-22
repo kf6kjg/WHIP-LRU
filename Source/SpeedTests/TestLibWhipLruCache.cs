@@ -81,7 +81,7 @@ namespace SpeedTests {
 				var completed = false;
 
 				try {
-					LOG.Debug($"Starting test {methodInfo.Name}...");
+					LOG.Debug($"Starting test {nameof(TestLibWhipLruCache)}.{methodInfo.Name}...");
 					stopWatch.Restart();
 
 					ExecuteWithTimeLimit(() => {
@@ -91,10 +91,10 @@ namespace SpeedTests {
 					}, TEST_MAX_TIME, out completed);
 
 					stopWatch.Stop();
-					LOG.Info($"Test {methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.");
+					LOG.Info($"Test {nameof(TestLibWhipLruCache)}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.");
 				}
 				catch (Exception e) {
-					LOG.Warn($"Test {methodInfo.Name} threw an exception after {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.", e);
+					LOG.Warn($"Test {nameof(TestLibWhipLruCache)}.{methodInfo.Name} threw an exception after {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.", e);
 				}
 			}
 
