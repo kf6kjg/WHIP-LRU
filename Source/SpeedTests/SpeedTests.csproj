@@ -85,6 +85,7 @@
     <Compile Include="TestLibWhipLruCache.cs" />
     <Compile Include="RandomUtil.cs" />
     <Compile Include="TestLibWhipLru.cs" />
+    <Compile Include="TestWhip.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LibWhipLru\LibWhipLru.csproj">
