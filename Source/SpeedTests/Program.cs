@@ -33,8 +33,12 @@ namespace SpeedTests {
 
 			LOG.Info("Starting up speed tests...");
 
-			// TODO: Do some tests
-			using(var libTests = new TestLibWhipLruCache()) {
+			// Do some tests
+			using (var libTests = new TestLibWhipLruCache()) {
+				libTests.RunTests();
+			}
+
+			using (var libTests = new TestLibWhipLru()) {
 				libTests.RunTests();
 			}
 		}
