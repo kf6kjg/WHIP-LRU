@@ -311,27 +311,29 @@ namespace LibWhipLru.Cache {
 
 				// If it's safely in local get it on the upload path to remote.
 				if (lightningException == null) {
-					var writeCacheNode = GetNextAvailableWriteCacheNode();
+					if (_assetWriter != null) { // If there's no asset writer to send to then there's no point in trying to store against a write failure.
+						var writeCacheNode = GetNextAvailableWriteCacheNode();
 
-					writeCacheNode.AssetId = asset.Id;
+						writeCacheNode.AssetId = asset.Id;
 
-					// Queue up for remote storage.
-					_assetsToWriteToRemoteStorage.Add(writeCacheNode);
+						// Queue up for remote storage.
+						_assetsToWriteToRemoteStorage.Add(writeCacheNode);
 
-					// Write to writecache file. In this way if we crash after this point we can recover.
-					try {
-						using (var mmf = MemoryMappedFile.CreateFromFile(_pathToWriteCacheFile, FileMode.Open, "whiplruwritecache")) {
-							using (var accessor = mmf.CreateViewAccessor((long)writeCacheNode.FileOffset, IdWriteCacheNode.BYTE_SIZE)) {
-								var nodeBytes = writeCacheNode.ToByteArray();
+						// Write to writecache file. In this way if we crash after this point we can recover.
+						try {
+							using (var mmf = MemoryMappedFile.CreateFromFile(_pathToWriteCacheFile, FileMode.Open, "whiplruwritecache")) {
+								using (var accessor = mmf.CreateViewAccessor((long)writeCacheNode.FileOffset, IdWriteCacheNode.BYTE_SIZE)) {
+									var nodeBytes = writeCacheNode.ToByteArray();
 
-								accessor.WriteArray(0, nodeBytes, 0, (int)IdWriteCacheNode.BYTE_SIZE);
+									accessor.WriteArray(0, nodeBytes, 0, (int)IdWriteCacheNode.BYTE_SIZE);
+								}
 							}
 						}
-					}
-					catch (Exception e) {
-						LOG.Warn($"Failed to write asset ID {asset.Id} to disk-based write cache!", e);
-						// As long as the queue thread processes the asset this should be OK.
-						return PutResult.WIP;
+						catch (Exception e) {
+							LOG.Warn($"Failed to write asset ID {asset.Id} to disk-based write cache!", e);
+							// As long as the queue thread processes the asset this should be OK.
+							return PutResult.WIP;
+						}
 					}
 				}
 				else {
@@ -539,12 +541,14 @@ namespace LibWhipLru.Cache {
 			if (!disposedValue) {
 				if (disposing) {
 					// dispose managed state (managed objects).
-					_dbenv.Dispose();
-					_dbenv = null;
 					_assetsFailingStorage.CompleteAdding();
 					_assetsToWriteToRemoteStorage.CompleteAdding();
 					_cancellationTokenSource.Cancel();
 					_cancellationTokenSource.Dispose();
+
+					Thread.Sleep(500);
+					_dbenv.Dispose();
+					_dbenv = null;
 				}
 
 				// Free unmanaged resources (unmanaged objects) and override a finalizer below.

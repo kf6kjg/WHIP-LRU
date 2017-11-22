@@ -43,16 +43,7 @@
     <Reference Include="protobuf-net">
       <HintPath>..\..\packages\protobuf-net.2.3.2\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
-    <Reference Include="LibreMetaverse.Types">
-      <HintPath>..\..\packages\LibreMetaverse.Types.1.2.0.146\lib\net461\LibreMetaverse.Types.dll</HintPath>
-    </Reference>
-    <Reference Include="LibreMetaverse.StructuredData">
-      <HintPath>..\..\packages\LibreMetaverse.StructuredData.1.2.0.146\lib\net461\LibreMetaverse.StructuredData.dll</HintPath>
-    </Reference>
     <Reference Include="System.Core" />
-    <Reference Include="System.Reflection.TypeExtensions">
-      <HintPath>..\..\packages\System.Reflection.TypeExtensions.4.1.0\lib\net46\System.Reflection.TypeExtensions.dll</HintPath>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Flurl">
       <HintPath>..\..\packages\Flurl.Signed.2.3.0\lib\netstandard1.4\Flurl.dll</HintPath>
@@ -72,17 +63,30 @@
     <Reference Include="zlib.net">
       <HintPath>..\..\packages\zlib.net-mutliplatform.1.0.4\lib\net461\zlib.net.dll</HintPath>
     </Reference>
-    <Reference Include="LibreMetaverse">
-      <HintPath>..\..\packages\LibreMetaverse.1.2.0.146\lib\net461\LibreMetaverse.dll</HintPath>
-    </Reference>
     <Reference Include="Chattel">
       <HintPath>..\..\packages\Chattel.1.2.1.25\lib\net461\Chattel.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse.Types">
+      <HintPath>..\..\packages\LibreMetaverse.Types.1.2.1.151\lib\net461\LibreMetaverse.Types.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse.StructuredData">
+      <HintPath>..\..\packages\LibreMetaverse.StructuredData.1.2.1.151\lib\net461\LibreMetaverse.StructuredData.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.TypeExtensions">
+      <HintPath>..\..\packages\System.Reflection.TypeExtensions.4.4.0\lib\net461\System.Reflection.TypeExtensions.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse">
+      <HintPath>..\..\packages\LibreMetaverse.1.2.1.151\lib\net461\LibreMetaverse.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestLibWhipLruCache.cs" />
+    <Compile Include="RandomUtil.cs" />
     <Compile Include="TestLibWhipLru.cs" />
+    <Compile Include="TestWhip.cs" />
+    <Compile Include="WhipServiceTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LibWhipLru\LibWhipLru.csproj">
@@ -92,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

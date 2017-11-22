@@ -182,7 +182,7 @@ namespace UnitTests.WHIPTests {
 		public static Socket Connect(string address = Constants.SERVICE_ADDRESS, int port = Constants.SERVICE_PORT, string password = Constants.PASSWORD) {
 			var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-			socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
+			socket.Connect(address, port);
 
 			// Get the challenge
 			var challengeData = GetData(socket, CHALLENGE_MESSAGE_SIZE);
@@ -193,7 +193,7 @@ namespace UnitTests.WHIPTests {
 			var challenge = challengeData.Skip(1).Take(CHALLENGE_SIZE).ToArray();
 
 			// Send the auth response
-			var responsePacket = GenerateAuthResponsePacket(challenge, Constants.PASSWORD);
+			var responsePacket = GenerateAuthResponsePacket(challenge, password);
 			Send(socket, responsePacket);
 
 			// Receive the auth status
