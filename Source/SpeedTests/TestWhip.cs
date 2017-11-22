@@ -73,7 +73,7 @@ namespace SpeedTests {
 					// dispose managed state (managed objects).
 					LOG.Debug($"Cleaning up after {nameof(TestWhip)}...");
 
-					Dispose();
+					base.Dispose(disposing);
 
 					_whipService.Kill();
 

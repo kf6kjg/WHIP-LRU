@@ -92,7 +92,7 @@ namespace SpeedTests {
 					// dispose managed state (managed objects).
 					LOG.Debug($"Cleaning up after {nameof(TestLibWhipLru)}...");
 
-					Dispose();
+					base.Dispose(disposing);
 
 					_libWhipLru.Stop();
 
