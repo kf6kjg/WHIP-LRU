@@ -82,7 +82,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestLibWhipLru.cs" />
+    <Compile Include="TestLibWhipLruCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LibWhipLru\LibWhipLru.csproj">
@@ -92,6 +92,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
