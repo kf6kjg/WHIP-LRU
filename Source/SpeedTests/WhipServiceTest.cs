@@ -70,6 +70,8 @@ namespace SpeedTests {
 				_socket = Connect(_serviceAddress, _servicePort, _servicePassword);
 			}
 
+			var className = this.GetType().Name;
+
 			var status = true;
 
 			var methodInfos = typeof(WhipServiceTest).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic);
@@ -82,7 +84,7 @@ namespace SpeedTests {
 				var completed = false;
 
 				try {
-					LOG.Debug($"Starting test {nameof(WhipServiceTest)}.{methodInfo.Name}...");
+					LOG.Debug($"Starting test {className}.{methodInfo.Name}...");
 					stopWatch.Restart();
 
 					ExecuteWithTimeLimit(() => {
@@ -92,10 +94,10 @@ namespace SpeedTests {
 					}, TEST_MAX_TIME, out completed);
 
 					stopWatch.Stop();
-					LOG.Info($"Test {nameof(WhipServiceTest)}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.");
+					LOG.Info($"Test {className}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.");
 				}
 				catch (Exception e) {
-					LOG.Warn($"Test {nameof(WhipServiceTest)}.{methodInfo.Name} threw an exception after {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.", e);
+					LOG.Warn($"Test {className}.{methodInfo.Name} threw an exception after {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.", e);
 				}
 			}
 
