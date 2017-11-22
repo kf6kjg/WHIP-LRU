@@ -31,7 +31,12 @@ namespace SpeedTests {
 		public static void Main(string[] args) {
 			log4net.Config.XmlConfigurator.Configure();
 
+			LOG.Info("Starting up speed tests...");
+
 			// TODO: Do some tests
+			using(var libTests = new TestLibWhipLruCache()) {
+				libTests.RunTests();
+			}
 		}
 	}
 }
