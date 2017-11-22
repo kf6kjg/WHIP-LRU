@@ -113,7 +113,6 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				Thread.Sleep(10);
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -125,7 +124,6 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				Thread.Sleep(10);
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -137,7 +135,6 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				Thread.Sleep(10);
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -160,7 +157,6 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				Thread.Sleep(10);
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -183,7 +179,6 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				Thread.Sleep(10);
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -210,7 +205,6 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				Thread.Sleep(10);
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
