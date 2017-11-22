@@ -541,12 +541,14 @@ namespace LibWhipLru.Cache {
 			if (!disposedValue) {
 				if (disposing) {
 					// dispose managed state (managed objects).
-					_dbenv.Dispose();
-					_dbenv = null;
 					_assetsFailingStorage.CompleteAdding();
 					_assetsToWriteToRemoteStorage.CompleteAdding();
 					_cancellationTokenSource.Cancel();
 					_cancellationTokenSource.Dispose();
+
+					Thread.Sleep(500);
+					_dbenv.Dispose();
+					_dbenv = null;
 				}
 
 				// Free unmanaged resources (unmanaged objects) and override a finalizer below.
