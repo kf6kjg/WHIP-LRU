@@ -27,6 +27,7 @@ using OpenMetaverse;
 using InWorldz.Whip.Client;
 using System.Text;
 using static InWorldz.Whip.Client.ClientRequestMsg;
+using System;
 
 namespace LibWhipLru.Server {
 	public class ClientRequestMsg : IByteArrayAppendable {
@@ -36,67 +37,84 @@ namespace LibWhipLru.Server {
 		private const short UUID_TAG_LOCATION = 1;
 		private const short UUID_LEN = 32;
 
-		private readonly List<byte> _rawMessageData = new List<byte>();
+		private long _bytesRead;
 
-		public Guid AssetId { get; private set; }
-		public byte[] Data;
-		public bool IsReady { get; private set; }
 		public RequestType Type { get; private set; }
-
-		private int _dataSize;
+		private bool _typeIsReady;
+		public Guid AssetId { get; private set; }
+		private bool _assetIdIsReady;
+		public byte[] Data;
+		private int _dataWritePointer = 0;
+		public bool IsReady { get; private set; }
 
 		public string GetHeaderSummary() {
 			return $"Type: {Type}, AssetID: {AssetId}, Size: {Data?.Length}";
 		}
 
+		/// <summary>
+		/// Adds the incoming raw data to the message.
+		/// </summary>
+		/// <returns><c>true</c>, if all expected data is received, <c>false</c> otherwise.</returns>
+		/// <param name="data">Data.</param>
 		public bool AddRange(byte[] data) {
-			if (IsReady) { // Refuse to append more data once loaded.
-				throw new System.InvalidOperationException("You cannot reuse messages!");
+			if (data.Length < HEADER_SIZE) { // Only allow packets big enough to contain the whole header.
+				throw new ArgumentOutOfRangeException(nameof(data), $"Data buffer MUST be at least {HEADER_SIZE} bytes long.");
 			}
 
-			_rawMessageData.AddRange(data);
+			if (IsReady) { // Refuse to append more data once loaded.
+				throw new InvalidOperationException("You cannot reuse messages!");
+			}
 
-			if (_rawMessageData.Count >= HEADER_SIZE) {
-				var header = _rawMessageData.GetRange(0, HEADER_SIZE).ToArray();
+			_bytesRead += data.Length;
 
-				// We've enough of the header to determine size.
-				_dataSize = InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC);
-				var packetSize = HEADER_SIZE + _dataSize;
-
-				if (packetSize > REQUEST_TYPE_LOC && _rawMessageData.Count >= packetSize) {
-					// Load the class up with the data.
-					var type = header[REQUEST_TYPE_LOC];
-					if (typeof(RequestType).IsEnumDefined(type)) {
-						Type = (RequestType)type;
-					}
-					else {
-						throw new AssetProtocolError($"Invalid result type in server response. Header summary: {GetHeaderSummary(header)}");
-					}
-
-					var idString = Encoding.ASCII.GetString(header, UUID_TAG_LOCATION, UUID_LEN);
-					UUID id;
-					if (UUID.TryParse(idString, out id)) {
-						AssetId = id;
-					}
-					else {
-						throw new AssetProtocolError($"Invalid UUID in server response. Header summary: {GetHeaderSummary(header)}");
-					}
-
-					Data = _rawMessageData?.GetRange(HEADER_SIZE, _dataSize).ToArray();
-
-					_rawMessageData.Clear();
-
-					IsReady = true;
-
-					// If all the expected data has arrived, return true, else false.
+			if (!_typeIsReady && _bytesRead >= REQUEST_TYPE_LOC + 1) {
+				var type = data[REQUEST_TYPE_LOC];
+				if (typeof(RequestType).IsEnumDefined(type)) {
+					Type = (RequestType)type;
+					_typeIsReady = true;
+				}
+				else {
+					throw new AssetProtocolError($"Invalid result type in server response. Type value sent: {type}");
 				}
 			}
 
-			return IsReady;
-		}
+			if (!_assetIdIsReady && _bytesRead >= UUID_TAG_LOCATION + UUID_LEN) {
+				var idString = Encoding.ASCII.GetString(data, UUID_TAG_LOCATION, UUID_LEN);
+				Guid id;
+				if (Guid.TryParse(idString, out id)) {
+					AssetId = id;
+					_assetIdIsReady = true;
+				}
+				else {
+					throw new AssetProtocolError($"Invalid UUID in server response. Header summary: Type = {Type}, AssetId = {idString}");
+				}
+			}
 
-		private static string GetHeaderSummary(byte[] header) {
-			return $"Type: {header[REQUEST_TYPE_LOC]}, AssetID: {Encoding.ASCII.GetString(header, UUID_TAG_LOCATION, UUID_LEN)}, Size: {InWorldz.Whip.Client.Util.NTOHL(header, DATA_SIZE_MARKER_LOC)}";
+			if (Data == null && _bytesRead >= DATA_SIZE_MARKER_LOC + 4) {
+				var dataSize = Math.Max(0, InWorldz.Whip.Client.Util.NTOHL(data, DATA_SIZE_MARKER_LOC)); // No, you don't get to send me negative numbers.
+				Data = new byte[dataSize];
+
+				var bytesToRead = Math.Min(dataSize, data.Length - HEADER_SIZE);
+
+				if (dataSize > 0) {
+					// We are processing a packet of data that has the header.
+					Buffer.BlockCopy(data, HEADER_SIZE, Data, 0, bytesToRead);
+				}
+
+				_dataWritePointer = bytesToRead;
+			}
+			else {
+				// Processing a pure data packet.
+				var bytesToRead = Math.Min(data.Length, Data.Length - _dataWritePointer);
+
+				Buffer.BlockCopy(data, 0, Data, _dataWritePointer, bytesToRead);
+
+				_dataWritePointer += bytesToRead;
+			}
+
+			IsReady = _dataWritePointer >= Data.Length;
+
+			return IsReady;
 		}
 	}
 }
