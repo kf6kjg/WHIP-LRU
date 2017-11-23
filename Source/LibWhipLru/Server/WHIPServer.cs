@@ -415,7 +415,7 @@ namespace LibWhipLru.Server {
 		// State object for reading client data asynchronously  
 		private class StateObject {
 			// Size of receive buffer.  
-			public const int BUFFER_SIZE = 1024;
+			public const int BUFFER_SIZE = 4098;
 
 			// Client  socket.  
 			public Socket WorkSocket;
