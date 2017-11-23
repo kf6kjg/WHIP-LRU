@@ -24,28 +24,24 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Chattel;
-using log4net;
+using InWorldz.Data.Assets.Stratus;
 using LibWhipLru.Cache;
 using LibWhipLru.Server;
 using LibWhipLru.Util;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
-using InWorldz.Data.Assets.Stratus;
-using System.Globalization;
+using log4net;
 using static InWorldz.Whip.Client.ClientRequestMsg;
 
 namespace LibWhipLru {
 	public class WhipLru {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-		// Unix-epoch starts at January 1st 1970, 00:00:00 UTC. And all our times in the server are (or at least should be) in UTC.
-		private static readonly DateTime UNIX_EPOCH = DateTime.ParseExact("1970-01-01 00:00:00 +0", "yyyy-MM-dd hh:mm:ss z", DateTimeFormatInfo.InvariantInfo).ToUniversalTime();
 
 		private readonly CacheManager _cacheManager;
 		private readonly PIDFileManager _pidFileManager;
@@ -237,28 +233,15 @@ namespace LibWhipLru {
 				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, new OpenMetaverse.UUID(assetId), "Zero UUID not allowed.");
 			}
 
-			InWorldz.Whip.Client.Asset whipAsset;
+			StratusAsset asset;
 
 			try {
-				var rawData = new InWorldz.Whip.Client.AppendableByteArray(data.Length);
-				rawData.Append(data);
-				whipAsset = new InWorldz.Whip.Client.Asset(rawData);
+				asset = StratusAsset.FromWHIPSerialized(data);
 			}
 			catch (Exception e) {
 				LOG.Debug($"Exception reading data for asset {assetId}", e);
 				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, new OpenMetaverse.UUID(assetId), "Error processing request.");
 			}
-
-			var asset = new StratusAsset {
-				CreateTime = UnixToUTCDateTime(whipAsset.CreateTime),
-				Data = whipAsset.Data,
-				Description = whipAsset.Description,
-				Id = assetId,
-				Local = whipAsset.Local,
-				Name = whipAsset.Name,
-				Temporary = whipAsset.Temporary,
-				Type = (sbyte)whipAsset.Type,
-			};
 
 			switch (_cacheManager.PutAsset(asset)) {
 				case CacheManager.PutResult.DONE:
@@ -270,10 +253,6 @@ namespace LibWhipLru {
 		}
 
 		#endregion
-
-		private static DateTime UnixToUTCDateTime(long seconds) {
-			return UNIX_EPOCH.AddSeconds(seconds);
-		}
 
 		private class Request {
 			public ClientRequestMsg request { get; set; }
