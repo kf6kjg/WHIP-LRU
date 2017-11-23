@@ -139,7 +139,7 @@ namespace LibWhipLru {
 
 		private void RequestReceivedDelegate(ClientRequestMsg request, WHIPServer.RequestResponseDelegate responseHandler, object context) {
 			// Queue up for processing.
-			_requests.Add(new Request() {
+			_requests.Add(new Request {
 				context = context,
 				request = request,
 				responseHandler = responseHandler,
@@ -156,10 +156,10 @@ namespace LibWhipLru {
 				case RequestType.GET_DONTCACHE:
 				case RequestType.MAINT_PURGELOCALS:
 				case RequestType.PURGE:
-					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
+					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty);
 					break;
 				case RequestType.PUT:
-					response = HandlePutAsset(req.request.AssetId.Guid, req.request.Data);
+					response = HandlePutAsset(req.request.AssetId, req.request.Data);
 					break;
 				case RequestType.STATUS_GET:
 					response = HandleGetStatus();
@@ -169,7 +169,7 @@ namespace LibWhipLru {
 					break;
 				case RequestType.TEST:
 				default:
-					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, OpenMetaverse.UUID.Zero);
+					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty);
 					break;
 			}
 			req.responseHandler(response, req.context);
@@ -219,18 +219,18 @@ namespace LibWhipLru {
 			//	output.Append($"  {assetrequest.description}\n") // description is based on the type of request, could be "GET {uuid}", "PURGE", etc...
 
 			LOG.Debug($"Sending:\n{output}");
-			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, OpenMetaverse.UUID.Zero, output.ToString());
+			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty, output.ToString());
 		}
 
 		private ServerResponseMsg HandleGetStoredAssetIds(string prefix) {
 			var ids = _cacheManager?.ActiveIds(prefix);
 
-			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, OpenMetaverse.UUID.Zero, string.Join(",", ids));
+			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty, string.Join(",", ids));
 		}
 
 		private ServerResponseMsg HandlePutAsset(Guid assetId, byte[] data) {
 			if (assetId == Guid.Empty) {
-				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, new OpenMetaverse.UUID(assetId), "Zero UUID not allowed.");
+				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed.");
 			}
 
 			StratusAsset asset;
@@ -240,15 +240,15 @@ namespace LibWhipLru {
 			}
 			catch (Exception e) {
 				LOG.Debug($"Exception reading data for asset {assetId}", e);
-				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, new OpenMetaverse.UUID(assetId), "Error processing request.");
+				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request.");
 			}
 
 			switch (_cacheManager.PutAsset(asset)) {
 				case CacheManager.PutResult.DONE:
 				case CacheManager.PutResult.WIP:
-					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, new OpenMetaverse.UUID(assetId));
+					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, assetId);
 				default:
-					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, new OpenMetaverse.UUID(assetId), "Duplicate assets are not allowed.");
+					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Duplicate assets are not allowed.");
 			}
 		}
 

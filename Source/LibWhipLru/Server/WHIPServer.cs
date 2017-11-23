@@ -26,13 +26,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using log4net;
-using OpenMetaverse;
 
 namespace LibWhipLru.Server {
 	public class WHIPServer : IDisposable {
@@ -136,8 +134,8 @@ namespace LibWhipLru.Server {
 			var listener = (Socket)ar.AsyncState;
 
 			// Create the state object.  
-			var state = new StateObject() {
-				Client = new ClientInfo() {
+			var state = new StateObject {
+				Client = new ClientInfo {
 					State = State.Acceptance,
 					RequestInfo = "(connecting)",
 					RemoteEndpoint = string.Empty,
@@ -214,7 +212,7 @@ namespace LibWhipLru.Server {
 			}
 			catch (Exception e) {
 				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught reading data.", e);
-				Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+				Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
 				StartReceive(state, state.Client.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
 				return;
 			}
@@ -228,7 +226,7 @@ namespace LibWhipLru.Server {
 				}
 				catch (Exception e) {
 					LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught while extracting data from inbound message.", e);
-					Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+					Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
 					StartReceive(state, state.Client.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
 					return;
 				}
@@ -281,7 +279,7 @@ namespace LibWhipLru.Server {
 							}
 							catch (Exception e) {
 								LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding to client.", e);
-								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, UUID.Zero));
+								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
 								StartReceive(state, new ClientRequestMsg(), ReadCallback);
 								return;
 							}

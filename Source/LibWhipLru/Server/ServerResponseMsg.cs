@@ -26,7 +26,6 @@ using System;
 using System.Net;
 using System.Text;
 using InWorldz.Whip.Client;
-using OpenMetaverse;
 
 namespace LibWhipLru.Server {
 	public class ServerResponseMsg : IByteArraySerializable {
@@ -38,19 +37,19 @@ namespace LibWhipLru.Server {
 		//48 MB max data size
 		private const int MAX_DATA_SIZE = 50331648;
 
-		private UUID _assetId;
+		private Guid _assetId;
 		private ResponseCode _code;
 		private byte[] _data;
 
 		private ServerResponseMsg() {
 		}
 
-		public ServerResponseMsg(ResponseCode code, UUID assetId) {
+		public ServerResponseMsg(ResponseCode code, Guid assetId) {
 			_assetId = assetId;
 			_code = code;
 		}
 
-		public ServerResponseMsg(ResponseCode code, UUID assetId, byte[] data) : this(code, assetId) {
+		public ServerResponseMsg(ResponseCode code, Guid assetId, byte[] data) : this(code, assetId) {
 			if (data.Length + HEADER_SIZE <= MAX_DATA_SIZE) {
 				_data = new byte[data.Length];
 				Buffer.BlockCopy(data, 0, _data, 0, data.Length * sizeof(byte)); // Yes, sizeof(byte) is redundant, but it's also good documentation.
@@ -60,7 +59,7 @@ namespace LibWhipLru.Server {
 			}
 		}
 
-		public ServerResponseMsg(ResponseCode code, UUID assetId, string message) : this(code, assetId) {
+		public ServerResponseMsg(ResponseCode code, Guid assetId, string message) : this(code, assetId) {
 			var encoding = new UTF8Encoding();
 
 			if (encoding.GetByteCount(message) + HEADER_SIZE <= MAX_DATA_SIZE) {
@@ -85,7 +84,17 @@ namespace LibWhipLru.Server {
 			 */
 			output[0] = (byte)_code;
 
-			_assetId.ToBytes(output, UUID_TAG_LOC);
+			// Copy the asset ID, in the correct order.
+			var idBytes = _assetId.ToByteArray();
+			output[1] = idBytes[3];
+			output[2] = idBytes[2];
+			output[3] = idBytes[1];
+			output[4] = idBytes[0];
+			output[5] = idBytes[5];
+			output[6] = idBytes[4];
+			output[7] = idBytes[7];
+			output[8] = idBytes[6];
+			Buffer.BlockCopy(idBytes, 8, output, 9, 8);
 
 			if (_data != null) {
 				Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(_data.Length)), 0, output, DATA_SZ_TAG_LOC, 4);

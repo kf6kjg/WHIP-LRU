@@ -38,8 +38,8 @@ namespace LibWhipLru.Server {
 
 		private readonly List<byte> _rawMessageData = new List<byte>();
 
+		public Guid AssetId { get; private set; }
 		public byte[] Data;
-		public UUID AssetId { get; private set; }
 		public bool IsReady { get; private set; }
 		public RequestType Type { get; private set; }
 
