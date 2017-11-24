@@ -56,8 +56,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, assetId);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.ERROR, response.Status, $"Wrong result returned for asset {assetId}.");
@@ -71,8 +71,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, assetId);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.NOT_FOUND, response.Status, $"Wrong result returned for asset {assetId}.");
@@ -87,8 +87,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, asset.Uuid);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			var resultingAsset = new Asset(response.Data);
@@ -109,8 +109,8 @@ namespace UnitTests.WHIPTests {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure storing asset for test.");
 
-			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, asset.Uuid);
-			request.Send(_socket);
+			while (_socket.Available <= 0) {
+			}
 
 			Thread.Sleep(10);
 			Assert.NotZero(_socket.Available, "Got nothing from the server!");
@@ -148,8 +148,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.MAINT_PURGELOCALS, Guid.Empty.ToString());
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for purge locals.");
@@ -167,8 +167,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, assetId);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.ERROR, response.Status, $"Wrong result returned for asset {assetId}.");
@@ -182,8 +182,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, assetId);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.NOT_FOUND, response.Status, $"Wrong result returned for asset {assetId}.");
@@ -198,8 +198,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, asset.Uuid);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
@@ -214,8 +214,8 @@ namespace UnitTests.WHIPTests {
 			var purgeRequest = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, asset.Uuid);
 			purgeRequest.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var purgeResponse = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, purgeResponse.Status, $"Wrong result returned for asset {asset.Uuid}.");
@@ -245,8 +245,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
 			request.Send(_socket);
 
-			Thread.Sleep(100);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.ERROR, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
@@ -271,8 +271,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
 			request.Send(_socket);
 
-			Thread.Sleep(100);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
@@ -288,8 +288,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString());
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 
@@ -303,8 +303,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString());
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned.");
@@ -325,8 +325,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STORED_ASSET_IDS_GET, assetRangeId);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 
@@ -345,8 +345,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STORED_ASSET_IDS_GET, assetRangeId);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for asset range matching {assetRangeId.Substring(0, 3)}*.");
@@ -364,8 +364,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, assetId);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.ERROR, response.Status, $"Wrong result returned for asset {assetId}.");
@@ -379,8 +379,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, assetId);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.NOT_FOUND, response.Status, $"Wrong result returned for asset {assetId}.");
@@ -395,8 +395,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, asset.Uuid);
 			request.Send(_socket);
 
-			Thread.Sleep(10);
-			Assert.NotZero(_socket.Available, "Got nothing from the server!");
+			while (_socket.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.FOUND, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
@@ -423,8 +423,8 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, data);
 			request.Send(conn);
 
-			Thread.Sleep(100);
-			Assert.NotZero(conn.Available, "Got nothing from the server!");
+			while (conn.Available <= 0) {
+			}
 
 			var response = new ServerResponseMsg(conn);
 

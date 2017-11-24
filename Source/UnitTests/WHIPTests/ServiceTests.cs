@@ -55,8 +55,8 @@ namespace UnitTests.WHIPTests {
 					var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, assetId);
 					request.Send(socket);
 
-					Thread.Sleep(10);
-					Assert.NotZero(socket.Available, $"Got nothing from the server on attempt {index+1}.");
+					while (socket.Available <= 0) {
+					}
 
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 					new ServerResponseMsg(socket);
@@ -74,8 +74,8 @@ namespace UnitTests.WHIPTests {
 					var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString());
 					request.Send(socket);
 
-					Thread.Sleep(10);
-					Assert.NotZero(socket.Available, $"Got nothing from the server on attempt {index + 1}.");
+					while (socket.Available <= 0) {
+					}
 
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 					new ServerResponseMsg(socket);
