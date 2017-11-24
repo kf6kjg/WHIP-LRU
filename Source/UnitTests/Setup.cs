@@ -31,7 +31,6 @@ using LibWhipLru;
 using log4net.Config;
 using Nini.Config;
 using NUnit.Framework;
-using LibWhipLru.Server;
 
 namespace UnitTests {
 	[SetUpFixture]
@@ -67,8 +66,18 @@ namespace UnitTests {
 			// Read in the ini file
 			configSource.Merge(new IniConfigSource(Constants.INI_PATH));
 
-			Directory.Delete(DATABASE_FOLDER_PATH, true);
-			File.Delete(WRITE_CACHE_FILE_PATH);
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+			try {
+				Directory.Delete(DATABASE_FOLDER_PATH, true);
+			}
+			catch (Exception) {
+			}
+			try {
+				File.Delete(WRITE_CACHE_FILE_PATH);
+			}
+			catch (Exception) {
+			}
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 			Directory.CreateDirectory(DATABASE_FOLDER_PATH);
 
 			// Start booting server
