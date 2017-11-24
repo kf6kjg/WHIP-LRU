@@ -46,7 +46,7 @@ namespace UnitTests.WHIPTests {
 		}
 
 		[Test]
-		[Timeout(200)]
+		[Timeout(2000)]
 		public void TestAuthChallengeOnConnect() {
 			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
 				socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
@@ -64,7 +64,7 @@ namespace UnitTests.WHIPTests {
 		}
 
 		[Test]
-		[Timeout(200)]
+		[Timeout(2000)]
 		public void TestAuthStatusErrorWithInvalidPassword() {
 			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
 				socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
@@ -90,7 +90,7 @@ namespace UnitTests.WHIPTests {
 		}
 
 		[Test]
-		[Timeout(200)]
+		[Timeout(2000)]
 		public void TestAuthStatusErrorWithBadPasswordUsingStaticMethod() {
 			Assert.DoesNotThrow(() => {
 				Connect(password: "notthepassword");
@@ -98,7 +98,7 @@ namespace UnitTests.WHIPTests {
 		}
 
 		[Test]
-		[Timeout(200)]
+		[Timeout(2000)]
 		public void TestAuthStatusGood() {
 			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
 				socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
@@ -124,7 +124,7 @@ namespace UnitTests.WHIPTests {
 		}
 
 		[Test]
-		[Timeout(200)]
+		[Timeout(2000)]
 		public void TestAuthStatusGoodUsingStaticMethod() {
 			Assert.DoesNotThrow(() => {
 				Connect();
