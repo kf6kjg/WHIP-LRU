@@ -123,7 +123,6 @@ namespace UnitTests.WHIPTests {
 
 		#region GET_DONTCACHE
 
-		/* TODO: Waiting on the library to support GET_DONTCACHE
 		[Test]
 		[Timeout(60000)]
 		public void TestOperationGET_DONTCACHEWithValidIdReturnsOk() {
@@ -133,10 +132,12 @@ namespace UnitTests.WHIPTests {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET_DONTCACHE, asset.Uuid);
 			request.Send(_socket);
 
+			while (_socket.Available <= 0) {
+			}
+
 			var response = new ServerResponseMsg(_socket);
 			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
 		}
-		*/
 
 		#endregion
 
