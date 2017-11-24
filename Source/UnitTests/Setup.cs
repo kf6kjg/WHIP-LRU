@@ -48,6 +48,9 @@ namespace UnitTests {
 			// Configure Log4Net
 			XmlConfigurator.Configure(new FileInfo(Constants.LOG_CONFIG_PATH));
 
+			// Set CWD so that native libs are found.
+			Directory.SetCurrentDirectory(TestContext.CurrentContext.TestDirectory);
+
 			// Load INI stuff
 			var configSource = new ArgvConfigSource(new string[] { });
 
