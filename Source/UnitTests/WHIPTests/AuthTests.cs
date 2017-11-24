@@ -92,7 +92,7 @@ namespace UnitTests.WHIPTests {
 		[Test]
 		[Timeout(2000)]
 		public void TestAuthStatusErrorWithBadPasswordUsingStaticMethod() {
-			Assert.DoesNotThrow(() => {
+			Assert.Throws<AuthException>(() => {
 				Connect(password: "notthepassword");
 			}, "Static auth method failed.");
 		}
