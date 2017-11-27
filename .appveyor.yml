@@ -1,0 +1,75 @@
+init:
+- ps: if ($env:APPVEYOR_REPO_TAG -eq "true") { $env:TAG_VERSION = "$env:APPVEYOR_REPO_TAG_NAME.$env:APPVEYOR_BUILD_NUMBER" } else { $env:TAG_VERSION = "v0.0.0.$env:APPVEYOR_BUILD_NUMBER-alpha" }
+- ps: $env:TAG_VERSION = $env:TAG_VERSION -replace 'v',''
+- ps: Write-Host "Setting version to '$env:TAG_VERSION'"
+- ps: Update-AppveyorBuild -Version "$env:TAG_VERSION"
+
+image: Visual Studio 2017
+
+configuration: Release
+
+pull_requests:
+  do_not_increment_build_number: true
+
+nuget:
+  disable_publish_on_pr: true
+
+skip_commits:
+  files:
+  - .gitignore
+  - LICENSE
+  - README.md
+
+cache:
+- packages -> **\packages.config
+- '%LocalAppData%\NuGet\Cache'
+
+assembly_info:
+  patch: true
+  assembly_version: '{version}'
+  assembly_file_version: '{version}'
+  assembly_informational_version: '{version}'
+
+before_build:
+- ps: (Get-Content Source\WHIP_LRU\Program.cs) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2017"' | Set-Content Source\WHIP_LRU\Program.cs
+- ps: (Get-Content Source\RollbarCrashReporter\CrashReporter.cs) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2017"' | Set-Content Source\RollbarCrashReporter\CrashReporter.cs
+- nuget restore WHIP_LRU.sln
+
+build:
+  project: WHIP_LRU.sln
+  parallel: true
+  verbosity: minimal
+  publish_nuget: false
+  publish_nuget_symbols: false
+
+after_build:
+  - ps: >-
+      if ($env:APPVEYOR_REPO_TAG -eq "true") {
+        (Get-Content bin\WHIP_LRU.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\WHIP_LRU.exe.config
+        (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="production"' | Set-Content bin\RollbarCrashReporter.exe.config
+      }
+      else {
+        (Get-Content bin\WHIP_LRU.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\WHIP_LRU.exe.config
+        (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\RollbarCrashReporter.exe.config
+      }
+  - rename bin WHIP-LRU
+
+test: off
+#  assemblies:
+#    only:
+#    - UnitTests.dll
+
+artifacts:
+- path: WHIP-LRU
+  name: WHIP-LRU-dotnet
+  type: zip
+
+deploy:
+  provider: GitHub
+  auth_token:
+    secure: "tZGZ+LdhQz6wpgiCc15gbkDyu7l2Y3VzKPAzu9vhCiMdfuppmZwGYo/3luQSWBtq"
+  artifact: WHIP-LRU-dotnet
+  draft: true
+  prerelease: false
+  on:
+    appveyor_repo_tag: true
