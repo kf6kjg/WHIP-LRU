@@ -194,7 +194,11 @@ namespace LibWhipLru {
 				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request.");
 			}
 
-			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, assetId, StratusAsset.ToWHIPSerialized(asset));
+			if (asset == null) {
+				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_NOTFOUND, assetId);
+			}
+
+			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_FOUND, assetId, StratusAsset.ToWHIPSerialized(asset));
 		}
 
 		private ServerResponseMsg HandleGetStatus() {

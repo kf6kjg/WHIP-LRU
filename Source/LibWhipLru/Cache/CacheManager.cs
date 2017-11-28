@@ -399,6 +399,10 @@ namespace LibWhipLru.Cache {
 
 		private LightningException WriteAssetToDisk(StratusAsset asset) {
 			// Remember it's important that this method does not throw exceptions.
+			if (asset == null) {
+				return null;
+			}
+
 			LightningException lightningException;
 
 			ulong spaceNeeded;
