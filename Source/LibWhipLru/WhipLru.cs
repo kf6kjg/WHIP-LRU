@@ -251,7 +251,7 @@ namespace LibWhipLru {
 		private ServerResponseMsg HandleGetStoredAssetIds(string prefix) {
 			var ids = _cacheManager?.ActiveIds(prefix);
 
-			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty, string.Join(",", ids));
+			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty, string.Join(",", ids.Select(id => id.ToString("N"))));
 		}
 
 		private ServerResponseMsg HandlePutAsset(Guid assetId, byte[] data) {
