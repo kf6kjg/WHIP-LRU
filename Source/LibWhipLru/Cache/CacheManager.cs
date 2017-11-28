@@ -363,12 +363,14 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentException("Asset ID cannot be zero.", nameof(assetId));
 			}
 
-			try {
-				return ReadAssetFromDisk(assetId);
-			}
-			catch (CacheException e) {
-				LOG.Debug("Simple cache miss or error in the cache system, see inner exception.", e);
-				// Cache miss. Bummer.
+			if (_activeIds?.Contains(assetId) ?? false) {
+				try {
+					return ReadAssetFromDisk(assetId);
+				}
+				catch (CacheException e) {
+					LOG.Debug("Error in the cache system, see inner exception.", e);
+					// Cache miss. Bummer.
+				}
 			}
 
 			if (_assetReader != null) {
