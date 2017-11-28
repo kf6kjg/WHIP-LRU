@@ -39,7 +39,7 @@ namespace SpeedTests {
 		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(10);
 
 		protected readonly Asset _knownAsset = new Asset(
-			Guid.NewGuid().ToString(),
+			Guid.NewGuid().ToString("N"),
 			7, // Notecard
 			false,
 			false,
@@ -111,7 +111,7 @@ namespace SpeedTests {
 		}
 
 		private void TestGetUnknown() {
-			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, Guid.NewGuid().ToString());
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, Guid.NewGuid().ToString("N"));
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
@@ -145,7 +145,7 @@ namespace SpeedTests {
 
 		private void TestPutNewBlank() {
 			var asset = new Asset(
-				Guid.NewGuid().ToString(),
+				Guid.NewGuid().ToString("N"),
 				7, // Notecard
 				false,
 				false,
@@ -167,7 +167,7 @@ namespace SpeedTests {
 
 		private void TestPutNewComplete() {
 			var asset = new Asset(
-				Guid.NewGuid().ToString(),
+				Guid.NewGuid().ToString("N"),
 				7, // Notecard
 				false,
 				false,
@@ -193,7 +193,7 @@ namespace SpeedTests {
 			RandomUtil.Rnd.NextBytes(data);
 
 			var asset = new Asset(
-				Guid.NewGuid().ToString(),
+				Guid.NewGuid().ToString("N"),
 				7, // Notecard
 				false,
 				false,

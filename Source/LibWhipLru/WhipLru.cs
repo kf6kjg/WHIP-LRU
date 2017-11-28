@@ -167,7 +167,7 @@ namespace LibWhipLru {
 					response = HandleGetStatus();
 					break;
 				case RequestType.STORED_ASSET_IDS_GET:
-					response = HandleGetStoredAssetIds(req.request.AssetId.ToString().Substring(0, 3));
+					response = HandleGetStoredAssetIds(req.request.AssetId.ToString("N").Substring(0, 3));
 					break;
 				case RequestType.TEST:
 				default:

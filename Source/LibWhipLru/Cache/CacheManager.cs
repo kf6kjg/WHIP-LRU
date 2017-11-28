@@ -414,7 +414,7 @@ namespace LibWhipLru.Cache {
 				try {
 					using (var tx = _dbenv.BeginTransaction())
 					using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
-						tx.Put(db, Encoding.UTF8.GetBytes(asset.Id.ToString()), buffer);
+						tx.Put(db, Encoding.UTF8.GetBytes(asset.Id.ToString("N")), buffer);
 						tx.Commit();
 					}
 
@@ -445,7 +445,7 @@ namespace LibWhipLru.Cache {
 						using (var tx = _dbenv.BeginTransaction()) {
 							foreach (var assetId in removedAssetIds) {
 								using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
-									tx.Delete(db, Encoding.UTF8.GetBytes(assetId.ToString()));
+									tx.Delete(db, Encoding.UTF8.GetBytes(assetId.ToString("N")));
 									tx.Commit();
 								}
 							}
@@ -472,7 +472,7 @@ namespace LibWhipLru.Cache {
 				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
 				using (var db = tx.OpenDatabase("assetstore")) {
 					byte[] buffer;
-					if (tx.TryGet(db, Encoding.UTF8.GetBytes(assetId.ToString()), out buffer)) {
+					if (tx.TryGet(db, Encoding.UTF8.GetBytes(assetId.ToString("N")), out buffer)) {
 						using (var stream = new MemoryStream(buffer)) {
 							return ProtoBuf.Serializer.Deserialize<StratusAsset>(stream);
 						}

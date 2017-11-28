@@ -126,7 +126,7 @@ namespace LibWhipLruTests.Cache {
 			cache.TryAdd(Guid.Parse("67bdbe4a-1f93-4316-8c32-ae7a168a00e4"), 2);
 			cache.TryAdd(Guid.Parse("06fd2e96-4c5e-4e87-918a-f217064330ea"), 3);
 
-			var result = cache.ItemsWithPrefix(guid.ToString().Substring(0, 3));
+			var result = cache.ItemsWithPrefix(guid.ToString("N").Substring(0, 3));
 			Assert.AreEqual(1, result.Count());
 			Assert.That(result, Contains.Item(guid));
 		}
@@ -141,7 +141,7 @@ namespace LibWhipLruTests.Cache {
 			cache.TryAdd(Guid.Parse("67bdbe4a-1f93-4316-8c32-ae7a168a00e4"), 3);
 			cache.TryAdd(Guid.Parse("06fd2e96-4c5e-4e87-918a-f217064330ea"), 4);
 
-			var result = cache.ItemsWithPrefix(guid1.ToString().Substring(0, 3));
+			var result = cache.ItemsWithPrefix(guid1.ToString("N").Substring(0, 3));
 			Assert.AreEqual(2, result.Count());
 			Assert.That(result, Contains.Item(guid1));
 			Assert.That(result, Contains.Item(guid2));
@@ -228,7 +228,7 @@ namespace LibWhipLruTests.Cache {
 			Thread.Sleep(100);
 			cache.Contains(guidStays3);
 			Thread.Sleep(100);
-			cache.ItemsWithPrefix(guidStays2.ToString().Substring(0, 3));
+			cache.ItemsWithPrefix(guidStays2.ToString("N").Substring(0, 3));
 			Thread.Sleep(100);
 
 			ulong sizeCleared;
@@ -264,7 +264,7 @@ namespace LibWhipLruTests.Cache {
 			Thread.Sleep(100);
 			cache.Contains(guidStays3);
 			Thread.Sleep(100);
-			cache.ItemsWithPrefix(guidStays2.ToString().Substring(0, 3));
+			cache.ItemsWithPrefix(guidStays2.ToString("N").Substring(0, 3));
 			Thread.Sleep(100);
 
 			ulong sizeCleared;
@@ -300,7 +300,7 @@ namespace LibWhipLruTests.Cache {
 			Thread.Sleep(100);
 			cache.Contains(guidStays3);
 			Thread.Sleep(100);
-			cache.ItemsWithPrefix(guidStays2.ToString().Substring(0, 3));
+			cache.ItemsWithPrefix(guidStays2.ToString("N").Substring(0, 3));
 			Thread.Sleep(100);
 
 			ulong sizeCleared;

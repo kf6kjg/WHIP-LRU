@@ -43,7 +43,7 @@ namespace UnitTests.WHIPTests {
 		[SetUp]
 		public void PretestPrep() {
 			_asset = new Asset(
-				Guid.NewGuid().ToString(),
+				Guid.NewGuid().ToString("N"),
 				7, // Notecard
 				false,
 				false,

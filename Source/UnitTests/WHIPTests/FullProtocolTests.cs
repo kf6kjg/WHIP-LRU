@@ -66,7 +66,7 @@ namespace UnitTests.WHIPTests {
 		[Test]
 		[Timeout(60000)]
 		public void TestOperationGETWithRandomIdReturnsNotFound() {
-			var assetId = Guid.NewGuid().ToString();
+			var assetId = Guid.NewGuid().ToString("N");
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, assetId);
 			request.Send(_socket);
@@ -146,7 +146,7 @@ namespace UnitTests.WHIPTests {
 		[Test]
 		[Timeout(60000)]
 		public void TestOperationMAINT_PURGELOCALSReturnsOk() {
-			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.MAINT_PURGELOCALS, Guid.Empty.ToString());
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.MAINT_PURGELOCALS, Guid.Empty.ToString("N"));
 			request.Send(_socket);
 
 			while (_socket.Available <= 0) {
@@ -178,7 +178,7 @@ namespace UnitTests.WHIPTests {
 		[Test]
 		[Timeout(60000)]
 		public void TestOperationPURGEWithRandomIdReturnsNotFound() {
-			var assetId = Guid.NewGuid().ToString();
+			var assetId = Guid.NewGuid().ToString("N");
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, assetId);
 			request.Send(_socket);
@@ -257,7 +257,7 @@ namespace UnitTests.WHIPTests {
 		[Timeout(60000)]
 		public void TestOperationPUTWithValidIdReturnsOk() {
 			var asset = new Asset(
-				Guid.NewGuid().ToString(),
+				Guid.NewGuid().ToString("N"),
 				7, // Notecard
 				false,
 				false,
@@ -286,7 +286,7 @@ namespace UnitTests.WHIPTests {
 		[Test]
 		[Timeout(60000)]
 		public void TestOperationSTATUS_GETHasExpectedValue() {
-			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString());
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString("N"));
 			request.Send(_socket);
 
 			while (_socket.Available <= 0) {
@@ -301,7 +301,7 @@ namespace UnitTests.WHIPTests {
 		[Test]
 		[Timeout(60000)]
 		public void TestOperationSTATUS_GETReturnsOk() {
-			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString());
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString("N"));
 			request.Send(_socket);
 
 			while (_socket.Available <= 0) {
@@ -321,7 +321,7 @@ namespace UnitTests.WHIPTests {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
-			var assetRangeId = asset.Uuid.Substring(0, 3) + Guid.Empty.ToString().Substring(3);
+			var assetRangeId = asset.Uuid.Substring(0, 3) + Guid.Empty.ToString("N").Substring(3);
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STORED_ASSET_IDS_GET, assetRangeId);
 			request.Send(_socket);
@@ -341,7 +341,7 @@ namespace UnitTests.WHIPTests {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
-			var assetRangeId = asset.Uuid.Substring(0, 3) + Guid.Empty.ToString().Substring(3);
+			var assetRangeId = asset.Uuid.Substring(0, 3) + Guid.Empty.ToString("N").Substring(3);
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STORED_ASSET_IDS_GET, assetRangeId);
 			request.Send(_socket);
@@ -375,7 +375,7 @@ namespace UnitTests.WHIPTests {
 		[Test]
 		[Timeout(60000)]
 		public void TestOperationTESTWithRandomIdReturnsNotFound() {
-			var assetId = Guid.NewGuid().ToString();
+			var assetId = Guid.NewGuid().ToString("N");
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, assetId);
 			request.Send(_socket);
@@ -409,7 +409,7 @@ namespace UnitTests.WHIPTests {
 			Contract.Requires(conn != null);
 
 			var asset = new Asset(
-				Guid.NewGuid().ToString(),
+				Guid.NewGuid().ToString("N"),
 				7, // Notecard
 				false,
 				false,
