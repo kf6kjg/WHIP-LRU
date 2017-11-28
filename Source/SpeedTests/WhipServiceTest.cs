@@ -122,6 +122,8 @@ namespace SpeedTests {
 			_cancelTest = true;
 		}
 
+		#region Get Tests
+
 		private void TestGetUnknown() {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, Guid.NewGuid().ToString("N"));
 			request.Send(_socket);
@@ -145,6 +147,38 @@ namespace SpeedTests {
 			new ServerResponseMsg(_socket);
 #pragma warning restore RECS0026 // Possible unassigned object created by 'new'
 		}
+
+		#endregion
+
+		#region Get Dont Cache Tests
+
+		private void TestGetDontCacheUnknown() {
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET_DONTCACHE, Guid.NewGuid().ToString("N"));
+			request.Send(_socket);
+			// Wait until response comes back.
+			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
+			}
+#pragma warning disable RECS0026 // Possible unassigned object created by 'new'
+			new ServerResponseMsg(_socket);
+#pragma warning restore RECS0026 // Possible unassigned object created by 'new'
+		}
+
+		private void TestGetDontCacheKnown() {
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET_DONTCACHE, _knownAsset.Uuid);
+			request.Send(_socket);
+			// Wait until response comes back.
+			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
+			}
+#pragma warning disable RECS0026 // Possible unassigned object created by 'new'
+			new ServerResponseMsg(_socket);
+#pragma warning restore RECS0026 // Possible unassigned object created by 'new'
+		}
+
+		#endregion
+
+		#region Put Tests
 
 		private void TestPutKnown() {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, _knownAsset.Uuid, _knownAsset.Serialize().data);
@@ -230,6 +264,68 @@ namespace SpeedTests {
 			new ServerResponseMsg(_socket);
 #pragma warning restore RECS0026 // Possible unassigned object created by 'new'
 		}
+
+		#endregion
+
+		#region Status Get Tests
+
+		private void TestStatusGet() {
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString("N"));
+			request.Send(_socket);
+			// Wait until response comes back.
+			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
+			}
+#pragma warning disable RECS0026 // Possible unassigned object created by 'new'
+			new ServerResponseMsg(_socket);
+#pragma warning restore RECS0026 // Possible unassigned object created by 'new'
+		}
+
+		#endregion
+
+		#region Stored Asset Ids Get Tests
+
+		private void TestStoredAssetIdsGet000() {
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STORED_ASSET_IDS_GET, Guid.Empty.ToString("N"));
+			request.Send(_socket);
+			// Wait until response comes back.
+			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
+			}
+#pragma warning disable RECS0026 // Possible unassigned object created by 'new'
+			new ServerResponseMsg(_socket);
+#pragma warning restore RECS0026 // Possible unassigned object created by 'new'
+		}
+
+		#endregion
+
+		#region Test Tests
+
+		private void TestTestUnknown() {
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, Guid.NewGuid().ToString("N"));
+			request.Send(_socket);
+			// Wait until response comes back.
+			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
+			}
+#pragma warning disable RECS0026 // Possible unassigned object created by 'new'
+			new ServerResponseMsg(_socket);
+#pragma warning restore RECS0026 // Possible unassigned object created by 'new'
+		}
+
+		private void TestTestKnown() {
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, _knownAsset.Uuid);
+			request.Send(_socket);
+			// Wait until response comes back.
+			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
+			}
+#pragma warning disable RECS0026 // Possible unassigned object created by 'new'
+			new ServerResponseMsg(_socket);
+#pragma warning restore RECS0026 // Possible unassigned object created by 'new'
+		}
+
+		#endregion
 
 		#region Connection Utilities
 
