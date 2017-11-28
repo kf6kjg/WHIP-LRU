@@ -61,7 +61,7 @@ namespace SpeedTests {
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
-			_libWhipLruCacheManager = new LibWhipLru.Cache.CacheManager("TestLibWhipLruCache", 4096*4096, "TestLibWhipLruCache.wcache", 100);
+			_libWhipLruCacheManager = new LibWhipLru.Cache.CacheManager("TestLibWhipLruCache", 1024UL * 4096 * 4096, "TestLibWhipLruCache.wcache", 100);
 
 			_libWhipLruCacheManager.PutAsset(_knownAsset);
 
