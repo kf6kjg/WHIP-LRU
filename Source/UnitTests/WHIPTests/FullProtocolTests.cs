@@ -109,6 +109,9 @@ namespace UnitTests.WHIPTests {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure storing asset for test.");
 
+			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, asset.Uuid);
+			request.Send(_socket);
+
 			while (_socket.Available <= 0) {
 			}
 
