@@ -69,7 +69,7 @@ namespace LibWhipLru.Server {
 
 			if (!_typeIsReady && _bytesRead >= REQUEST_TYPE_LOC + 1) {
 				var type = data[REQUEST_TYPE_LOC];
-				if (typeof(RequestType).IsEnumDefined(type)) {
+				if (typeof(RequestType).IsEnumDefined((int)type)) {
 					Type = (RequestType)type;
 					_typeIsReady = true;
 				}
