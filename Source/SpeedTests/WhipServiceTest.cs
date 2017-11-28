@@ -29,14 +29,13 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Threading;
 using InWorldz.Whip.Client;
 
 namespace SpeedTests {
 	public class WhipServiceTest : IDisposable {
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private const uint ITERATION_MAX = 1000;
-		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(10);
+		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(120);
 
 		protected readonly Asset _knownAsset = new Asset(
 			Guid.NewGuid().ToString("N"),
@@ -55,12 +54,18 @@ namespace SpeedTests {
 		private readonly int _servicePort;
 		private readonly string _servicePassword;
 
+		private readonly System.Timers.Timer _timer;
+		private bool _cancelTest;
+
 		public WhipServiceTest(string serviceAddress, int servicePort, string servicePassword) {
 			LOG.Debug($"Initializing {nameof(WhipServiceTest)}...");
 
 			_serviceAddress = serviceAddress;
 			_servicePort = servicePort;
 			_servicePassword = servicePassword;
+
+			_timer = new System.Timers.Timer();
+			_timer.Elapsed += TimerExpired;
 
 			LOG.Debug($"Initialization of {nameof(WhipServiceTest)} complete.");
 		}
@@ -81,19 +86,28 @@ namespace SpeedTests {
 				if (!methodInfo.Name.StartsWith("Test", StringComparison.InvariantCulture)) continue;
 
 				var counter = 0U;
-				var completed = false;
 
 				try {
 					LOG.Debug($"Starting test {className}.{methodInfo.Name}...");
 					stopWatch.Restart();
 
-					ExecuteWithTimeLimit(() => {
-						for (; counter < ITERATION_MAX; ++counter) {
-							methodInfo.Invoke(this, testParams);
-						}
-					}, TEST_MAX_TIME, out completed);
+					_cancelTest = false;
+					_timer.Interval = TEST_MAX_TIME.TotalMilliseconds;
+					_timer.Start();
+					for (; counter < ITERATION_MAX; ++counter) {
+						methodInfo.Invoke(this, testParams);
+						if (_cancelTest) break;
+					}
+					_timer.Stop();
 
 					stopWatch.Stop();
+
+					if (_cancelTest) {
+						// Clean up the connection.
+						_socket.Dispose();
+						_socket = Connect(_serviceAddress, _servicePort, _servicePassword);
+					}
+
 					LOG.Info($"Test {className}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.");
 				}
 				catch (Exception e) {
@@ -104,10 +118,8 @@ namespace SpeedTests {
 			return status;
 		}
 
-		private static void ExecuteWithTimeLimit(Action func, TimeSpan timeout, out bool completed) {
-			var iar = func.BeginInvoke(null, new object());
-			completed = iar.AsyncWaitHandle.WaitOne(timeout);
-			func.EndInvoke(iar); //not calling EndInvoke will result in a memory leak
+		private void TimerExpired(object sender, System.Timers.ElapsedEventArgs e) {
+			_cancelTest = true;
 		}
 
 		private void TestGetUnknown() {
@@ -115,6 +127,7 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -126,6 +139,7 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -137,6 +151,7 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -152,13 +167,14 @@ namespace SpeedTests {
 				(int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds,
 				"Blank Asset",
 				"",
-				new byte[] {}
+				new byte[] { }
 			);
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PUT, asset.Uuid, asset.Serialize().data);
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -181,6 +197,7 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -207,6 +224,7 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
+				if (_cancelTest) return;
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
