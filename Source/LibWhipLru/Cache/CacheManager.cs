@@ -384,6 +384,33 @@ namespace LibWhipLru.Cache {
 			return null;
 		}
 
+		/// <summary>
+		/// Attempts to verify if the asset is known or not. Tries the local cache first, then moves on to the remote storage systems.
+		/// 
+		/// Can throw, but only if there were problems with the remote calls or you passed a zero ID.
+		/// </summary>
+		/// <returns>Whether the asset was found or not.</returns>
+		/// <param name="assetId">Asset identifier.</param>
+		public bool CheckAsset(Guid assetId) {
+			if (assetId == Guid.Empty) {
+				throw new ArgumentException("Asset ID cannot be zero.", nameof(assetId));
+			}
+
+			if (_activeIds?.Contains(assetId) ?? false) {
+				return true;
+			}
+
+			if (_assetReader != null) {
+				var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
+
+				WriteAssetToDisk(asset); // Don't care if this reports a problem.
+
+				return asset != null;
+			}
+
+			return false;
+		}
+
 		internal void SetChattelReader(ChattelReader reader) {
 			if (_assetWriter != null) {
 				throw new CacheException("Cannot change asset reader once initialized.");

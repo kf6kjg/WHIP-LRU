@@ -172,6 +172,8 @@ namespace LibWhipLru {
 					response = HandleGetStoredAssetIds(req.request.AssetId.ToString("N").Substring(0, 3));
 					break;
 				case RequestType.TEST:
+					response = HandleTest(req.request.AssetId);
+					break;
 				default:
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty);
 					break;
@@ -276,6 +278,24 @@ namespace LibWhipLru {
 				default:
 					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Duplicate assets are not allowed.");
 			}
+		}
+
+		private ServerResponseMsg HandleTest(Guid assetId) {
+			if (assetId == Guid.Empty) {
+				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed.");
+			}
+
+			bool result;
+
+			try {
+				result = _cacheManager.CheckAsset(assetId);
+			}
+			catch (Exception e) {
+				LOG.Debug($"Exception reading data for asset {assetId}", e);
+				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request.");
+			}
+
+			return new ServerResponseMsg(result ? ServerResponseMsg.ResponseCode.RC_FOUND : ServerResponseMsg.ResponseCode.RC_NOTFOUND, assetId);
 		}
 
 		#endregion
