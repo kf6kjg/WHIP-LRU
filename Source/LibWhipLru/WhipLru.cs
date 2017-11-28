@@ -52,7 +52,6 @@ namespace LibWhipLru {
 		private uint _port;
 		private string _password;
 
-		private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 		private BlockingCollection<Request> _requests;
 
 		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, CacheManager cacheManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null) {
@@ -112,12 +111,10 @@ namespace LibWhipLru {
 
 			_requests = new BlockingCollection<Request>();
 
-			var parallelOptions = new ParallelOptions {
-				MaxDegreeOfParallelism = 4, // Keeps memory use from spiraling out of control, see https://canbilgin.wordpress.com/2017/02/05/curious-case-of-parallel-foreach-with-blockingcollection/
-				CancellationToken = _cancellationTokenSource.Token,
-			};
-
-			Task.Factory.StartNew(() => Parallel.ForEach(_requests.GetConsumingEnumerable(), parallelOptions, ProcessRequest));
+			Task.Run(() => { foreach (var request in _requests.GetConsumingEnumerable()) { ProcessRequest(request); } });
+			Task.Run(() => { foreach (var request in _requests.GetConsumingEnumerable()) { ProcessRequest(request); } });
+			Task.Run(() => { foreach (var request in _requests.GetConsumingEnumerable()) { ProcessRequest(request); } });
+			Task.Run(() => { foreach (var request in _requests.GetConsumingEnumerable()) { ProcessRequest(request); } });
 		}
 
 		public void Stop() {
