@@ -108,7 +108,7 @@ namespace SpeedTests {
 						_socket = Connect(_serviceAddress, _servicePort, _servicePassword);
 					}
 
-					LOG.Info($"Test {className}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.");
+					LOG.Info($"Test {className}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations." + (_cancelTest ? " And was cancelled during the last iteration." : string.Empty));
 				}
 				catch (Exception e) {
 					LOG.Warn($"Test {className}.{methodInfo.Name} threw an exception after {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.", e);
