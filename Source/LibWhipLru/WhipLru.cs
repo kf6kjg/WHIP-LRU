@@ -156,6 +156,8 @@ namespace LibWhipLru {
 					response = HandleGetAsset(req.request.AssetId);
 					break;
 				case RequestType.GET_DONTCACHE:
+					response = HandleGetAsset(req.request.AssetId, false);
+					break;
 				case RequestType.MAINT_PURGELOCALS:
 				case RequestType.PURGE:
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty);
@@ -179,7 +181,7 @@ namespace LibWhipLru {
 
 		#region Handlers
 
-		private ServerResponseMsg HandleGetAsset(Guid assetId) {
+		private ServerResponseMsg HandleGetAsset(Guid assetId, bool cacheResult = true) {
 			if (assetId == Guid.Empty) {
 				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed.");
 			}
@@ -187,7 +189,7 @@ namespace LibWhipLru {
 			StratusAsset asset;
 
 			try {
-				asset = _cacheManager.GetAsset(assetId);
+				asset = _cacheManager.GetAsset(assetId, cacheResult);
 			}
 			catch (Exception e) {
 				LOG.Debug($"Exception reading data for asset {assetId}", e);

@@ -139,7 +139,7 @@ namespace UnitTests.WHIPTests {
 			}
 
 			var response = new ServerResponseMsg(_socket);
-			Assert.AreEqual(ServerResponseMsg.Result.OK, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
+			Assert.AreEqual(ServerResponseMsg.Result.FOUND, response.Status, $"Wrong result returned for asset {asset.Uuid}.");
 		}
 
 		#endregion

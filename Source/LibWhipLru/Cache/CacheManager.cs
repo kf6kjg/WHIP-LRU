@@ -357,7 +357,8 @@ namespace LibWhipLru.Cache {
 		/// </summary>
 		/// <returns>The asset.</returns>
 		/// <param name="assetId">Asset identifier.</param>
-		public StratusAsset GetAsset(Guid assetId) {
+		/// <param name="cacheResult">Specifies to locally store the asset if it was fetched from a remote.</param>
+		public StratusAsset GetAsset(Guid assetId, bool cacheResult = true) {
 			if (assetId == Guid.Empty) {
 				throw new ArgumentException("Asset ID cannot be zero.", nameof(assetId));
 			}
@@ -373,7 +374,9 @@ namespace LibWhipLru.Cache {
 			if (_assetReader != null) {
 				var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
 
-				WriteAssetToDisk(asset); // Don't care if this reports a problem.
+				if (cacheResult) {
+					WriteAssetToDisk(asset); // Don't care if this reports a problem.
+				}
 
 				return asset;
 			}
