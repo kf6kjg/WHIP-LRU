@@ -61,9 +61,6 @@
     <Reference Include="zlib.net">
       <HintPath>..\..\packages\zlib.net-mutliplatform.1.0.4\lib\net461\zlib.net.dll</HintPath>
     </Reference>
-    <Reference Include="Chattel">
-      <HintPath>..\..\packages\Chattel.1.2.1.25\lib\net461\Chattel.dll</HintPath>
-    </Reference>
     <Reference Include="LightningDB">
       <HintPath>..\..\packages\LightningDB.0.9.9\lib\net45\LightningDB.dll</HintPath>
     </Reference>
@@ -84,6 +81,9 @@
     </Reference>
     <Reference Include="LibreMetaverse">
       <HintPath>..\..\packages\LibreMetaverse.1.2.1.151\lib\net461\LibreMetaverse.dll</HintPath>
+    </Reference>
+    <Reference Include="Chattel">
+      <HintPath>..\..\packages\Chattel.1.3.2.33\lib\net461\Chattel.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
