@@ -114,6 +114,8 @@ namespace SpeedTests {
 			_cancelTest = true;
 		}
 
+		#region Get Tests
+
 		private void TestGetUnknown() {
 			_libWhipLruCacheManager.GetAsset(Guid.NewGuid());
 		}
@@ -121,6 +123,22 @@ namespace SpeedTests {
 		private void TestGetKnown() {
 			_libWhipLruCacheManager.GetAsset(_knownAsset.Id);
 		}
+
+		#endregion
+
+		#region Get Dont Cache Tests
+
+		private void TestGetDontCacheUnknown() {
+			_libWhipLruCacheManager.GetAsset(Guid.NewGuid(), false);
+		}
+
+		private void TestGetDontCacheKnown() {
+			_libWhipLruCacheManager.GetAsset(_knownAsset.Id, false);
+		}
+
+		#endregion
+
+		#region Put Tests
 
 		private void TestPutKnown() {
 			_libWhipLruCacheManager.PutAsset(_knownAsset);
@@ -162,7 +180,30 @@ namespace SpeedTests {
 			});
 		}
 
+		#endregion
+
+		#region Stored Asset Ids Get Tests
+
+		private void TestStoredAssetIdsGet000() {
+			_libWhipLruCacheManager.ActiveIds("000");
+		}
+
+		#endregion
+
+		#region Test Tests
+
+		private void TestTestUnknown() {
+			_libWhipLruCacheManager.CheckAsset(Guid.NewGuid());
+		}
+
+		private void TestTestKnown() {
+			_libWhipLruCacheManager.CheckAsset(_knownAsset.Id);
+		}
+
+		#endregion
+
 		#region IDisposable Support
+
 		private bool disposedValue = false; // To detect redundant calls
 
 		protected virtual void Dispose(bool disposing) {
