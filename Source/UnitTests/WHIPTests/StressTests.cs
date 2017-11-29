@@ -59,7 +59,8 @@ namespace UnitTests.WHIPTests {
 		[Test]
 		[Timeout(60000)]
 		public void TestStressConnectCyclingParallel1000() {
-			Parallel.For(0, 1000, (index) => {
+			var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+			Parallel.For(0, 1000, options, index => {
 				using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
 					socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
 				}
@@ -82,7 +83,8 @@ namespace UnitTests.WHIPTests {
 		[Test]
 		[Timeout(60000)]
 		public void TestStressPUTRandomAssetParallel1000() {
-			Parallel.For(0, 1000, (index) => {
+			var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+			Parallel.For(0, 1000, options, index => {
 				using (var socket = AuthTests.Connect()) {
 					var asset = FullProtocolTests.CreateAndPutAsset(socket, RandomBytes());
 					Assert.NotNull(asset, "Stress test failed.");
