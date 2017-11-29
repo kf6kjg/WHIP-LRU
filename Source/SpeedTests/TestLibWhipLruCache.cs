@@ -100,7 +100,7 @@ namespace SpeedTests {
 
 					stopWatch.Stop();
 
-					LOG.Info($"Test {nameof(TestLibWhipLruCache)}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.");
+					LOG.Info($"Test {nameof(TestLibWhipLruCache)}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations." + (_cancelTest ? " And was cancelled during the last iteration." : string.Empty));
 				}
 				catch (Exception e) {
 					LOG.Warn($"Test {nameof(TestLibWhipLruCache)}.{methodInfo.Name} threw an exception after {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.", e);
