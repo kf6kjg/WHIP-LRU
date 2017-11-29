@@ -228,7 +228,7 @@ namespace LibWhipLru.Cache {
 			_localAssetStoreRetryTask.Start();
 
 			// Set up the task for storing the assets to the remote server.
-			if (_assetWriter != null) {
+			if (_assetWriter != null && _assetWriter.HasUpstream) {
 				_remoteAssetStoreTask = new Thread(() => {
 					var crashExceptions = new List<Exception>();
 					var safeExit = false;
@@ -311,7 +311,7 @@ namespace LibWhipLru.Cache {
 
 				// If it's safely in local get it on the upload path to remote.
 				if (lightningException == null) {
-					if (_assetWriter != null) { // If there's no asset writer to send to then there's no point in trying to store against a write failure.
+					if (_assetWriter != null && _assetWriter.HasUpstream) { // If there's no asset writer to send to then there's no point in trying to store against a write failure.
 						var writeCacheNode = GetNextAvailableWriteCacheNode();
 
 						writeCacheNode.AssetId = asset.Id;
@@ -373,7 +373,7 @@ namespace LibWhipLru.Cache {
 				}
 			}
 
-			if (_assetReader != null) {
+			if (_assetReader != null && _assetReader.HasUpstream) {
 				var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
 
 				if (cacheResult) {
@@ -402,7 +402,7 @@ namespace LibWhipLru.Cache {
 				return true;
 			}
 
-			if (_assetReader != null) {
+			if (_assetReader != null && _assetReader.HasUpstream) {
 				var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
 
 				WriteAssetToDisk(asset); // Don't care if this reports a problem.
