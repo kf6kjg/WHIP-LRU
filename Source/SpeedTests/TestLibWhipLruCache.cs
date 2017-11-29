@@ -31,7 +31,7 @@ namespace SpeedTests {
 	public class TestLibWhipLruCache :IDisposable {
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private const uint ITERATION_MAX = 1000;
-		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(10);
+		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(60);
 
 		private readonly LibWhipLru.Cache.CacheManager _libWhipLruCacheManager;
 		private readonly InWorldz.Data.Assets.Stratus.StratusAsset _knownAsset = new InWorldz.Data.Assets.Stratus.StratusAsset {
@@ -45,8 +45,14 @@ namespace SpeedTests {
 			Type = 7,
 		};
 
+		private readonly System.Timers.Timer _timer;
+		private bool _cancelTest;
+
 		public TestLibWhipLruCache() {
 			LOG.Debug($"Initializing {nameof(TestLibWhipLruCache)}...");
+
+			_timer = new System.Timers.Timer();
+			_timer.Elapsed += TimerExpired;
 
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
 			try {
@@ -78,19 +84,22 @@ namespace SpeedTests {
 				if (!methodInfo.Name.StartsWith("Test", StringComparison.InvariantCulture)) continue;
 
 				var counter = 0U;
-				var completed = false;
 
 				try {
 					LOG.Debug($"Starting test {nameof(TestLibWhipLruCache)}.{methodInfo.Name}...");
 					stopWatch.Restart();
 
-					ExecuteWithTimeLimit(() => {
-						for (; counter < ITERATION_MAX; ++counter) {
-							methodInfo.Invoke(this, testParams);
-						}
-					}, TEST_MAX_TIME, out completed);
+					_cancelTest = false;
+					_timer.Interval = TEST_MAX_TIME.TotalMilliseconds;
+					_timer.Start();
+					for (; counter < ITERATION_MAX; ++counter) {
+						methodInfo.Invoke(this, testParams);
+						if (_cancelTest) break;
+					}
+					_timer.Stop();
 
 					stopWatch.Stop();
+
 					LOG.Info($"Test {nameof(TestLibWhipLruCache)}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.");
 				}
 				catch (Exception e) {
@@ -101,10 +110,8 @@ namespace SpeedTests {
 			return status;
 		}
 
-		public static void ExecuteWithTimeLimit(Action func, TimeSpan timeout, out bool completed) {
-			var iar = func.BeginInvoke(null, new object());
-			completed = iar.AsyncWaitHandle.WaitOne(timeout);
-			func.EndInvoke(iar); //not calling EndInvoke will result in a memory leak
+		private void TimerExpired(object sender, System.Timers.ElapsedEventArgs e) {
+			_cancelTest = true;
 		}
 
 		private void TestGetUnknown() {
