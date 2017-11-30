@@ -70,9 +70,9 @@ namespace LibWhipLru.Cache {
 		private readonly object _writeCacheNodeLock = new object();
 		private readonly Thread _remoteAssetStoreTask;
 
-
-
-		// TODO: write a negative cache to store IDs that are failures.  Remember to remove any IDs that wind up being Put.  Don't need to disk-backup this.
+		// TODO: Size limit and LRU purge items from negative cache.
+		private readonly HashSet<Guid> _negativeCache = new HashSet<Guid>(); // Stores IDs that are failures.  No need to disk backup, it's OK to lose this info in a restart.
+		private readonly ReaderWriterLockSlim _negativeCacheLock = new ReaderWriterLockSlim();
 
 		public CacheManager(
 			string pathToDatabaseFolder,
@@ -309,6 +309,14 @@ namespace LibWhipLru.Cache {
 				// First step: get it in the local disk cache.
 				var lightningException = WriteAssetToDisk(asset);
 
+				_negativeCacheLock.EnterWriteLock();
+				try {
+					_negativeCache.Remove(asset.Id);
+				}
+				finally {
+					_negativeCacheLock.ExitWriteLock();
+				}
+
 				// If it's safely in local get it on the upload path to remote.
 				if (lightningException == null) {
 					if (_assetWriter != null && _assetWriter.HasUpstream) { // If there's no asset writer to send to then there's no point in trying to store against a write failure.
@@ -363,6 +371,16 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentException("Asset ID cannot be zero.", nameof(assetId));
 			}
 
+			_negativeCacheLock.EnterReadLock();
+			try {
+				if (_negativeCache.Contains(assetId)) {
+					return null;
+				}
+			}
+			finally {
+				_negativeCacheLock.ExitReadLock();
+			}
+
 			if (_activeIds?.Contains(assetId) ?? false) {
 				try {
 					return ReadAssetFromDisk(assetId);
@@ -370,6 +388,15 @@ namespace LibWhipLru.Cache {
 				catch (CacheException e) {
 					LOG.Debug("Error in the cache system, see inner exception.", e);
 					// Cache miss. Bummer.
+				}
+			}
+			else {
+				_negativeCacheLock.EnterWriteLock();
+				try {
+					_negativeCache.Add(assetId);
+				}
+				finally {
+					_negativeCacheLock.ExitWriteLock();
 				}
 			}
 
@@ -398,6 +425,16 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentException("Asset ID cannot be zero.", nameof(assetId));
 			}
 
+			_negativeCacheLock.EnterReadLock();
+			try {
+				if (_negativeCache.Contains(assetId)) {
+					return false;
+				}
+			}
+			finally {
+				_negativeCacheLock.ExitReadLock();
+			}
+
 			if (_activeIds?.Contains(assetId) ?? false) {
 				return true;
 			}
@@ -407,7 +444,17 @@ namespace LibWhipLru.Cache {
 
 				WriteAssetToDisk(asset); // Don't care if this reports a problem.
 
-				return asset != null;
+				if (asset != null) {
+					return true;
+				}
+
+				_negativeCacheLock.EnterWriteLock();
+				try {
+					_negativeCache.Add(assetId);
+				}
+				finally {
+					_negativeCacheLock.ExitWriteLock();
+				}
 			}
 
 			return false;
