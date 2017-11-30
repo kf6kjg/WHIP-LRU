@@ -70,8 +70,13 @@ namespace LibWhipLru.Cache {
 		private readonly object _writeCacheNodeLock = new object();
 		private readonly Thread _remoteAssetStoreTask;
 
-		// TODO: Size limit and LRU purge items from negative cache.
-		private readonly HashSet<Guid> _negativeCache = new HashSet<Guid>(); // Stores IDs that are failures.  No need to disk backup, it's OK to lose this info in a restart.
+		/// <summary>
+		/// Stores IDs that are failures.  No need to disk backup, it's OK to lose this info in a restart.
+		/// </summary>
+		private readonly System.Runtime.Caching.ObjectCache _negativeCache = System.Runtime.Caching.MemoryCache.Default;
+		private readonly System.Runtime.Caching.CacheItemPolicy _negativeCachePolicy = new System.Runtime.Caching.CacheItemPolicy {
+			SlidingExpiration = TimeSpan.FromMinutes(2),
+		};
 		private readonly ReaderWriterLockSlim _negativeCacheLock = new ReaderWriterLockSlim();
 
 		public CacheManager(
@@ -311,7 +316,7 @@ namespace LibWhipLru.Cache {
 
 				_negativeCacheLock.EnterWriteLock();
 				try {
-					_negativeCache.Remove(asset.Id);
+					_negativeCache.Remove(asset.Id.ToString("N"));
 				}
 				finally {
 					_negativeCacheLock.ExitWriteLock();
@@ -373,7 +378,7 @@ namespace LibWhipLru.Cache {
 
 			_negativeCacheLock.EnterReadLock();
 			try {
-				if (_negativeCache.Contains(assetId)) {
+				if (_negativeCache.Contains(assetId.ToString("N"))) {
 					return null;
 				}
 			}
@@ -390,15 +395,6 @@ namespace LibWhipLru.Cache {
 					// Cache miss. Bummer.
 				}
 			}
-			else {
-				_negativeCacheLock.EnterWriteLock();
-				try {
-					_negativeCache.Add(assetId);
-				}
-				finally {
-					_negativeCacheLock.ExitWriteLock();
-				}
-			}
 
 			if (_assetReader != null && _assetReader.HasUpstream) {
 				var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
@@ -408,6 +404,14 @@ namespace LibWhipLru.Cache {
 				}
 
 				return asset;
+			}
+
+			_negativeCacheLock.EnterWriteLock();
+			try {
+				_negativeCache.Set(new System.Runtime.Caching.CacheItem(assetId.ToString("N"), 0), _negativeCachePolicy);
+			}
+			finally {
+				_negativeCacheLock.ExitWriteLock();
 			}
 
 			return null;
@@ -427,7 +431,7 @@ namespace LibWhipLru.Cache {
 
 			_negativeCacheLock.EnterReadLock();
 			try {
-				if (_negativeCache.Contains(assetId)) {
+				if (_negativeCache.Contains(assetId.ToString("N"))) {
 					return false;
 				}
 			}
@@ -447,14 +451,14 @@ namespace LibWhipLru.Cache {
 				if (asset != null) {
 					return true;
 				}
+			}
 
-				_negativeCacheLock.EnterWriteLock();
-				try {
-					_negativeCache.Add(assetId);
-				}
-				finally {
-					_negativeCacheLock.ExitWriteLock();
-				}
+			_negativeCacheLock.EnterWriteLock();
+			try {
+				_negativeCache.Set(new System.Runtime.Caching.CacheItem(assetId.ToString("N"), 0), _negativeCachePolicy);
+			}
+			finally {
+				_negativeCacheLock.ExitWriteLock();
 			}
 
 			return false;
