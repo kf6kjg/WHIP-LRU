@@ -107,12 +107,14 @@ namespace WHIP_LRU {
 				var maxAssetCacheDiskSpaceByteCount = (ulong?)cacheConfig?.GetLong("MaxDiskSpace", (long)CacheManager.DEFAULT_DB_MAX_DISK_BYTES) ?? CacheManager.DEFAULT_DB_MAX_DISK_BYTES;
 				var pathToWriteCacheFile = cacheConfig?.GetString("WriteCacheFilePath", CacheManager.DEFAULT_WC_FILE_PATH) ?? CacheManager.DEFAULT_WC_FILE_PATH;
 				var maxWriteCacheRecordCount = (uint?)cacheConfig?.GetInt("WriteCacheMaxRecords", (int)CacheManager.DEFAULT_WC_RECORD_COUNT) ?? CacheManager.DEFAULT_WC_RECORD_COUNT;
+				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)cacheConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)CacheManager.DEFAULT_NC_LIFETIME_SECONDS) ?? CacheManager.DEFAULT_NC_LIFETIME_SECONDS);
 
 				var cacheManager = new CacheManager(
 					pathToDatabaseFolder,
 					maxAssetCacheDiskSpaceByteCount,
 					pathToWriteCacheFile,
-					maxWriteCacheRecordCount
+					maxWriteCacheRecordCount,
+					negativeCacheItemLifetime
 				);
 
 				whipLru = new WhipLru(address, port, password, pidFileManager, cacheManager, chattelConfigRead, chattelConfigWrite);

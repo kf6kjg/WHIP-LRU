@@ -59,7 +59,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			));
 		}
 
@@ -69,7 +70,8 @@ namespace LibWhipLruTests.Cache {
 				"",
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			));
 		}
 
@@ -79,7 +81,8 @@ namespace LibWhipLruTests.Cache {
 				null,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			));
 		}
 
@@ -89,7 +92,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			FileAssert.Exists(WRITE_CACHE_FILE_PATH);
@@ -101,7 +105,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			var buffer = new byte[WRITE_CACHE_MAGIC_NUMBER.Length];
@@ -119,7 +124,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			var dataLength = new FileInfo(WRITE_CACHE_FILE_PATH).Length - WRITE_CACHE_MAGIC_NUMBER.Length;
@@ -134,7 +140,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			using (var fs = new FileStream(WRITE_CACHE_FILE_PATH, FileMode.Open, FileAccess.Read)) {
@@ -165,7 +172,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			Assert.Throws<ArgumentNullException>(() => mgr.PutAsset(null));
@@ -177,7 +185,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			var asset = new StratusAsset {
@@ -193,7 +202,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			var asset = new StratusAsset {
@@ -209,7 +219,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			var asset = new StratusAsset {
@@ -226,7 +237,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			Assert.DoesNotThrow(() => mgr.PutAsset(new StratusAsset {
@@ -253,7 +265,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			Assert.Throws<ArgumentException>(() => mgr.GetAsset(Guid.Empty));
@@ -265,7 +278,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			Assert.DoesNotThrow(() => mgr.GetAsset(Guid.NewGuid()));
@@ -277,7 +291,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			Assert.IsNull(mgr.GetAsset(Guid.NewGuid()));
@@ -289,7 +304,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			var id = Guid.NewGuid();
@@ -307,7 +323,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			var id = Guid.NewGuid();
@@ -327,7 +344,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			var id = Guid.NewGuid();
@@ -347,7 +365,8 @@ namespace LibWhipLruTests.Cache {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			var baseAsset = new StratusAsset {

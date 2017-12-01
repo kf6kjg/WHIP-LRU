@@ -45,6 +45,7 @@ namespace LibWhipLru.Cache {
 		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = 1024UL * 1024UL * 1024UL * 1024UL/*1TB*/;
 		public static readonly string DEFAULT_WC_FILE_PATH = "whip_lru.whipwcache";
 		public static readonly uint DEFAULT_WC_RECORD_COUNT = 1024U * 1024U * 1024U/*1GB*/ / IdWriteCacheNode.BYTE_SIZE;
+		public static readonly uint DEFAULT_NC_LIFETIME_SECONDS = 60 * 2;
 
 		private LightningEnvironment _dbenv;
 		private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -74,16 +75,15 @@ namespace LibWhipLru.Cache {
 		/// Stores IDs that are failures.  No need to disk backup, it's OK to lose this info in a restart.
 		/// </summary>
 		private readonly System.Runtime.Caching.ObjectCache _negativeCache = System.Runtime.Caching.MemoryCache.Default;
-		private readonly System.Runtime.Caching.CacheItemPolicy _negativeCachePolicy = new System.Runtime.Caching.CacheItemPolicy {
-			SlidingExpiration = TimeSpan.FromMinutes(2),
-		};
+		private readonly System.Runtime.Caching.CacheItemPolicy _negativeCachePolicy;
 		private readonly ReaderWriterLockSlim _negativeCacheLock = new ReaderWriterLockSlim();
 
 		public CacheManager(
 			string pathToDatabaseFolder,
 			ulong maxAssetCacheDiskSpaceByteCount,
 			string pathToWriteCacheFile,
-			uint maxWriteCacheRecordCount
+			uint maxWriteCacheRecordCount,
+			TimeSpan negativeCacheItemLifetime
 		) {
 			if (string.IsNullOrWhiteSpace(pathToDatabaseFolder)) {
 				throw new ArgumentNullException(nameof(pathToDatabaseFolder), "No database path means no go.");
@@ -107,6 +107,10 @@ namespace LibWhipLru.Cache {
 
 			_pathToWriteCacheFile = pathToWriteCacheFile;
 			_assetsToWriteToRemoteStorage = new BlockingCollection<IdWriteCacheNode>();
+
+			_negativeCachePolicy = new System.Runtime.Caching.CacheItemPolicy {
+				SlidingExpiration = negativeCacheItemLifetime,
+			};
 
 			LOG.Info($"Restoring index from DB.");
 			try {

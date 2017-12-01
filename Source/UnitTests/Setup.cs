@@ -90,7 +90,8 @@ namespace UnitTests {
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
 			);
 
 			_service = new WhipLru(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT, Constants.PASSWORD, pidFileManager, cacheManager, chattelConfigRead, chattelConfigWrite);
