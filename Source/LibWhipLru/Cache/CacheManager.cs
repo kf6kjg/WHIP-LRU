@@ -534,11 +534,12 @@ namespace LibWhipLru.Cache {
 
 					try {
 						using (var tx = _dbenv.BeginTransaction()) {
-							foreach (var assetId in removedAssetIds) {
-								using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+							using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+								var dbEntrieCount = tx.GetEntriesCount(db);
+								foreach (var assetId in removedAssetIds) {
 									tx.Delete(db, Encoding.UTF8.GetBytes(assetId.ToString("N")));
-									tx.Commit();
 								}
+								tx.Commit();
 							}
 						}
 					}
