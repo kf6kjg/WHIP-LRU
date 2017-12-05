@@ -260,10 +260,9 @@ namespace LibWhipLru.Cache {
 								}
 
 								// Clear the byte on disk before clearing in memory.
-								using (var mmf = MemoryMappedFile.CreateFromFile(pathToWriteCacheFile, FileMode.Open, "whiplruwritecache")) {
-									using (var accessor = mmf.CreateViewAccessor((long)assetCacheNode.FileOffset, IdWriteCacheNode.BYTE_SIZE)) {
-										accessor.Write(0, (byte)0);
-									}
+								using (var mmf = MemoryMappedFile.CreateFromFile(pathToWriteCacheFile, FileMode.Open, "whiplruwritecache"))
+								using (var accessor = mmf.CreateViewAccessor((long)assetCacheNode.FileOffset, IdWriteCacheNode.BYTE_SIZE)) {
+									accessor.Write(0, (byte)0);
 								}
 								assetCacheNode.IsAvailable = true;
 
@@ -338,12 +337,11 @@ namespace LibWhipLru.Cache {
 
 						// Write to writecache file. In this way if we crash after this point we can recover.
 						try {
-							using (var mmf = MemoryMappedFile.CreateFromFile(_pathToWriteCacheFile, FileMode.Open, "whiplruwritecache")) {
-								using (var accessor = mmf.CreateViewAccessor((long)writeCacheNode.FileOffset, IdWriteCacheNode.BYTE_SIZE)) {
-									var nodeBytes = writeCacheNode.ToByteArray();
+							using (var mmf = MemoryMappedFile.CreateFromFile(_pathToWriteCacheFile, FileMode.Open, "whiplruwritecache"))
+							using (var accessor = mmf.CreateViewAccessor((long)writeCacheNode.FileOffset, IdWriteCacheNode.BYTE_SIZE)) {
+								var nodeBytes = writeCacheNode.ToByteArray();
 
-									accessor.WriteArray(0, nodeBytes, 0, (int)IdWriteCacheNode.BYTE_SIZE);
-								}
+								accessor.WriteArray(0, nodeBytes, 0, (int)IdWriteCacheNode.BYTE_SIZE);
 							}
 						}
 						catch (Exception e) {
@@ -533,14 +531,13 @@ namespace LibWhipLru.Cache {
 					var removedAssetIds = _activeIds.Remove(spaceNeeded * 2, out bytesRemoved);
 
 					try {
-						using (var tx = _dbenv.BeginTransaction()) {
-							using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
-								var dbEntrieCount = tx.GetEntriesCount(db);
-								foreach (var assetId in removedAssetIds) {
-									tx.Delete(db, Encoding.UTF8.GetBytes(assetId.ToString("N")));
-								}
-								tx.Commit();
+						using (var tx = _dbenv.BeginTransaction())
+						using (var db = tx.OpenDatabase("assetstore")) {
+							var dbEntrieCount = tx.GetEntriesCount(db);
+							foreach (var assetId in removedAssetIds) {
+								tx.Delete(db, Encoding.UTF8.GetBytes(assetId.ToString("N")));
 							}
+							tx.Commit();
 						}
 					}
 					catch (LightningException e) {
