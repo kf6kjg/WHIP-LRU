@@ -73,7 +73,29 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestStressPUTRandomAsset1000() {
+		public void TestStressPUTRandomFixedSizeAsset1000() {
+			for (var i = 0; i < 1000; ++i) {
+				var asset = FullProtocolTests.CreateAndPutAsset(_socket, RandomBytes(10000, 10000));
+				Assert.NotNull(asset, "Stress test failed.");
+			}
+		}
+
+		[Test]
+		[Timeout(60000)]
+		public void TestStressPUTRandomFixedSizeAssetParallel1000() {
+			var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+			Parallel.For(0, 1000, options, index => {
+				using (var socket = AuthTests.Connect()) {
+					var asset = FullProtocolTests.CreateAndPutAsset(socket, RandomBytes(10000, 10000));
+					Assert.NotNull(asset, "Stress test failed.");
+				}
+			});
+		}
+
+
+		[Test]
+		[Timeout(60000)]
+		public void TestStressPUTRandomVariableSizeAsset1000() {
 			for (var i = 0; i < 1000; ++i) {
 				var asset = FullProtocolTests.CreateAndPutAsset(_socket, RandomBytes());
 				Assert.NotNull(asset, "Stress test failed.");
@@ -82,7 +104,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestStressPUTRandomAssetParallel1000() {
+		public void TestStressPUTRandomVariableSizeAssetParallel1000() {
 			var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
 			Parallel.For(0, 1000, options, index => {
 				using (var socket = AuthTests.Connect()) {
