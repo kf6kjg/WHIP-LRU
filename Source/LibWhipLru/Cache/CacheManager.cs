@@ -48,6 +48,7 @@ namespace LibWhipLru.Cache {
 		public static readonly uint DEFAULT_NC_LIFETIME_SECONDS = 60 * 2;
 
 		private LightningEnvironment _dbenv;
+		private object _dbenv_lock = new object();
 		private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
 		private readonly OrderedGuidCache _activeIds;
@@ -209,7 +210,7 @@ namespace LibWhipLru.Cache {
 						var token = _cancellationTokenSource.Token;
 						foreach (var asset in _assetsFailingStorage.GetConsumingEnumerable()) {
 							if (token.IsCancellationRequested) break;
-							LOG.Debug($"Attempting to locally store {asset.Id} again.");
+							LOG.Debug($"{asset.Id} retrying local storage again.");
 							PutAsset(asset);
 							crashExceptions.Clear(); // Success means ignore the past.
 						}
@@ -345,19 +346,19 @@ namespace LibWhipLru.Cache {
 							}
 						}
 						catch (Exception e) {
-							LOG.Warn($"Failed to write asset ID {asset.Id} to disk-based write cache!", e);
+							LOG.Warn($"{asset.Id} failed to write to disk-based write cache!", e);
 							// As long as the queue thread processes the asset this should be OK.
 							return PutResult.WIP;
 						}
 					}
 				}
 				else {
-					LOG.Warn($"There was an exception writing asset {asset.Id} to the local DB. Asset has been queued for retry. Termination of WHIP-LRU could result in data loss!", lightningException);
+					LOG.Warn($"{asset.Id} had an exception writing to the local DB. Asset has been queued for retry. Termination of WHIP-LRU could result in data loss!", lightningException);
 					return PutResult.WIP;
 				}
 			}
 			else {
-				LOG.Info($"Dropped store of duplicate asset {asset.Id}");
+				LOG.Info($"{asset.Id} was dropped from storage as a duplicate.");
 				return PutResult.DUPLICATE;
 			}
 
@@ -520,35 +521,43 @@ namespace LibWhipLru.Cache {
 				case -30799:
 					//LightningDB.Native.Lmdb.MDB_KEYEXIST: Not available in lib ATM...
 					// Ignorable.
-					LOG.Info($"According to local storage asset {asset.Id} already exists.", lightningException);
+					LOG.Info($"{asset.Id} already exists according to local storage.", lightningException);
 					lightningException = null;
 					break;
 				case LightningDB.Native.Lmdb.MDB_DBS_FULL:
 				case LightningDB.Native.Lmdb.MDB_MAP_FULL:
-					LOG.Warn($"Got storage space full during local asset storage for {asset.Id}, clearing some room...", lightningException);
-
-					ulong bytesRemoved;
-					var removedAssetIds = _activeIds.Remove(spaceNeeded * 2, out bytesRemoved);
-
+					var lockTaken = Monitor.TryEnter(_dbenv_lock);
 					try {
-						using (var tx = _dbenv.BeginTransaction())
-						using (var db = tx.OpenDatabase("assetstore")) {
-							var dbEntrieCount = tx.GetEntriesCount(db);
-							foreach (var assetId in removedAssetIds) {
-								tx.Delete(db, Encoding.UTF8.GetBytes(assetId.ToString("N")));
+						if (lockTaken) {
+							LOG.Warn($"{asset.Id} got storage space full during local storage, clearing some room...", lightningException);
+
+							ulong bytesRemoved;
+							var removedAssetIds = _activeIds.Remove(spaceNeeded * 2, out bytesRemoved);
+
+							try {
+								using (var tx = _dbenv.BeginTransaction())
+								using (var db = tx.OpenDatabase("assetstore")) {
+									foreach (var assetId in removedAssetIds) {
+										tx.Delete(db, Encoding.UTF8.GetBytes(assetId.ToString("N")));
+									}
+									tx.Commit();
+								}
 							}
-							tx.Commit();
+							catch (LightningException e) {
+								LOG.Warn($"{asset.Id} had an exception while attempting to clear some space in the local asset store.", e);
+							}
 						}
+						// else skip as another thread is already clearing some space.
 					}
-					catch (LightningException e) {
-						LOG.Warn($"Had an exception while attempting to clear some space in the local asset store.", e);
+					finally {
+						if (lockTaken) Monitor.Exit(_dbenv_lock);
 					}
 
 					// Place the asset where we can try it again.
 					_assetsFailingStorage.Add(asset);
 					break;
 				default:
-					LOG.Warn($"Got an unexpected exception during local asset storage for {asset.Id}.", lightningException);
+					LOG.Warn($"{asset.Id} got an unexpected exception during local storage.", lightningException);
 					_assetsFailingStorage.Add(asset);
 					break;
 			}
