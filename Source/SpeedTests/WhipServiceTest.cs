@@ -431,7 +431,7 @@ namespace SpeedTests {
 					// dispose managed state (managed objects).
 					LOG.Debug($"Cleaning up after {nameof(WhipServiceTest)}...");
 
-					_socket.Dispose();
+					_socket?.Dispose();
 
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
 					try {
