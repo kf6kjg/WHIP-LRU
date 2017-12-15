@@ -22,12 +22,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Collections.Generic;
-using OpenMetaverse;
-using InWorldz.Whip.Client;
-using System.Text;
-using static InWorldz.Whip.Client.ClientRequestMsg;
 using System;
+using System.Text;
+using InWorldz.Whip.Client;
+using static InWorldz.Whip.Client.ClientRequestMsg;
 
 namespace LibWhipLru.Server {
 	public class ClientRequestMsg : IByteArrayAppendable {

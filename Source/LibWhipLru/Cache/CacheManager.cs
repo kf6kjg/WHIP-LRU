@@ -400,7 +400,7 @@ namespace LibWhipLru.Cache {
 			}
 
 			if (_assetReader != null && _assetReader.HasUpstream) {
-				var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
+				var asset = _assetReader.GetAssetSync(assetId);
 
 				if (cacheResult) {
 					WriteAssetToDisk(asset); // Don't care if this reports a problem.
@@ -447,7 +447,7 @@ namespace LibWhipLru.Cache {
 			}
 
 			if (_assetReader != null && _assetReader.HasUpstream) {
-				var asset = _assetReader.GetAssetSync(new OpenMetaverse.UUID(assetId));
+				var asset = _assetReader.GetAssetSync(assetId);
 
 				WriteAssetToDisk(asset); // Don't care if this reports a problem.
 
