@@ -100,6 +100,7 @@ namespace WHIP_LRU {
 				if (password == null) { // Would only be null if serverConfig was null or DEFAULT_PASSWORD is null.  Why not use the ?? operator? Compiler didn't like it.
 					password = WHIPServer.DEFAULT_PASSWORD;
 				}
+				var listenBacklogLength = (uint?)serverConfig?.GetInt("ConnectionQueueLength", (int)WHIPServer.DEFAULT_BACKLOG_LENGTH) ?? WHIPServer.DEFAULT_BACKLOG_LENGTH;
 
 				var cacheConfig = configSource.Configs["Cache"];
 

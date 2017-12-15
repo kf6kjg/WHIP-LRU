@@ -51,10 +51,11 @@ namespace LibWhipLru {
 		private string _address;
 		private uint _port;
 		private string _password;
+		private uint _listenBacklogLength;
 
 		private BlockingCollection<Request> _requests;
 
-		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, CacheManager cacheManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null) {
+		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, CacheManager cacheManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null, uint listenBacklogLength = WHIPServer.DEFAULT_BACKLOG_LENGTH) {
 			if (address == null) {
 				throw new ArgumentNullException(nameof(address));
 			}
@@ -69,6 +70,7 @@ namespace LibWhipLru {
 			_address = address;
 			_port = port;
 			_password = password;
+			_listenBacklogLength = listenBacklogLength;
 
 			_cacheManager = cacheManager;
 			_pidFileManager = pidFileManager;
@@ -94,7 +96,7 @@ namespace LibWhipLru {
 			}
 			LOG.Debug($"{_address}:{_port} - Starting service");
 
-			_server = new WHIPServer(RequestReceivedDelegate, _address, _port, _password);
+			_server = new WHIPServer(RequestReceivedDelegate, _address, _port, _password, _listenBacklogLength);
 			_serviceThread = new Thread(_server.Start) {
 				IsBackground = true
 			};

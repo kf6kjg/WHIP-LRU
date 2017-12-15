@@ -39,6 +39,7 @@ namespace LibWhipLru.Server {
 		public const string DEFAULT_ADDRESS = "*";
 		public const string DEFAULT_PASSWORD = null;
 		public const uint DEFAULT_PORT = 32700;
+		public const uint DEFAULT_BACKLOG_LENGTH = 100;
 
 		// Thread signal.
 		private ManualResetEvent _allDone = new ManualResetEvent(false);
@@ -50,13 +51,14 @@ namespace LibWhipLru.Server {
 		private IPEndPoint _localEndPoint;
 		private string _password;
 		private int _port;
+		private int _listenBacklogLength;
 
 		private ConcurrentDictionary<string, ClientInfo> _activeConnections = new ConcurrentDictionary<string, ClientInfo>();
 		public IEnumerable<ClientInfo> ActiveConnections => _activeConnections.Values; // Automatic lock and snapshot each access.
 
 		private RequestReceivedDelegate _requestHandler;
 
-		public WHIPServer(RequestReceivedDelegate requestHandler, string address = DEFAULT_ADDRESS, uint port = DEFAULT_PORT, string password = DEFAULT_PASSWORD) {
+		public WHIPServer(RequestReceivedDelegate requestHandler, string address = DEFAULT_ADDRESS, uint port = DEFAULT_PORT, string password = DEFAULT_PASSWORD, uint listenBacklogLength = DEFAULT_BACKLOG_LENGTH) {
 			LOG.Debug($"{address}:{port} - Initializing server.");
 
 			IPAddress addr;
@@ -80,6 +82,11 @@ namespace LibWhipLru.Server {
 
 			_requestHandler = requestHandler;
 
+			if (listenBacklogLength > int.MaxValue) {
+				throw new ArgumentOutOfRangeException(nameof(listenBacklogLength), $"Value exceeded maximum of {int.MaxValue}");
+			}
+			_listenBacklogLength = (int)listenBacklogLength;
+
 			try {
 				_localEndPoint = new IPEndPoint(addr, _port);
 			}
@@ -99,7 +106,7 @@ namespace LibWhipLru.Server {
 
 			// Bind the socket to the local endpoint and listen for incoming connections.  
 			listener.Bind(_localEndPoint);
-			listener.Listen(100); // This is the maximum number of simultanious clients....  TODO: revisit this and maybe make it condifgurable.
+			listener.Listen(_listenBacklogLength);
 
 			_isRunning = true;
 			while (_isRunning) {
@@ -446,14 +453,14 @@ namespace LibWhipLru.Server {
 					Stop();
 				}
 
-				// TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-				// TODO: set large fields to null.
+				// free unmanaged resources (unmanaged objects) and override a finalizer below.
+				// set large fields to null.
 
 				disposedValue = true;
 			}
 		}
 
-		// TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+		// override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
 		// ~WHIPServer() {
 		//   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 		//   Dispose(false);
@@ -463,7 +470,7 @@ namespace LibWhipLru.Server {
 		public void Dispose() {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(true);
-			// TODO: uncomment the following line if the finalizer is overridden above.
+			// uncomment the following line if the finalizer is overridden above.
 			// GC.SuppressFinalize(this);
 		}
 
