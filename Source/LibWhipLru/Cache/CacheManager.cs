@@ -75,9 +75,9 @@ namespace LibWhipLru.Cache {
 		/// <summary>
 		/// Stores IDs that are failures.  No need to disk backup, it's OK to lose this info in a restart.
 		/// </summary>
-		private readonly System.Runtime.Caching.ObjectCache _negativeCache = System.Runtime.Caching.MemoryCache.Default;
+		private readonly System.Runtime.Caching.ObjectCache _negativeCache;
 		private readonly System.Runtime.Caching.CacheItemPolicy _negativeCachePolicy;
-		private readonly ReaderWriterLockSlim _negativeCacheLock = new ReaderWriterLockSlim();
+		private readonly ReaderWriterLockSlim _negativeCacheLock;
 
 		public CacheManager(
 			string pathToDatabaseFolder,
@@ -109,9 +109,14 @@ namespace LibWhipLru.Cache {
 			_pathToWriteCacheFile = pathToWriteCacheFile;
 			_assetsToWriteToRemoteStorage = new BlockingCollection<IdWriteCacheNode>();
 
-			_negativeCachePolicy = new System.Runtime.Caching.CacheItemPolicy {
-				SlidingExpiration = negativeCacheItemLifetime,
-			};
+			if (negativeCacheItemLifetime.TotalSeconds > 0) {
+				_negativeCache = System.Runtime.Caching.MemoryCache.Default;
+				_negativeCacheLock = new ReaderWriterLockSlim();
+
+				_negativeCachePolicy = new System.Runtime.Caching.CacheItemPolicy {
+					SlidingExpiration = negativeCacheItemLifetime,
+				};
+			}
 
 			LOG.Info($"Restoring index from DB.");
 			try {
@@ -318,12 +323,14 @@ namespace LibWhipLru.Cache {
 				// First step: get it in the local disk cache.
 				var lightningException = WriteAssetToDisk(asset);
 
-				_negativeCacheLock.EnterWriteLock();
-				try {
-					_negativeCache.Remove(asset.Id.ToString("N"));
-				}
-				finally {
-					_negativeCacheLock.ExitWriteLock();
+				if (_negativeCache != null) {
+					_negativeCacheLock.EnterWriteLock();
+					try {
+						_negativeCache.Remove(asset.Id.ToString("N"));
+					}
+					finally {
+						_negativeCacheLock.ExitWriteLock();
+					}
 				}
 
 				// If it's safely in local get it on the upload path to remote.
@@ -379,14 +386,16 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentException("Asset ID cannot be zero.", nameof(assetId));
 			}
 
-			_negativeCacheLock.EnterReadLock();
-			try {
-				if (_negativeCache.Contains(assetId.ToString("N"))) {
-					return null;
+			if (_negativeCache != null) {
+				_negativeCacheLock.EnterReadLock();
+				try {
+					if (_negativeCache.Contains(assetId.ToString("N"))) {
+						return null;
+					}
 				}
-			}
-			finally {
-				_negativeCacheLock.ExitReadLock();
+				finally {
+					_negativeCacheLock.ExitReadLock();
+				}
 			}
 
 			if (_activeIds?.Contains(assetId) ?? false) {
@@ -409,12 +418,14 @@ namespace LibWhipLru.Cache {
 				return asset;
 			}
 
-			_negativeCacheLock.EnterWriteLock();
-			try {
-				_negativeCache.Set(new System.Runtime.Caching.CacheItem(assetId.ToString("N"), 0), _negativeCachePolicy);
-			}
-			finally {
-				_negativeCacheLock.ExitWriteLock();
+			if (_negativeCache != null) {
+				_negativeCacheLock.EnterWriteLock();
+				try {
+					_negativeCache.Set(new System.Runtime.Caching.CacheItem(assetId.ToString("N"), 0), _negativeCachePolicy);
+				}
+				finally {
+					_negativeCacheLock.ExitWriteLock();
+				}
 			}
 
 			return null;
@@ -432,14 +443,16 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentException("Asset ID cannot be zero.", nameof(assetId));
 			}
 
-			_negativeCacheLock.EnterReadLock();
-			try {
-				if (_negativeCache.Contains(assetId.ToString("N"))) {
-					return false;
+			if (_negativeCache != null) {
+				_negativeCacheLock.EnterReadLock();
+				try {
+					if (_negativeCache.Contains(assetId.ToString("N"))) {
+						return false;
+					}
 				}
-			}
-			finally {
-				_negativeCacheLock.ExitReadLock();
+				finally {
+					_negativeCacheLock.ExitReadLock();
+				}
 			}
 
 			if (_activeIds?.Contains(assetId) ?? false) {
@@ -456,12 +469,14 @@ namespace LibWhipLru.Cache {
 				}
 			}
 
-			_negativeCacheLock.EnterWriteLock();
-			try {
-				_negativeCache.Set(new System.Runtime.Caching.CacheItem(assetId.ToString("N"), 0), _negativeCachePolicy);
-			}
-			finally {
-				_negativeCacheLock.ExitWriteLock();
+			if (_negativeCache != null) {
+				_negativeCacheLock.EnterWriteLock();
+				try {
+					_negativeCache.Set(new System.Runtime.Caching.CacheItem(assetId.ToString("N"), 0), _negativeCachePolicy);
+				}
+				finally {
+					_negativeCacheLock.ExitWriteLock();
+				}
 			}
 
 			return false;
