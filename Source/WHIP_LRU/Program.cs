@@ -118,7 +118,7 @@ namespace WHIP_LRU {
 					negativeCacheItemLifetime
 				);
 
-				whipLru = new WhipLru(address, port, password, pidFileManager, cacheManager, chattelConfigRead, chattelConfigWrite);
+				whipLru = new WhipLru(address, port, password, pidFileManager, cacheManager, chattelConfigRead, chattelConfigWrite, listenBacklogLength);
 
 				whipLru.Start();
 
