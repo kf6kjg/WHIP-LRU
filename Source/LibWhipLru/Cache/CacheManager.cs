@@ -398,7 +398,14 @@ namespace LibWhipLru.Cache {
 				}
 			}
 
-			if (_activeIds?.Contains(assetId) ?? false) {
+			var assetSize = _activeIds?.AssetSize(assetId);
+
+			if (assetSize != null) { // Asset exists, just might not be on disk yet.
+				if (assetSize <= 0) {
+					// Wait here until the asset makes it to disk.
+					SpinWait.SpinUntil(() => _activeIds?.AssetSize(assetId) > 0);
+				}
+
 				try {
 					return ReadAssetFromDisk(assetId);
 				}
@@ -508,6 +515,8 @@ namespace LibWhipLru.Cache {
 
 			ulong spaceNeeded;
 
+			_activeIds.TryAdd(asset.Id, 0); // Register the asset as existing, but not yet on disk; size of 0. Failure simply indicates that the asset ID already exists.
+
 			using (var memStream = new MemoryStream()) {
 				ProtoBuf.Serializer.Serialize(memStream, asset); // This can throw, but only if something is VERY and irrecoverably wrong.
 				spaceNeeded = (ulong)memStream.Length;
@@ -523,7 +532,7 @@ namespace LibWhipLru.Cache {
 						tx.Commit();
 					}
 
-					_activeIds.TryAdd(asset.Id, spaceNeeded);
+					_activeIds.AssetSize(asset.Id, spaceNeeded); // Set the size now that it's on disk.
 
 					return null;
 				}

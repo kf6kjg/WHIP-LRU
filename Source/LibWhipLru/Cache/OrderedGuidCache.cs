@@ -52,6 +52,26 @@ namespace LibWhipLru.Cache {
 			return false;
 		}
 
+		public ulong? AssetSize(Guid uuid) {
+			MetaAsset ma;
+			if (cache.TryGetValue(uuid, out ma)) {
+				ma.LastAccessed = DateTimeOffset.UtcNow;
+
+				return ma.Size;
+			}
+
+			return null;
+		}
+
+		public void AssetSize(Guid uuid, ulong size) {
+			MetaAsset ma;
+			if (cache.TryGetValue(uuid, out ma)) {
+				ma.LastAccessed = DateTimeOffset.UtcNow;
+
+				ma.Size = size;
+			}
+		}
+
 		public IEnumerable<Guid> ItemsWithPrefix(string prefix) {
 			var matchingKvps = cache.Where(kvp => kvp.Key.ToString("N").StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
 
@@ -83,7 +103,7 @@ namespace LibWhipLru.Cache {
 					break;
 				}
 
-				if (TryRemove(ma.Id)) {
+				if (ma.Size > 0 && TryRemove(ma.Id)) {
 					removed.Add(ma.Id);
 					sizeCleared += ma.Size;
 				}
@@ -95,6 +115,10 @@ namespace LibWhipLru.Cache {
 		private class MetaAsset {
 			public Guid Id { get; set; }
 			public DateTimeOffset LastAccessed { get; set;}
+			/// <summary>
+			/// The size in bytes of the asset on disk. If 0, then the asset has yet to be written to disk.
+			/// </summary>
+			/// <value>The size.</value>
 			public ulong Size { get; set; }
 		}
 	}
