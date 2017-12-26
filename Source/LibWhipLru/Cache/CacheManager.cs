@@ -42,7 +42,7 @@ namespace LibWhipLru.Cache {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		public static readonly string DEFAULT_DB_FOLDER_PATH = "cache";
-		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = 1024UL * 1024UL * 1024UL * 1024UL/*1TB*/;
+		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = uint.MaxValue/*4TB, maximum size of single asset*/;
 		public static readonly string DEFAULT_WC_FILE_PATH = "whip_lru.whipwcache";
 		public static readonly uint DEFAULT_WC_RECORD_COUNT = 1024U * 1024U * 1024U/*1GB*/ / IdWriteCacheNode.BYTE_SIZE;
 		public static readonly uint DEFAULT_NC_LIFETIME_SECONDS = 60 * 2;
@@ -82,6 +82,9 @@ namespace LibWhipLru.Cache {
 		) {
 			if (string.IsNullOrWhiteSpace(pathToDatabaseFolder)) {
 				throw new ArgumentNullException(nameof(pathToDatabaseFolder), "No database path means no go.");
+			}
+			if (maxAssetCacheDiskSpaceByteCount < uint.MaxValue) {
+				throw new ArgumentOutOfRangeException(nameof(maxAssetCacheDiskSpaceByteCount), $"Asset cache disk space should be able to fit at least one maximum-sized asset, and thus should be at least {uint.MaxValue} bytes.");
 			}
 			try {
 				_dbenv = new LightningEnvironment(pathToDatabaseFolder) {
