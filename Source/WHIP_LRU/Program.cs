@@ -29,6 +29,14 @@ namespace WHIP_LRU {
 			// First line, hook the appdomain to the crash reporter
 			AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
+			var createdNew = true;
+			var waitHandle = new EventWaitHandle(false, EventResetMode.AutoReset, "70a9f94f-59e8-4073-93ab-00aaacc26111", out createdNew);
+
+			if (!createdNew) {
+				LOG.Error("Server process alredy started, please stop that server first.");
+				return 2;
+			}
+
 			// Add the arguments supplied when running the application to the configuration
 			var configSource = new ArgvConfigSource(args);
 
@@ -68,20 +76,22 @@ namespace WHIP_LRU {
 			WhipLru whipLru = null;
 
 			// Handlers for signals.
-			Console.CancelKeyPress += delegate {
-				LOG.Debug("CTRL-C pressed, terminating.");
-				isRunning = false;
-				whipLru?.Stop();
-			};
-
-
 			UnixSignal[] signals = null;
-			if (ON_POSIX_COMPLAINT_OS)
-			{
+			if (ON_POSIX_COMPLAINT_OS) {
 				signals = new UnixSignal[]{
 					new UnixSignal(Signum.SIGINT),
 					new UnixSignal(Signum.SIGTERM),
 					new UnixSignal(Signum.SIGHUP),
+				};
+			}
+			else {
+				Console.CancelKeyPress += (sender, cargs) => {
+					LOG.Debug("CTRL-C pressed, terminating.");
+					isRunning = false;
+					whipLru?.Stop();
+
+					cargs.Cancel = true;
+					waitHandle.Set();
 				};
 			}
 
@@ -122,12 +132,10 @@ namespace WHIP_LRU {
 
 				whipLru.Start();
 
-				if (signals != null)
-				{
+				if (signals != null) {
 					var signalIndex = UnixSignal.WaitAny(signals, -1);
 
-					switch (signals[signalIndex].Signum)
-					{
+					switch (signals[signalIndex].Signum) {
 						case Signum.SIGHUP:
 							whipLru.Stop();
 						break;
@@ -137,6 +145,9 @@ namespace WHIP_LRU {
 							whipLru.Stop();
 						break;
 					}
+				}
+				else {
+					waitHandle.WaitOne();
 				}
 			}
 
