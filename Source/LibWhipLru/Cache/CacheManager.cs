@@ -160,16 +160,26 @@ namespace LibWhipLru.Cache {
 				LOG.Debug($"Write cache formatting complete.");
 			}
 
-			LOG.Info($"Reading write cache from file '{pathToWriteCacheFile}'");
-			using (var mmf = MemoryMappedFile.CreateFromFile(pathToWriteCacheFile, FileMode.Open, "whiplruwritecache")) {
-				using (var accessor = mmf.CreateViewAccessor(0, WRITE_CACHE_MAGIC_NUMBER.Length)) {
-					var magic_number = new byte[WRITE_CACHE_MAGIC_NUMBER.Length];
-					accessor.ReadArray(0, magic_number, 0, WRITE_CACHE_MAGIC_NUMBER.Length);
-					if (!magic_number.SequenceEqual(WRITE_CACHE_MAGIC_NUMBER)) {
-						throw new ArgumentException($"Magic number mismatch when given path: ", nameof(pathToWriteCacheFile));
-					}
-				}
+			var writeCacheFileRecordCount = (uint)((new FileInfo(pathToWriteCacheFile).Length - WRITE_CACHE_MAGIC_NUMBER.Length) / IdWriteCacheNode.BYTE_SIZE);
 
+			if (writeCacheFileRecordCount < maxWriteCacheRecordCount) {
+				// Expand the file.
+				var bytesNeeded = (int)((maxWriteCacheRecordCount - writeCacheFileRecordCount) * IdWriteCacheNode.BYTE_SIZE);
+				LOG.Info($"Write cache file expanding by {bytesNeeded} bytes to accomodate requested change in record count.");
+				using (var stream = new FileStream(pathToWriteCacheFile, FileMode.Append)) {
+					stream.Write(new byte[bytesNeeded], 0, bytesNeeded); // In C# a new array is already init'd to 0s.
+				}
+			}
+			else if (writeCacheFileRecordCount > maxWriteCacheRecordCount) {
+				// For now, use the file size.
+				LOG.Warn($"Write cache not able to be shrunk in this version of WHIP_LRU, continuing with old value of {writeCacheFileRecordCount} records instead of requested {maxWriteCacheRecordCount} records.");
+				maxWriteCacheRecordCount = writeCacheFileRecordCount;
+				// TODO: find a way to shrink the file without losing ANY of the records that have not yet been submitted to an upstream server.
+				// Could get difficult in the case of a full file...
+			}
+
+			LOG.Info($"Reading write cache from file '{pathToWriteCacheFile}'. Expecting {maxWriteCacheRecordCount} records, found {writeCacheFileRecordCount} records, choosing the larger.");
+			using (var mmf = MemoryMappedFile.CreateFromFile(pathToWriteCacheFile, FileMode.Open, "whiplruwritecache")) {
 				using (var stream = mmf.CreateViewStream()) {
 					var offset = 0UL;
 					{

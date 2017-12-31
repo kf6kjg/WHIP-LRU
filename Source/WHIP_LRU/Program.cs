@@ -33,7 +33,7 @@ namespace WHIP_LRU {
 			var waitHandle = new EventWaitHandle(false, EventResetMode.AutoReset, "70a9f94f-59e8-4073-93ab-00aaacc26111", out createdNew);
 
 			if (!createdNew) {
-				LOG.Error("Server process alredy started, please stop that server first.");
+				LOG.Error("Server process already started, please stop that server first.");
 				return 2;
 			}
 

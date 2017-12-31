@@ -162,6 +162,66 @@ namespace LibWhipLruTests.Cache {
 			}
 		}
 
+		[Test]
+		public void TestCtorUpdatesWriteCacheFileWithCorrectRecordCount() {
+			new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT / 2,
+				TimeSpan.FromMinutes(2)
+			);
+
+			new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
+			);
+
+			var dataLength = new FileInfo(WRITE_CACHE_FILE_PATH).Length - WRITE_CACHE_MAGIC_NUMBER.Length;
+			var recordCount = dataLength / IdWriteCacheNode.BYTE_SIZE;
+
+			Assert.AreEqual(WRITE_CACHE_MAX_RECORD_COUNT, recordCount);
+		}
+
+		[Test]
+		public void TestCtorUpdatesWriteCacheFileWithRecordsAllAvailable() {
+			new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT / 2,
+				TimeSpan.FromMinutes(2)
+			);
+
+			new CacheManager(
+				DATABASE_FOLDER_PATH,
+				DATABASE_MAX_SIZE_BYTES,
+				WRITE_CACHE_FILE_PATH,
+				WRITE_CACHE_MAX_RECORD_COUNT,
+				TimeSpan.FromMinutes(2)
+			);
+
+			using (var fs = new FileStream(WRITE_CACHE_FILE_PATH, FileMode.Open, FileAccess.Read)) {
+				try {
+					// Skip the header
+					fs.Seek(WRITE_CACHE_MAGIC_NUMBER.Length, SeekOrigin.Begin);
+
+					// Check each row.
+					for (var recordIndex = 0; recordIndex < WRITE_CACHE_MAX_RECORD_COUNT; ++recordIndex) {
+						var buffer = new byte[IdWriteCacheNode.BYTE_SIZE];
+						fs.Read(buffer, 0, buffer.Length);
+						Assert.AreEqual(0, buffer[0], $"Record #{recordIndex + 1} is not marked as available!");
+					}
+				}
+				finally {
+					fs.Close();
+				}
+			}
+		}
+
 		#endregion
 
 		#region Putting assets
