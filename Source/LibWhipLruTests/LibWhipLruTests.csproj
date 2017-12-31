@@ -58,9 +58,6 @@
     <Reference Include="zlib.net">
       <HintPath>..\..\packages\zlib.net-mutliplatform.1.0.4\lib\net461\zlib.net.dll</HintPath>
     </Reference>
-    <Reference Include="LightningDB">
-      <HintPath>..\..\packages\LightningDB.0.9.9\lib\net45\LightningDB.dll</HintPath>
-    </Reference>
     <Reference Include="InWorldz.Whip.Client">
       <HintPath>..\..\packages\InWorldz.Whip.Client.1.1.0.6\lib\net461\InWorldz.Whip.Client.dll</HintPath>
     </Reference>
@@ -85,6 +82,10 @@
     <Reference Include="protobuf-net">
       <HintPath>..\..\packages\protobuf-net.2.3.3\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
+    <Reference Include="LightningDB">
+      <HintPath>..\..\packages\LightningDB.0.10.0\lib\net45\LightningDB.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LibWhipLru\LibWhipLru.csproj">
@@ -107,5 +108,5 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\..\packages\LightningDB.0.9.9\build\LightningDB.targets" Condition="Exists('..\..\packages\LightningDB.0.9.9\build\LightningDB.targets')" />
+  <Import Project="..\..\packages\LightningDB.0.10.0\build\LightningDB.targets" Condition="Exists('..\..\packages\LightningDB.0.10.0\build\LightningDB.targets')" />
 </Project>
