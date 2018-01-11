@@ -77,10 +77,10 @@
     <Reference Include="LibreMetaverse">
       <HintPath>..\..\packages\LibreMetaverse.1.2.1.151\lib\net461\LibreMetaverse.dll</HintPath>
     </Reference>
-    <Reference Include="Chattel">
-      <HintPath>..\..\packages\Chattel.1.4.0.52\lib\net461\Chattel.dll</HintPath>
-    </Reference>
     <Reference Include="Mono.Posix" />
+    <Reference Include="Chattel">
+      <HintPath>..\..\packages\Chattel.1.5.0.66\lib\net461\Chattel.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
