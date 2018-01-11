@@ -139,9 +139,9 @@ namespace LibWhipLru {
 		private void RequestReceivedDelegate(ClientRequestMsg request, WHIPServer.RequestResponseDelegate responseHandler, object context) {
 			// Queue up for processing.
 			_requests.Add(new Request {
-				context = context,
-				request = request,
-				responseHandler = responseHandler,
+				Context = context,
+				RequestMessage = request,
+				ResponseHandler = responseHandler,
 			});
 		}
 
@@ -150,34 +150,34 @@ namespace LibWhipLru {
 
 			ServerResponseMsg response;
 
-			switch (req.request.Type) {
+			switch (req.RequestMessage.Type) {
 				case RequestType.GET:
-					response = HandleGetAsset(req.request.AssetId);
+					response = HandleGetAsset(req.RequestMessage.AssetId);
 					break;
 				case RequestType.GET_DONTCACHE:
-					response = HandleGetAsset(req.request.AssetId, false);
+					response = HandleGetAsset(req.RequestMessage.AssetId, false);
 					break;
 				case RequestType.MAINT_PURGELOCALS:
 				case RequestType.PURGE:
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty);
 					break;
 				case RequestType.PUT:
-					response = HandlePutAsset(req.request.AssetId, req.request.Data);
+					response = HandlePutAsset(req.RequestMessage.AssetId, req.RequestMessage.Data);
 					break;
 				case RequestType.STATUS_GET:
 					response = HandleGetStatus();
 					break;
 				case RequestType.STORED_ASSET_IDS_GET:
-					response = HandleGetStoredAssetIds(req.request.AssetId.ToString("N").Substring(0, 3));
+					response = HandleGetStoredAssetIds(req.RequestMessage.AssetId.ToString("N").Substring(0, 3));
 					break;
 				case RequestType.TEST:
-					response = HandleTest(req.request.AssetId);
+					response = HandleTest(req.RequestMessage.AssetId);
 					break;
 				default:
 					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty);
 					break;
 			}
-			req.responseHandler(response, req.context);
+			req.ResponseHandler(response, req.Context);
 		}
 
 		#region Handlers
@@ -300,9 +300,9 @@ namespace LibWhipLru {
 		#endregion
 
 		private class Request {
-			public ClientRequestMsg request { get; set; }
-			public WHIPServer.RequestResponseDelegate responseHandler { get; set; }
-			public object context { get; set; }
+			public ClientRequestMsg RequestMessage { get; set; }
+			public WHIPServer.RequestResponseDelegate ResponseHandler { get; set; }
+			public object Context { get; set; }
 		}
 	}
 }
