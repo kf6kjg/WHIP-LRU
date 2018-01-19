@@ -84,11 +84,11 @@
     <Compile Include="Server\ServerResponseMsg.cs" />
     <Compile Include="Server\WHIPServer.cs" />
     <Compile Include="Cache\CacheException.cs" />
-    <Compile Include="Cache\CacheManager.cs" />
+    <Compile Include="Cache\StorageManager.cs" />
     <Compile Include="Util\PIDFileManager.cs" />
     <Compile Include="Server\ClientInfo.cs" />
     <Compile Include="Cache\OrderedGuidCache.cs" />
-    <Compile Include="Cache\IdWriteCacheNode.cs" />
+    <Compile Include="Cache\AssetCacheLmdb.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Server\" />

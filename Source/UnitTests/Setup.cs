@@ -86,7 +86,7 @@ namespace UnitTests {
 			var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
 			var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);
 
-			var cacheManager = new LibWhipLru.Cache.CacheManager(
+			var cacheManager = new LibWhipLru.Cache.StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,

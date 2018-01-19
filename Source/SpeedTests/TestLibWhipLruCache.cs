@@ -33,7 +33,7 @@ namespace SpeedTests {
 		private const uint ITERATION_MAX = 1000;
 		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(60);
 
-		private readonly LibWhipLru.Cache.CacheManager _libWhipLruCacheManager;
+		private readonly LibWhipLru.Cache.StorageManager _libWhipLruCacheManager;
 		private readonly InWorldz.Data.Assets.Stratus.StratusAsset _knownAsset = new InWorldz.Data.Assets.Stratus.StratusAsset {
 			Id = Guid.NewGuid(),
 			CreateTime = DateTime.UtcNow,
@@ -67,7 +67,7 @@ namespace SpeedTests {
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
-			_libWhipLruCacheManager = new LibWhipLru.Cache.CacheManager("TestLibWhipLruCache", uint.MaxValue, "TestLibWhipLruCache.wcache", 100, TimeSpan.FromMinutes(2));
+			_libWhipLruCacheManager = new LibWhipLru.Cache.StorageManager("TestLibWhipLruCache", uint.MaxValue, "TestLibWhipLruCache.wcache", 100, TimeSpan.FromMinutes(2));
 
 			_libWhipLruCacheManager.PutAsset(_knownAsset);
 

@@ -34,7 +34,7 @@ namespace SpeedTests {
 		protected const int SERVICE_PORT = 37111;
 		protected const string SERVICE_PASSWORD = "widjadidja";
 
-		private readonly LibWhipLru.Cache.CacheManager _libWhipLruCacheManager;
+		private readonly LibWhipLru.Cache.StorageManager _libWhipLruCacheManager;
 		private readonly LibWhipLru.WhipLru _libWhipLru;
 
 		public TestLibWhipLru() : base(SERVICE_ADDRESS, SERVICE_PORT, SERVICE_PASSWORD) {
@@ -58,7 +58,7 @@ namespace SpeedTests {
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
-			_libWhipLruCacheManager = new LibWhipLru.Cache.CacheManager("SpeedTestLibWhipLru", uint.MaxValue, "SpeedTestLibWhipLru.wcache", 100, TimeSpan.FromMinutes(2));
+			_libWhipLruCacheManager = new LibWhipLru.Cache.StorageManager("SpeedTestLibWhipLru", uint.MaxValue, "SpeedTestLibWhipLru.wcache", 100, TimeSpan.FromMinutes(2));
 
 			_libWhipLruCacheManager.PutAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
 				CreateTime = DateTime.UtcNow, // Close enough.

@@ -43,7 +43,7 @@ namespace LibWhipLru {
 	public class WhipLru {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly CacheManager _cacheManager;
+		private readonly StorageManager _cacheManager;
 		private readonly PIDFileManager _pidFileManager;
 		private WHIPServer _server;
 		private Thread _serviceThread;
@@ -55,7 +55,7 @@ namespace LibWhipLru {
 
 		private BlockingCollection<Request> _requests;
 
-		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, CacheManager cacheManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null, uint listenBacklogLength = WHIPServer.DEFAULT_BACKLOG_LENGTH) {
+		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, StorageManager cacheManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null, uint listenBacklogLength = WHIPServer.DEFAULT_BACKLOG_LENGTH) {
 			if (address == null) {
 				throw new ArgumentNullException(nameof(address));
 			}
@@ -77,11 +77,11 @@ namespace LibWhipLru {
 
 			if (chattelConfigRead != null) {
 				chattelConfigRead.DisableCache(); // Force caching off no matter how the INI is set. Doing caching differently here.
-				_cacheManager.SetChattelReader(new ChattelReader(chattelConfigRead));
+				_cacheManager.SetChattelReader(new ChattelReader(chattelConfigRead, cacheManager));
 			}
 			if (chattelConfigWrite != null) {
 				chattelConfigWrite.DisableCache(); // Force caching off no matter how the INI is set. Doing caching differently here.
-				_cacheManager.SetChattelWriter(new ChattelWriter(chattelConfigWrite));
+				_cacheManager.SetChattelWriter(new ChattelWriter(chattelConfigWrite, cacheManager));
 			}
 
 			_pidFileManager?.SetStatus(PIDFileManager.Status.Ready);
@@ -271,8 +271,8 @@ namespace LibWhipLru {
 			}
 
 			switch (_cacheManager.PutAsset(asset)) {
-				case CacheManager.PutResult.DONE:
-				case CacheManager.PutResult.WIP:
+				case StorageManager.PutResult.DONE:
+				case StorageManager.PutResult.WIP:
 					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, assetId);
 				default:
 					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Duplicate assets are not allowed.");

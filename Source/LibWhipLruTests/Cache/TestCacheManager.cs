@@ -55,7 +55,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestCtorDoesNotThrow() {
-			Assert.DoesNotThrow(() => new CacheManager(
+			Assert.DoesNotThrow(() => new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -66,7 +66,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestCtorDBPathBlankThrowsArgNullException() {
-			Assert.Throws<ArgumentNullException>(() => new CacheManager(
+			Assert.Throws<ArgumentNullException>(() => new StorageManager(
 				"",
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -77,7 +77,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestCtorDBPathNullThrowsArgNullException() {
-			Assert.Throws<ArgumentNullException>(() => new CacheManager(
+			Assert.Throws<ArgumentNullException>(() => new StorageManager(
 				null,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -88,7 +88,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestCtorCreatesWriteCacheFile() {
-			new CacheManager(
+			new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -101,7 +101,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestCtorCreatesWriteCacheFileWithCorrectMagicNumber() {
-			new CacheManager(
+			new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -120,7 +120,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestCtorCreatesWriteCacheFileWithCorrectRecordCount() {
-			new CacheManager(
+			new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -136,7 +136,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestCtorCreatesWriteCacheFileWithRecordsAllAvailable() {
-			new CacheManager(
+			new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -164,7 +164,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestCtorUpdatesWriteCacheFileWithCorrectRecordCount() {
-			new CacheManager(
+			new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -172,7 +172,7 @@ namespace LibWhipLruTests.Cache {
 				TimeSpan.FromMinutes(2)
 			);
 
-			new CacheManager(
+			new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -188,7 +188,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestCtorUpdatesWriteCacheFileWithRecordsAllAvailable() {
-			new CacheManager(
+			new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -196,7 +196,7 @@ namespace LibWhipLruTests.Cache {
 				TimeSpan.FromMinutes(2)
 			);
 
-			new CacheManager(
+			new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -228,7 +228,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestPutAssetAssetNullThrowsArgNullException() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -241,7 +241,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestPutAssetEmptyIdThrowsArgException() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -258,7 +258,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestPutAssetDoesntThrowFirstTime() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -275,7 +275,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestPutAssetDoesntThrowDuplicate() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -293,7 +293,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestPutAssetDoesntThrowMultiple() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -321,7 +321,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestGetAssetEmptyIdThrowsArgException() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -334,7 +334,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestGetAssetUnknownDoesntThrow() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -347,7 +347,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestGetAssetUnknownIsNull() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -360,7 +360,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestGetAssetKnownDoesntThrow() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -379,7 +379,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestGetAssetKnownIsNotNull() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -400,7 +400,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestGetAssetKnownHasSameId() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
@@ -421,7 +421,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestGetAssetKnownIsIdentical() {
-			var mgr = new CacheManager(
+			var mgr = new StorageManager(
 				DATABASE_FOLDER_PATH,
 				DATABASE_MAX_SIZE_BYTES,
 				WRITE_CACHE_FILE_PATH,
