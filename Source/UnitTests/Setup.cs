@@ -86,15 +86,24 @@ namespace UnitTests {
 			var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
 			var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);
 
+			var readerCache = new LibWhipLru.Cache.AssetCacheLmdb(chattelConfigRead, DATABASE_MAX_SIZE_BYTES);
+			var chattelReader = new ChattelReader(chattelConfigRead, readerCache);
+			var chattelWriter = new ChattelWriter(chattelConfigWrite, readerCache);
+
 			var cacheManager = new LibWhipLru.Cache.StorageManager(
-				DATABASE_FOLDER_PATH,
-				DATABASE_MAX_SIZE_BYTES,
-				WRITE_CACHE_FILE_PATH,
-				WRITE_CACHE_MAX_RECORD_COUNT,
-				TimeSpan.FromMinutes(2)
+				readerCache,
+				TimeSpan.FromMinutes(2),
+				chattelReader,
+				chattelWriter
 			);
 
-			_service = new WhipLru(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT, Constants.PASSWORD, pidFileManager, cacheManager, chattelConfigRead, chattelConfigWrite);
+			_service = new WhipLru(
+				Constants.SERVICE_ADDRESS,
+				Constants.SERVICE_PORT,
+				Constants.PASSWORD,
+				pidFileManager,
+				cacheManager
+			);
 
 			_service.Start();
 		}

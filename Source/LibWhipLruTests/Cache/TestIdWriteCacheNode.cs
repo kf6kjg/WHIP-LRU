@@ -29,6 +29,7 @@ using NUnit.Framework;
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	public class TestIdWriteCacheNode {
+		/* TODO: move to Chattel
 		[Test]
 		public void TestThrowsOnNewWithNullArray() {
 			Assert.Throws<ArgumentNullException>(() => new IdWriteCacheNode(null, 0));
@@ -107,5 +108,6 @@ namespace LibWhipLruTests.Cache {
 			var node = new IdWriteCacheNode(buffer, offset);
 			Assert.AreEqual(buffer, node.ToByteArray());
 		}
+		*/
 	}
 }

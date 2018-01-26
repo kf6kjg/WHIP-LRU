@@ -31,7 +31,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Chattel;
 using InWorldz.Data.Assets.Stratus;
 using LibWhipLru.Cache;
 using LibWhipLru.Server;
@@ -43,7 +42,7 @@ namespace LibWhipLru {
 	public class WhipLru {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly StorageManager _cacheManager;
+		private readonly StorageManager _storageManager;
 		private readonly PIDFileManager _pidFileManager;
 		private WHIPServer _server;
 		private Thread _serviceThread;
@@ -55,34 +54,23 @@ namespace LibWhipLru {
 
 		private BlockingCollection<Request> _requests;
 
-		public WhipLru(string address, uint port, string password, PIDFileManager pidFileManager, StorageManager cacheManager, ChattelConfiguration chattelConfigRead = null, ChattelConfiguration chattelConfigWrite = null, uint listenBacklogLength = WHIPServer.DEFAULT_BACKLOG_LENGTH) {
-			if (address == null) {
-				throw new ArgumentNullException(nameof(address));
-			}
-			if (pidFileManager == null) {
-				throw new ArgumentNullException(nameof(pidFileManager));
-			}
-			if (cacheManager == null) {
-				throw new ArgumentNullException(nameof(cacheManager));
-			}
+		public WhipLru(
+			string address,
+			uint port,
+			string password,
+			PIDFileManager pidFileManager,
+			StorageManager storageManager,
+			uint listenBacklogLength = WHIPServer.DEFAULT_BACKLOG_LENGTH
+		) {
 			LOG.Debug($"{address}:{port} - Initializing service.");
 
-			_address = address;
+			_address = address ?? throw new ArgumentNullException(nameof(address));
 			_port = port;
 			_password = password;
 			_listenBacklogLength = listenBacklogLength;
 
-			_cacheManager = cacheManager;
-			_pidFileManager = pidFileManager;
-
-			if (chattelConfigRead != null) {
-				chattelConfigRead.DisableCache(); // Force caching off no matter how the INI is set. Doing caching differently here.
-				_cacheManager.SetChattelReader(new ChattelReader(chattelConfigRead, cacheManager));
-			}
-			if (chattelConfigWrite != null) {
-				chattelConfigWrite.DisableCache(); // Force caching off no matter how the INI is set. Doing caching differently here.
-				_cacheManager.SetChattelWriter(new ChattelWriter(chattelConfigWrite, cacheManager));
-			}
+			_storageManager = storageManager ?? throw new ArgumentNullException(nameof(storageManager));
+			_pidFileManager = pidFileManager ?? throw new ArgumentNullException(nameof(pidFileManager));
 
 			_pidFileManager?.SetStatus(PIDFileManager.Status.Ready);
 		}
@@ -148,63 +136,68 @@ namespace LibWhipLru {
 		private void ProcessRequest(Request req) {
 			// WARNING: this method is being executed in its own thread, and may even be being executed in parallel in multiple threads.
 
-			ServerResponseMsg response;
-
 			switch (req.RequestMessage.Type) {
 				case RequestType.GET:
-					response = HandleGetAsset(req.RequestMessage.AssetId);
+					HandleGetAsset(req.RequestMessage.AssetId, req);
 					break;
 				case RequestType.GET_DONTCACHE:
-					response = HandleGetAsset(req.RequestMessage.AssetId, false);
+					HandleGetAsset(req.RequestMessage.AssetId, req, false);
 					break;
 				case RequestType.MAINT_PURGELOCALS:
 				case RequestType.PURGE:
-					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty);
+					req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty), req.Context);
 					break;
 				case RequestType.PUT:
-					response = HandlePutAsset(req.RequestMessage.AssetId, req.RequestMessage.Data);
+					HandlePutAsset(req.RequestMessage.AssetId, req.RequestMessage.Data, req);
 					break;
 				case RequestType.STATUS_GET:
-					response = HandleGetStatus();
+					HandleGetStatus(req);
 					break;
 				case RequestType.STORED_ASSET_IDS_GET:
-					response = HandleGetStoredAssetIds(req.RequestMessage.AssetId.ToString("N").Substring(0, 3));
+					HandleGetStoredAssetIds(req.RequestMessage.AssetId.ToString("N").Substring(0, 3), req);
 					break;
 				case RequestType.TEST:
-					response = HandleTest(req.RequestMessage.AssetId);
+					HandleTest(req.RequestMessage.AssetId, req);
 					break;
 				default:
-					response = new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty);
+					req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty), req.Context);
 					break;
 			}
-			req.ResponseHandler(response, req.Context);
 		}
 
 		#region Handlers
 
-		private ServerResponseMsg HandleGetAsset(Guid assetId, bool cacheResult = true) {
+		private void HandleGetAsset(Guid assetId, Request req, bool cacheResult = true) {
 			if (assetId == Guid.Empty) {
-				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed.");
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed."), req.Context);
+				return;
 			}
 
-			StratusAsset asset;
+			StratusAsset asset = null;
+			Exception exception = null;
 
 			try {
-				asset = _cacheManager.GetAsset(assetId, cacheResult);
+				_storageManager.GetAsset(assetId, resultAsset => asset = resultAsset, () => {}, cacheResult);
 			}
 			catch (Exception e) {
 				LOG.Debug($"Exception reading data for asset {assetId}", e);
-				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request.");
+				exception = e;
+			}
+
+			if (exception != null) {
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request."), req.Context);
+				return;
 			}
 
 			if (asset == null) {
-				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_NOTFOUND, assetId);
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_NOTFOUND, assetId), req.Context);
+				return;
 			}
 
-			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_FOUND, assetId, StratusAsset.ToWHIPSerialized(asset));
+			req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_FOUND, assetId, StratusAsset.ToWHIPSerialized(asset)), req.Context);
 		}
 
-		private ServerResponseMsg HandleGetStatus() {
+		private void HandleGetStatus(Request req) {
 			var output = new StringBuilder();
 
 			var connections = _server?.ActiveConnections;
@@ -246,18 +239,19 @@ namespace LibWhipLru {
 			//	output.Append($"  {assetrequest.description}\n") // description is based on the type of request, could be "GET {uuid}", "PURGE", etc...
 
 			LOG.Debug($"Sending:\n{output}");
-			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty, output.ToString());
+			req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty, output.ToString()), req.Context);
 		}
 
-		private ServerResponseMsg HandleGetStoredAssetIds(string prefix) {
-			var ids = _cacheManager?.ActiveIds(prefix);
+		private void HandleGetStoredAssetIds(string prefix, Request req) {
+			var ids = _storageManager.GetLocallyKnownAssetIds(prefix);
 
-			return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty, string.Join(",", ids.Select(id => id.ToString("N"))));
+			req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty, string.Join(",", ids.Select(id => id.ToString("N")))), req.Context);
 		}
 
-		private ServerResponseMsg HandlePutAsset(Guid assetId, byte[] data) {
+		private void HandlePutAsset(Guid assetId, byte[] data, Request req) {
 			if (assetId == Guid.Empty) {
-				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed.");
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed."), req.Context);
+				return;
 			}
 
 			StratusAsset asset;
@@ -267,34 +261,47 @@ namespace LibWhipLru {
 			}
 			catch (Exception e) {
 				LOG.Debug($"Exception reading data for asset {assetId}", e);
-				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request.");
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request."), req.Context);
+				return;
 			}
 
-			switch (_cacheManager.PutAsset(asset)) {
-				case StorageManager.PutResult.DONE:
-				case StorageManager.PutResult.WIP:
-					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, assetId);
-				default:
-					return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Duplicate assets are not allowed.");
-			}
+			_storageManager.StoreAsset(asset, result => {
+				switch (result) {
+					case StorageManager.PutResult.DONE:
+						req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, assetId), req.Context);
+						break;
+					case StorageManager.PutResult.DUPLICATE:
+						req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Duplicate assets are not allowed."), req.Context);
+						break;
+					default:
+						req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId), req.Context);
+						break;
+				}
+			});
 		}
 
-		private ServerResponseMsg HandleTest(Guid assetId) {
+		private void HandleTest(Guid assetId, Request req) {
 			if (assetId == Guid.Empty) {
-				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed.");
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed."), req.Context);
 			}
 
-			bool result;
+			var result = false;
+			var error = false;
 
 			try {
-				result = _cacheManager.CheckAsset(assetId);
+				_storageManager.CheckAsset(assetId, found => result = found);
 			}
 			catch (Exception e) {
 				LOG.Debug($"Exception reading data for asset {assetId}", e);
-				return new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request.");
+				error = true;
 			}
 
-			return new ServerResponseMsg(result ? ServerResponseMsg.ResponseCode.RC_FOUND : ServerResponseMsg.ResponseCode.RC_NOTFOUND, assetId);
+			if (error) {
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request."), req.Context);
+			}
+			else {
+				req.ResponseHandler(new ServerResponseMsg(result ? ServerResponseMsg.ResponseCode.RC_FOUND : ServerResponseMsg.ResponseCode.RC_NOTFOUND, assetId), req.Context);
+			}
 		}
 
 		#endregion

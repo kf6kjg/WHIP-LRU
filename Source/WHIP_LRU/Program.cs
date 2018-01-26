@@ -114,21 +114,31 @@ namespace WHIP_LRU {
 
 				var cacheConfig = configSource.Configs["Cache"];
 
-				var pathToDatabaseFolder = cacheConfig?.GetString("DatabaseFolderPath", StorageManager.DEFAULT_DB_FOLDER_PATH) ?? StorageManager.DEFAULT_DB_FOLDER_PATH;
-				var maxAssetCacheDiskSpaceByteCount = (ulong?)cacheConfig?.GetLong("MaxDiskSpace", (long)StorageManager.DEFAULT_DB_MAX_DISK_BYTES) ?? StorageManager.DEFAULT_DB_MAX_DISK_BYTES;
-				var pathToWriteCacheFile = cacheConfig?.GetString("WriteCacheFilePath", StorageManager.DEFAULT_WC_FILE_PATH) ?? StorageManager.DEFAULT_WC_FILE_PATH;
-				var maxWriteCacheRecordCount = (uint?)cacheConfig?.GetInt("WriteCacheMaxRecords", (int)StorageManager.DEFAULT_WC_RECORD_COUNT) ?? StorageManager.DEFAULT_WC_RECORD_COUNT;
+				var pathToDatabaseFolder = cacheConfig?.GetString("DatabaseFolderPath", ChattelConfiguration.DEFAULT_DB_FOLDER_PATH) ?? ChattelConfiguration.DEFAULT_DB_FOLDER_PATH;
+				var maxAssetCacheDiskSpaceByteCount = (ulong?)cacheConfig?.GetLong("MaxDiskSpace", (long)AssetCacheLmdb.DEFAULT_DB_MAX_DISK_BYTES) ?? AssetCacheLmdb.DEFAULT_DB_MAX_DISK_BYTES;
+				var pathToWriteCacheFile = cacheConfig?.GetString("WriteCacheFilePath", ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH) ?? ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH;
+				var maxWriteCacheRecordCount = (uint?)cacheConfig?.GetInt("WriteCacheMaxRecords", (int)ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT) ?? ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT;
 				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)cacheConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
 
-				var cacheManager = new StorageManager(
-					pathToDatabaseFolder,
-					maxAssetCacheDiskSpaceByteCount,
-					pathToWriteCacheFile,
-					maxWriteCacheRecordCount,
-					negativeCacheItemLifetime
+				var readerCache = new AssetCacheLmdb(chattelConfigRead, maxAssetCacheDiskSpaceByteCount); // TODO: If needed, possibly split the reader and writer caches.
+				var chattelReader = new ChattelReader(chattelConfigRead, readerCache); // TODO: add purge flag to CLI
+				var chattelWriter = new ChattelWriter(chattelConfigWrite, readerCache); // add purge flag to CLI
+
+				var storageManager = new StorageManager(
+					readerCache,
+					negativeCacheItemLifetime,
+					chattelReader,
+					chattelWriter
 				);
 
-				whipLru = new WhipLru(address, port, password, pidFileManager, cacheManager, chattelConfigRead, chattelConfigWrite, listenBacklogLength);
+				whipLru = new WhipLru(
+					address,
+					port,
+					password,
+					pidFileManager,
+					storageManager,
+					listenBacklogLength
+				);
 
 				whipLru.Start();
 

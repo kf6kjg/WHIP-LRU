@@ -57,7 +57,7 @@ namespace SpeedTests {
 			catch (Exception) {
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-
+			/* TODO: restore
 			_libWhipLruCacheManager = new LibWhipLru.Cache.StorageManager("SpeedTestLibWhipLru", uint.MaxValue, "SpeedTestLibWhipLru.wcache", 100, TimeSpan.FromMinutes(2));
 
 			_libWhipLruCacheManager.PutAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
@@ -80,6 +80,7 @@ namespace SpeedTests {
 			Thread.Sleep(500);
 
 			LOG.Debug($"Initialization of {nameof(TestLibWhipLru)} complete.");
+			*/
 		}
 
 		#region IDisposable Support
@@ -98,7 +99,8 @@ namespace SpeedTests {
 
 					Thread.Sleep(500);
 
-					_libWhipLruCacheManager.Dispose();
+					// TODO: restore
+					//_libWhipLruCacheManager.Dispose();
 
 					Thread.Sleep(500);
 

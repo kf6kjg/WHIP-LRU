@@ -1,4 +1,4 @@
-﻿// AssetCache.cs
+﻿// AssetCacheLmdb.cs
 //
 // Author:
 //       Ricky C <>
@@ -22,6 +22,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -75,7 +76,7 @@ namespace LibWhipLru.Cache {
 				_dbenv.Open(EnvironmentOpenFlags.None, UnixAccessMode.OwnerRead | UnixAccessMode.OwnerWrite);
 			}
 			catch (LightningException e) {
-				throw new ArgumentException($"Given path invalid: '{_config.CacheFolder.FullName}'", nameof(pathToDatabaseFolder), e);
+				throw new CacheException($"Given path invalid: '{_config.CacheFolder.FullName}'", e);
 			}
 
 			_activeIds = new OrderedGuidCache();
@@ -121,23 +122,30 @@ namespace LibWhipLru.Cache {
 		/// <returns>If the asset ID is known and available.</returns>
 		/// <param name="assetId">Asset identifier.</param>
 		public bool AssetOnDisk(Guid assetId) {
-			return _activeIds?.AssetSize(assetId) > 0;
+			return _activeIds.AssetSize(assetId) > 0;
 		}
 
 		#region IChattelCache
 
 		void IChattelCache.CacheAsset(StratusAsset asset) {
-			if (!_config.CacheEnabled || asset == null) { // Caching is disabled or stupidity.
+			asset = asset ?? throw new ArgumentNullException(nameof(asset));
+
+			if (asset.Id == Guid.Empty) {
+				throw new ArgumentException("Asset cannot have zero ID.", nameof(asset));
+			}
+
+			if (!_config.CacheEnabled) {
 				return;
 			}
 
 			if (!_assetsBeingWritten.TryAdd(asset.Id, asset)) {
-				LOG.Debug($"Attempted to write an asset to cache, but another thread is already doing so.  Skipping write of {asset.Id}");
+				LOG.Debug($"Attempted to write an asset to cache, but another thread is already doing so.  Skipping write of {asset.Id} - please report as this shoudln't happen.");
 				// Can't add it, which means it's already being written to disk by another thread.  No need to continue.
+				// Shouldn't be possible to get here if Chattel's working correctly, so I'm not going to worry about the rapid return timing issue this creates: Chattel has code to handle it.
 				return;
 			}
 
-			// TODO...
+			WriteAssetToDisk(asset);
 
 			// Writing is done, remove it from the work list.
 			_assetsBeingWritten.TryRemove(asset.Id, out StratusAsset temp);
@@ -180,14 +188,7 @@ namespace LibWhipLru.Cache {
 
 		#region Disk IO tools
 
-		private LightningException WriteAssetToDisk(StratusAsset asset) {
-			// Remember it's important that this method does not throw exceptions.
-			if (asset == null) {
-				return null;
-			}
-
-			LightningException lightningException;
-
+		private void WriteAssetToDisk(StratusAsset asset) {
 			ulong spaceNeeded;
 
 			_activeIds.TryAdd(asset.Id, 0); // Register the asset as existing, but not yet on disk; size of 0. Failure simply indicates that the asset ID already exists.
@@ -201,6 +202,7 @@ namespace LibWhipLru.Cache {
 
 				Buffer.BlockCopy(memStream.GetBuffer(), 0, buffer, 0, (int)spaceNeeded);
 			retryStorageLabel:
+				LightningException lightningException = null;
 				try {
 					using (var tx = _dbenv.BeginTransaction())
 					using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
@@ -210,7 +212,7 @@ namespace LibWhipLru.Cache {
 
 					_activeIds.AssetSize(asset.Id, spaceNeeded); // Set the size now that it's on disk.
 
-					return null;
+					return;
 				}
 				catch (LightningException e) {
 					lightningException = e;
@@ -223,9 +225,11 @@ namespace LibWhipLru.Cache {
 						LOG.Warn($"{asset.Id} already exists according to local storage. Adding to memory list - please report this as it should not be able to happen.", lightningException);
 						lightningException = null;
 
-						_activeIds.AssetSize(asset.Id, spaceNeeded); // Set the size now that it's on disk.
+						if (!_activeIds.TryAdd(asset.Id, spaceNeeded)) {
+							_activeIds.AssetSize(asset.Id, spaceNeeded);
+						}
 
-						break;
+						throw new AssetExistsException(asset.Id);
 					case LightningDB.Native.Lmdb.MDB_DBS_FULL:
 					case LightningDB.Native.Lmdb.MDB_MAP_FULL:
 						var lockTaken = Monitor.TryEnter(_dbenv_lock);
@@ -263,8 +267,6 @@ namespace LibWhipLru.Cache {
 						goto retryStorageLabel;
 				}
 			}
-
-			return lightningException;
 		}
 
 		private StratusAsset ReadAssetFromDisk(Guid assetId) {
