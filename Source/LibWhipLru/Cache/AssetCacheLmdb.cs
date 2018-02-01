@@ -294,30 +294,28 @@ namespace LibWhipLru.Cache {
 
 		#endregion
 
-
 		#region IDisposable Support
 
 		private bool disposedValue; // To detect redundant calls
 
 		protected virtual void Dispose(bool disposing) {
 			if (!disposedValue) {
-				if (disposing) {
-					_dbenv.Dispose();
-					_dbenv = null;
-				}
+				//if (disposing) {
+				//}
 
 				// Free unmanaged resources (unmanaged objects) and override a finalizer below.
-				// None at this time.
+				_dbenv?.Dispose();
+				_dbenv = null;
 
 				disposedValue = true;
 			}
 		}
 
 		// Override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-		// ~CacheManager() {
-		//   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-		//   Dispose(false);
-		// }
+		~AssetCacheLmdb() {
+			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+			Dispose(false);
+		}
 
 		// This code added to correctly implement the disposable pattern.
 		void IDisposable.Dispose() {
