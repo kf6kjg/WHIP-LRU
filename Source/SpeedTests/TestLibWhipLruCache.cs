@@ -33,7 +33,8 @@ namespace SpeedTests {
 		private const uint ITERATION_MAX = 1000;
 		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(60);
 
-		private readonly LibWhipLru.Cache.StorageManager _libWhipLruCacheManager;
+		private readonly LibWhipLru.Cache.StorageManager _libWhipLruStorageManager;
+		private readonly LibWhipLru.Cache.AssetCacheLmdb _libWhipLruCache;
 		private readonly InWorldz.Data.Assets.Stratus.StratusAsset _knownAsset = new InWorldz.Data.Assets.Stratus.StratusAsset {
 			Id = Guid.NewGuid(),
 			CreateTime = DateTime.UtcNow,
@@ -47,7 +48,7 @@ namespace SpeedTests {
 
 		private readonly System.Timers.Timer _timer;
 		private bool _cancelTest;
-		/* TODO: restore these tests
+
 		public TestLibWhipLruCache() {
 			LOG.Debug($"Initializing {nameof(TestLibWhipLruCache)}...");
 
@@ -67,9 +68,25 @@ namespace SpeedTests {
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
-			_libWhipLruCacheManager = new LibWhipLru.Cache.StorageManager("TestLibWhipLruCache", uint.MaxValue, "TestLibWhipLruCache.wcache", 100, TimeSpan.FromMinutes(2));
+			var config = new Chattel.ChattelConfiguration(
+				"TestLibWhipLruCache",
+				"TestLibWhipLruCache.wcache",
+				100
+			);
 
-			_libWhipLruCacheManager.PutAsset(_knownAsset);
+			_libWhipLruCache = new LibWhipLru.Cache.AssetCacheLmdb(
+				config,
+				uint.MaxValue
+			);
+
+			_libWhipLruStorageManager = new LibWhipLru.Cache.StorageManager(
+				_libWhipLruCache,
+				TimeSpan.FromMinutes(2),
+				null,
+				null
+			);
+
+			_libWhipLruStorageManager.StoreAsset(_knownAsset, result => {});
 
 			LOG.Debug($"Initialization of {nameof(TestLibWhipLruCache)} complete.");
 		}
@@ -117,11 +134,11 @@ namespace SpeedTests {
 		#region Get Tests
 
 		private void TestGetUnknown() {
-			_libWhipLruCacheManager.GetAsset(Guid.NewGuid());
+			_libWhipLruStorageManager.GetAsset(Guid.NewGuid(), asset => { }, () => {});
 		}
 
 		private void TestGetKnown() {
-			_libWhipLruCacheManager.GetAsset(_knownAsset.Id);
+			_libWhipLruStorageManager.GetAsset(_knownAsset.Id, asset => { }, () => { });
 		}
 
 		#endregion
@@ -129,11 +146,11 @@ namespace SpeedTests {
 		#region Get Dont Cache Tests
 
 		private void TestGetDontCacheUnknown() {
-			_libWhipLruCacheManager.GetAsset(Guid.NewGuid(), false);
+			_libWhipLruStorageManager.GetAsset(Guid.NewGuid(), asset => { }, () => { }, false);
 		}
 
 		private void TestGetDontCacheKnown() {
-			_libWhipLruCacheManager.GetAsset(_knownAsset.Id, false);
+			_libWhipLruStorageManager.GetAsset(_knownAsset.Id, asset => { }, () => { }, false);
 		}
 
 		#endregion
@@ -141,17 +158,17 @@ namespace SpeedTests {
 		#region Put Tests
 
 		private void TestPutKnown() {
-			_libWhipLruCacheManager.PutAsset(_knownAsset);
+			_libWhipLruStorageManager.StoreAsset(_knownAsset, result => { });
 		}
 
 		private void TestPutNewBlank() {
-			_libWhipLruCacheManager.PutAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
+			_libWhipLruStorageManager.StoreAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
 				Id = Guid.NewGuid(),
-			});
+			}, result => { });
 		}
 
 		private void TestPutNewComplete() {
-			_libWhipLruCacheManager.PutAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
+			_libWhipLruStorageManager.StoreAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
 				Id = Guid.NewGuid(),
 				CreateTime = DateTime.UtcNow,
 				Data = System.Text.Encoding.UTF8.GetBytes("Just some data."),
@@ -160,7 +177,7 @@ namespace SpeedTests {
 				Name = "New Asset",
 				Temporary = false,
 				Type = 7,
-			});
+			}, result => { });
 		}
 
 		private void TestPutNewComplete2MB() {
@@ -168,7 +185,7 @@ namespace SpeedTests {
 
 			RandomUtil.Rnd.NextBytes(data);
 
-			_libWhipLruCacheManager.PutAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
+			_libWhipLruStorageManager.StoreAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
 				Id = Guid.NewGuid(),
 				CreateTime = DateTime.UtcNow,
 				Data = data,
@@ -177,7 +194,7 @@ namespace SpeedTests {
 				Name = "New Asset",
 				Temporary = false,
 				Type = 7,
-			});
+			}, result => { });
 		}
 
 		#endregion
@@ -185,7 +202,7 @@ namespace SpeedTests {
 		#region Stored Asset Ids Get Tests
 
 		private void TestStoredAssetIdsGet000() {
-			_libWhipLruCacheManager.ActiveIds("000");
+			_libWhipLruStorageManager.GetLocallyKnownAssetIds("000");
 		}
 
 		#endregion
@@ -193,19 +210,18 @@ namespace SpeedTests {
 		#region Test Tests
 
 		private void TestTestUnknown() {
-			_libWhipLruCacheManager.CheckAsset(Guid.NewGuid());
+			_libWhipLruStorageManager.CheckAsset(Guid.NewGuid(), found => {});
 		}
 
 		private void TestTestKnown() {
-			_libWhipLruCacheManager.CheckAsset(_knownAsset.Id);
+			_libWhipLruStorageManager.CheckAsset(_knownAsset.Id, found => { });
 		}
 
 		#endregion
-*/
 
 		#region IDisposable Support
 
-		private bool disposedValue = false; // To detect redundant calls
+		private bool disposedValue; // To detect redundant calls
 
 		protected virtual void Dispose(bool disposing) {
 			if (!disposedValue) {
@@ -213,8 +229,8 @@ namespace SpeedTests {
 					// dispose managed state (managed objects).
 					LOG.Debug($"Cleaning up after {nameof(TestLibWhipLruCache)}...");
 
-					// TODO: restore
-					//_libWhipLruCacheManager.Dispose();
+					IDisposable disposableCache = _libWhipLruCache;
+					disposableCache.Dispose();
 
 					System.IO.Directory.Delete("TestLibWhipLruCache", true);
 					System.IO.File.Delete("TestLibWhipLruCache.wcache");
@@ -243,6 +259,7 @@ namespace SpeedTests {
 			// uncomment the following line if the finalizer is overridden above.
 			// GC.SuppressFinalize(this);
 		}
+
 		#endregion
 	}
 }

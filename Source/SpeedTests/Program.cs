@@ -35,8 +35,7 @@ namespace SpeedTests {
 
 			// Do some tests
 			using (var tests = new TestLibWhipLruCache()) {
-				// TODO: restore
-				//tests.RunTests();
+				tests.RunTests();
 			}
 
 			using (var tests = new TestLibWhipLru()) {

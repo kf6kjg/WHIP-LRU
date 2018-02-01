@@ -34,7 +34,8 @@ namespace SpeedTests {
 		protected const int SERVICE_PORT = 37111;
 		protected const string SERVICE_PASSWORD = "widjadidja";
 
-		private readonly LibWhipLru.Cache.StorageManager _libWhipLruCacheManager;
+		private readonly LibWhipLru.Cache.StorageManager _libWhipLruStorageManager;
+		private readonly LibWhipLru.Cache.AssetCacheLmdb _libWhipLruCache;
 		private readonly LibWhipLru.WhipLru _libWhipLru;
 
 		public TestLibWhipLru() : base(SERVICE_ADDRESS, SERVICE_PORT, SERVICE_PASSWORD) {
@@ -57,10 +58,26 @@ namespace SpeedTests {
 			catch (Exception) {
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
-			/* TODO: restore
-			_libWhipLruCacheManager = new LibWhipLru.Cache.StorageManager("SpeedTestLibWhipLru", uint.MaxValue, "SpeedTestLibWhipLru.wcache", 100, TimeSpan.FromMinutes(2));
 
-			_libWhipLruCacheManager.PutAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
+			var config = new Chattel.ChattelConfiguration(
+				"SpeedTestLibWhipLru",
+				"SpeedTestLibWhipLru.wcache",
+				100
+			);
+
+			_libWhipLruCache = new LibWhipLru.Cache.AssetCacheLmdb(
+				config,
+				uint.MaxValue
+			);
+
+			_libWhipLruStorageManager = new LibWhipLru.Cache.StorageManager(
+				_libWhipLruCache,
+				TimeSpan.FromMinutes(2),
+				null,
+				null
+			);
+
+			_libWhipLruStorageManager.StoreAsset(new InWorldz.Data.Assets.Stratus.StratusAsset {
 				CreateTime = DateTime.UtcNow, // Close enough.
 				Data = _knownAsset.Data,
 				Description = _knownAsset.Description,
@@ -69,18 +86,17 @@ namespace SpeedTests {
 				Name = _knownAsset.Name,
 				Temporary = _knownAsset.Temporary,
 				Type = (sbyte)_knownAsset.Type,
-			});
+			}, result => {});
 
 			var pidFileManager = new LibWhipLru.Util.PIDFileManager("SpeedTestLibWhipLru.pid");
 
-			_libWhipLru = new LibWhipLru.WhipLru(SERVICE_ADDRESS, SERVICE_PORT, SERVICE_PASSWORD, pidFileManager, _libWhipLruCacheManager);
+			_libWhipLru = new LibWhipLru.WhipLru(SERVICE_ADDRESS, SERVICE_PORT, SERVICE_PASSWORD, pidFileManager, _libWhipLruStorageManager);
 
 			_libWhipLru.Start();
 
 			Thread.Sleep(500);
 
 			LOG.Debug($"Initialization of {nameof(TestLibWhipLru)} complete.");
-			*/
 		}
 
 		#region IDisposable Support
@@ -99,8 +115,8 @@ namespace SpeedTests {
 
 					Thread.Sleep(500);
 
-					// TODO: restore
-					//_libWhipLruCacheManager.Dispose();
+					IDisposable disposableCache = _libWhipLruCache;
+					disposableCache.Dispose();
 
 					Thread.Sleep(500);
 
