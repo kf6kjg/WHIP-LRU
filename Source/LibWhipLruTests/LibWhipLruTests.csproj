@@ -96,10 +96,11 @@
   <ItemGroup>
     <Compile Include="Setup.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="Cache\TestIdWriteCacheNode.cs" />
     <Compile Include="RandomUtil.cs" />
     <Compile Include="Cache\TestOrderedGuidCache.cs" />
-    <Compile Include="Cache\TestCacheManager.cs" />
+    <Compile Include="Cache\TestStorageManager.cs" />
+    <Compile Include="Cache\TestAssetCacheLmdb.cs" />
+    <Compile Include="Cache\TestAssetCacheLmdbCtor.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cache\" />
