@@ -62,6 +62,10 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentOutOfRangeException(nameof(maxAssetCacheDiskSpaceByteCount), $"Asset cache disk space should be able to fit at least one maximum-sized asset, and thus should be at least {uint.MaxValue} bytes.");
 			}
 
+			if (maxAssetCacheDiskSpaceByteCount > long.MaxValue) {
+				throw new ArgumentOutOfRangeException(nameof(maxAssetCacheDiskSpaceByteCount), $"Asset cache underlying system doesn't support sizes larger than {long.MaxValue} bytes.");
+			}
+
 			if (!_config.CacheEnabled) {
 				// No caching? Don't do squat.
 				return;
@@ -103,8 +107,6 @@ namespace LibWhipLru.Cache {
 				throw new CacheException($"Attempting to restore index from db threw an exception!", e);
 			}
 			LOG.Debug($"Restoring index complete.");
-
-
 		}
 
 		/// <summary>
