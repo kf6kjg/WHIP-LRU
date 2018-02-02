@@ -80,7 +80,7 @@ namespace LibWhipLruTests.Cache {
 		#region Ctor
 
 		[Test]
-		public void TestCtorDoesNotThrow() {
+		public void TestStorageManager_Ctor_DoesNotThrow() {
 			Assert.DoesNotThrow(() => new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -96,7 +96,7 @@ namespace LibWhipLruTests.Cache {
 		#region Putting assets
 
 		[Test]
-		public void TestStoreAssetAssetNullThrowsArgNullException() {
+		public void TestStorageManager_StoreAsset_AssetNull_ArgumentNullException() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -108,7 +108,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStoreAssetEmptyIdThrowsArgException() {
+		public void TestStorageManager_StoreAsset_EmptyId_ArgumentException() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -124,7 +124,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStoreAssetDoesntThrowFirstTime() {
+		public void TestStorageManager_StoreAsset_DoesntThrowFirstTime() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -140,7 +140,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStoreAssetDoesntThrowDuplicate() {
+		public void TestStorageManager_StoreAsset_DoesntThrowDuplicate() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -157,7 +157,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStoreAssetDoesntThrowMultiple() {
+		public void TestStorageManager_StoreAsset_DoesntThrowMultiple() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -184,7 +184,7 @@ namespace LibWhipLruTests.Cache {
 		#region Get Assets
 
 		[Test]
-		public void TestGetAssetEmptyIdThrowsArgException() {
+		public void TestStorageManager_GetAsset_EmptyId_ArgumentException() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -196,7 +196,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestGetAssetUnknownDoesntThrow() {
+		public void TestStorageManager_GetAsset_Unknown_DoesntThrow() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -208,7 +208,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestGetAssetUnknownIsNull() {
+		public void TestStorageManager_GetAsset_Unknown_IsNull() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -220,7 +220,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestGetAssetKnownDoesntThrow() {
+		public void TestStorageManager_GetAsset_Known_DoesntThrow() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -238,7 +238,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestGetAssetKnownIsNotNull() {
+		public void TestStorageManager_GetAsset_Known_IsNotNull() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -258,7 +258,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestGetAssetKnownHasSameId() {
+		public void TestStorageManager_GetAsset_Known_HasSameId() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -278,7 +278,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestGetAssetKnownIsIdentical() {
+		public void TestStorageManager_GetAsset_Known_IsIdentical() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
