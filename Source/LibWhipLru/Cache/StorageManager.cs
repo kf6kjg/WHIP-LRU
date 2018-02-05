@@ -52,6 +52,14 @@ namespace LibWhipLru.Cache {
 		private readonly System.Runtime.Caching.CacheItemPolicy _negativeCachePolicy;
 		private readonly ReaderWriterLockSlim _negativeCacheLock;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.StorageManager"/> class.
+		/// A zero or negative value for the negativeCacheItemLifetime results in the negative cache being disabled.
+		/// </summary>
+		/// <param name="cache">Cache.</param>
+		/// <param name="negativeCacheItemLifetime">Negative cache item lifetime.</param>
+		/// <param name="reader">Reader.</param>
+		/// <param name="writer">Writer.</param>
 		public StorageManager(
 			AssetCacheLmdb cache,
 			TimeSpan negativeCacheItemLifetime,

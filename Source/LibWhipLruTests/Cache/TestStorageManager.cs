@@ -89,9 +89,59 @@ namespace LibWhipLruTests.Cache {
 			));
 		}
 
-		// TODO: a mess of tests for the ctor
+		[Test]
+		public void TestStorageManager_Ctor_NullCache_ArgumentNullException() {
+			Assert.Throws<ArgumentNullException>(() => new StorageManager(
+				null,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			));
+		}
+
+		[Test]
+		public void TestStorageManager_Ctor_NullReader_ArgumentNullException() {
+			Assert.Throws<ArgumentNullException>(() => new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				null,
+				_chattelWriter
+			));
+		}
+
+		[Test]
+		public void TestStorageManager_Ctor_NullWriter_ArgumentNullException() {
+			Assert.Throws<ArgumentNullException>(() => new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				null
+			));
+		}
+
+		[Test]
+		public void TestStorageManager_Ctor_NegativeTime_DoesntThrow() {
+			Assert.DoesNotThrow(() => new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(-1),
+				_chattelReader,
+				_chattelWriter
+			));
+		}
+
+		[Test]
+		public void TestStorageManager_Ctor_ZeroTime_DoesntThrow() {
+			Assert.DoesNotThrow(() => new StorageManager(
+				_readerCache,
+				TimeSpan.Zero,
+				_chattelReader,
+				_chattelWriter
+			));
+		}
 
 		#endregion
+
+		// TODO: Check Asset
 
 		#region Putting assets
 
