@@ -35,7 +35,7 @@ using InWorldz.Data.Assets.Stratus;
 using LightningDB;
 
 namespace LibWhipLru.Cache {
-	public class AssetCacheLmdb : IChattelCache, IDisposable {
+	public class AssetLocalStorageLmdb : IChattelLocalStorage, IDisposable {
 		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = uint.MaxValue/*4TB, maximum size of single asset*/;
 
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -52,7 +52,7 @@ namespace LibWhipLru.Cache {
 		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
 
 
-		public AssetCacheLmdb(
+		public AssetLocalStorageLmdb(
 			ChattelConfiguration config,
 			ulong maxAssetCacheDiskSpaceByteCount
 		) {
@@ -66,13 +66,13 @@ namespace LibWhipLru.Cache {
 				throw new ArgumentOutOfRangeException(nameof(maxAssetCacheDiskSpaceByteCount), $"Asset cache underlying system doesn't support sizes larger than {long.MaxValue} bytes.");
 			}
 
-			if (!_config.CacheEnabled) {
+			if (!_config.LocalStorageEnabled) {
 				// No caching? Don't do squat.
 				return;
 			}
 
 			try {
-				_dbenv = new LightningEnvironment(_config.CacheFolder.FullName) {
+				_dbenv = new LightningEnvironment(_config.LocalStorageFolder.FullName) {
 					MapSize = (long)maxAssetCacheDiskSpaceByteCount,
 					MaxDatabases = 1,
 				};
@@ -80,7 +80,7 @@ namespace LibWhipLru.Cache {
 				_dbenv.Open(EnvironmentOpenFlags.None, UnixAccessMode.OwnerRead | UnixAccessMode.OwnerWrite);
 			}
 			catch (LightningException e) {
-				throw new CacheException($"Given path invalid: '{_config.CacheFolder.FullName}'", e);
+				throw new CacheException($"Given path invalid: '{_config.LocalStorageFolder.FullName}'", e);
 			}
 
 			_activeIds = new OrderedGuidCache();
@@ -127,16 +127,16 @@ namespace LibWhipLru.Cache {
 			return _activeIds.AssetSize(assetId) > 0;
 		}
 
-		#region IChattelCache
+		#region IChattelLocalStorage
 
-		void IChattelCache.CacheAsset(StratusAsset asset) {
+		void IChattelLocalStorage.StoreAsset(StratusAsset asset) {
 			asset = asset ?? throw new ArgumentNullException(nameof(asset));
 
 			if (asset.Id == Guid.Empty) {
 				throw new ArgumentException("Asset cannot have zero ID.", nameof(asset));
 			}
 
-			if (!_config.CacheEnabled) {
+			if (!_config.LocalStorageEnabled) {
 				return;
 			}
 
@@ -154,16 +154,16 @@ namespace LibWhipLru.Cache {
 			LOG.Debug($"[ASSET_READER] Wrote an asset to cache: {asset.Id}");
 		}
 
-		void IChattelCache.Purge() {
+		void IChattelLocalStorage.PurgeAll() {
 			throw new NotImplementedException();
 		}
 
-		void IChattelCache.Purge(Guid assetId) {
+		void IChattelLocalStorage.Purge(Guid assetId) {
 			throw new NotImplementedException();
 		}
 
-		bool IChattelCache.TryGetCachedAsset(Guid assetId, out StratusAsset asset) {
-			if (!_config.CacheEnabled) {
+		bool IChattelLocalStorage.TryGetAsset(Guid assetId, out StratusAsset asset) {
+			if (!_config.LocalStorageEnabled) {
 				asset = null;
 				return false;
 			}
@@ -312,7 +312,7 @@ namespace LibWhipLru.Cache {
 		}
 
 		// Override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-		~AssetCacheLmdb() {
+		~AssetLocalStorageLmdb() {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(false);
 		}

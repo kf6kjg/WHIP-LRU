@@ -83,10 +83,10 @@ namespace UnitTests {
 			// Start booting server
 			var pidFileManager = new LibWhipLru.Util.PIDFileManager(Constants.PID_FILE_PATH);
 
-			var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
-			var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);
+			var chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH);
+			var chattelConfigWrite = new ChattelConfiguration(DATABASE_FOLDER_PATH);
 
-			var readerCache = new LibWhipLru.Cache.AssetCacheLmdb(chattelConfigRead, DATABASE_MAX_SIZE_BYTES);
+			var readerCache = new LibWhipLru.Cache.AssetLocalStorageLmdb(chattelConfigRead, DATABASE_MAX_SIZE_BYTES);
 			var chattelReader = new ChattelReader(chattelConfigRead, readerCache);
 			var chattelWriter = new ChattelWriter(chattelConfigWrite, readerCache);
 

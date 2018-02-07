@@ -36,21 +36,21 @@ namespace LibWhipLruTests.Cache {
 		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue/*Min value to get tests to run*/;
 
 		private ChattelConfiguration _chattelConfigRead;
-		private AssetCacheLmdb _cacheLmdb;
-		private IChattelCache _cache;
+		private AssetLocalStorageLmdb _cacheLmdb;
+		private IChattelLocalStorage _cache;
 
 		[OneTimeSetUp]
 		public void Startup() {
 			// Folder has to be there or the config fails.
 			TestAssetCacheLmdbCtor.RebuildCacheFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
-			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH);
+			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH, assetServer: null);
 		}
 
 		[SetUp]
 		public void BeforeEveryTest() {
 			TestAssetCacheLmdbCtor.RebuildCacheFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
 
-			_cache = _cacheLmdb = new AssetCacheLmdb(
+			_cache = _cacheLmdb = new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				DATABASE_MAX_SIZE_BYTES
 			);
@@ -75,46 +75,46 @@ namespace LibWhipLruTests.Cache {
 		#region Cache Asset
 
 		[Test]
-		public void TestAssetCacheLmdb_CacheAsset_AssetOnDiskImmediately() {
+		public void TestAssetCacheLmdb_StoreAsset_AssetOnDiskImmediately() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
 
-			_cache.CacheAsset(asset);
+			_cache.StoreAsset(asset);
 			Assert.True(_cacheLmdb.AssetOnDisk(asset.Id));
 		}
 
 		[Test]
-		public void TestAssetCacheLmdb_CacheAsset_ContainsImmediately() {
+		public void TestAssetCacheLmdb_StoreAsset_ContainsImmediately() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
 
-			_cache.CacheAsset(asset);
+			_cache.StoreAsset(asset);
 			Assert.True(_cacheLmdb.Contains(asset.Id));
 		}
 
 		[Test]
-		public void TestAssetCacheLmdb_CacheAsset_DoesntThrow() {
+		public void TestAssetCacheLmdb_StoreAsset_DoesntThrow() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
 
-			Assert.DoesNotThrow(() => _cache.CacheAsset(asset));
+			Assert.DoesNotThrow(() => _cache.StoreAsset(asset));
 		}
 
 		[Test]
-		public void TestAssetCacheLmdb_CacheAsset_Null_ArgumentNullException() {
-			Assert.Throws<ArgumentNullException>(() => _cache.CacheAsset(null));
+		public void TestAssetCacheLmdb_StoreAsset_Null_ArgumentNullException() {
+			Assert.Throws<ArgumentNullException>(() => _cache.StoreAsset(null));
 		}
 
 		[Test]
-		public void TestAssetCacheLmdb_CacheAsset_EmpyId_ArgumentException() {
+		public void TestAssetCacheLmdb_StoreAsset_EmpyId_ArgumentException() {
 			var asset = new StratusAsset {
 				Id = Guid.Empty,
 			};
 
-			Assert.Throws<ArgumentException>(() => _cache.CacheAsset(asset));
+			Assert.Throws<ArgumentException>(() => _cache.StoreAsset(asset));
 		}
 
 		#endregion

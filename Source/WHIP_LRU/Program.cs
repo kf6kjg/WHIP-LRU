@@ -12,6 +12,9 @@ using Nini.Config;
 using LibWhipLru.Server;
 using LibWhipLru.Util;
 using LibWhipLru.Cache;
+using System.Linq;
+using System.Collections.Generic;
+using System.Net.Sockets;
 
 namespace WHIP_LRU {
 	class Application {
@@ -25,12 +28,19 @@ namespace WHIP_LRU {
 
 		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
 
+		private static readonly string DEFAULT_DB_FOLDER_PATH = "cache";
+
+		private static readonly string DEFAULT_WRITECACHE_FILE_PATH = "whiplru.wcache";
+
+		private static readonly uint DEFAULT_WRITECACHE_RECORD_COUNT = 1024U * 1024U * 1024U/*1GB*/ / 17 /*WriteCacheNode.BYTE_SIZE*/;
+
+		private static readonly Dictionary<string, IAssetServer> _assetServersByName = new Dictionary<string, IAssetServer>();
+
 		public static int Main(string[] args) {
 			// First line, hook the appdomain to the crash reporter
 			AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-			var createdNew = true;
-			var waitHandle = new EventWaitHandle(false, EventResetMode.AutoReset, "70a9f94f-59e8-4073-93ab-00aaacc26111", out createdNew);
+			var waitHandle = new EventWaitHandle(false, EventResetMode.AutoReset, "70a9f94f-59e8-4073-93ab-00aaacc26111", out var createdNew);
 
 			if (!createdNew) {
 				LOG.Error("Server process already started, please stop that server first.");
@@ -96,11 +106,25 @@ namespace WHIP_LRU {
 			}
 
 			while (isRunning) {
+				// Dump any known servers, we're going to reconfigure them.
+				foreach (var server in _assetServersByName.Values) {
+					server.Dispose();
+				}
+				// TODO: might need to double buffer these, or something, so that old ones can finish out before being disposed.
+
 				// Read in the ini file
 				ReadConfigurationFromINI(configSource);
 
-				var chattelConfigRead = new ChattelConfiguration(configSource, configSource.Configs["AssetsRead"]);
-				var chattelConfigWrite = new ChattelConfiguration(configSource, configSource.Configs["AssetsWrite"]);
+				// Read in a config list that lists the priority order of servers and their settings.
+
+				var configRead = configSource.Configs["AssetsRead"];
+				var configWrite = configSource.Configs["AssetsWrite"];
+
+				var serversRead = GetServers(configSource, configRead, _assetServersByName);
+				var serversWrite = GetServers(configSource, configWrite, _assetServersByName);
+
+				var chattelConfigRead = GetConfig(configRead, serversRead);
+				var chattelConfigWrite = GetConfig(configWrite, serversWrite);
 
 				var serverConfig = configSource.Configs["Server"];
 
@@ -115,12 +139,12 @@ namespace WHIP_LRU {
 				var cacheConfig = configSource.Configs["Cache"];
 
 				var pathToDatabaseFolder = cacheConfig?.GetString("DatabaseFolderPath", ChattelConfiguration.DEFAULT_DB_FOLDER_PATH) ?? ChattelConfiguration.DEFAULT_DB_FOLDER_PATH;
-				var maxAssetCacheDiskSpaceByteCount = (ulong?)cacheConfig?.GetLong("MaxDiskSpace", (long)AssetCacheLmdb.DEFAULT_DB_MAX_DISK_BYTES) ?? AssetCacheLmdb.DEFAULT_DB_MAX_DISK_BYTES;
+				var maxAssetCacheDiskSpaceByteCount = (ulong?)cacheConfig?.GetLong("MaxDiskSpace", (long)AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES) ?? AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES;
 				var pathToWriteCacheFile = cacheConfig?.GetString("WriteCacheFilePath", ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH) ?? ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH;
 				var maxWriteCacheRecordCount = (uint?)cacheConfig?.GetInt("WriteCacheMaxRecords", (int)ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT) ?? ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT;
 				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)cacheConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
 
-				var readerCache = new AssetCacheLmdb(chattelConfigRead, maxAssetCacheDiskSpaceByteCount); // TODO: If needed, possibly split the reader and writer caches.
+				var readerCache = new AssetLocalStorageLmdb(chattelConfigRead, maxAssetCacheDiskSpaceByteCount);
 				var chattelReader = new ChattelReader(chattelConfigRead, readerCache); // TODO: add purge flag to CLI
 				var chattelWriter = new ChattelWriter(chattelConfigWrite, readerCache); // add purge flag to CLI
 
@@ -159,6 +183,10 @@ namespace WHIP_LRU {
 				else {
 					waitHandle.WaitOne();
 				}
+			}
+
+			foreach (var server in _assetServersByName.Values) {
+				server.Dispose();
 			}
 
 			return 0;
@@ -210,6 +238,110 @@ namespace WHIP_LRU {
 					LOG.Fatal($"Failure reading configuration file at {Path.GetFullPath(iniFileName)}");
 				}
 			}
+		}
+
+		private static IEnumerable<IEnumerable<IAssetServer>> GetServers(IConfigSource configSource, IConfig assetConfig, Dictionary<string, IAssetServer> serverList) {
+			var serialParallelServerSources = assetConfig?
+				.GetString("Servers", string.Empty)
+				.Split(',')
+				.Where(parallelSources => !string.IsNullOrWhiteSpace(parallelSources))
+				.Select(parallelSources => parallelSources
+					.Split('&')
+					.Where(source => !string.IsNullOrWhiteSpace(source))
+					.Select(source => source.Trim())
+				)
+				.Where(parallelSources => parallelSources.Any())
+			;
+
+			var serialParallelAssetServers = new List<List<IAssetServer>>();
+
+			if (serialParallelServerSources != null && serialParallelServerSources.Any()) {
+				foreach (var parallelSources in serialParallelServerSources) {
+					var parallelServerConnectors = new List<IAssetServer>();
+					foreach (var sourceName in parallelSources) {
+						var sourceConfig = configSource.Configs[sourceName];
+						var type = sourceConfig?.GetString("Type", string.Empty)?.ToLower(System.Globalization.CultureInfo.InvariantCulture);
+
+						if (!serverList.TryGetValue(sourceName, out var serverConnector)) {
+							try {
+								switch (type) {
+									case "whip":
+										serverConnector = new AssetServerWHIP(
+											sourceName,
+											sourceConfig.GetString("Host", string.Empty),
+											sourceConfig.GetInt("Port", 32700),
+											sourceConfig.GetString("Password", "changeme") // Yes, that's the default password for WHIP.
+										);
+										break;
+									case "cf":
+										serverConnector = new AssetServerCF(
+											sourceName,
+											sourceConfig.GetString("Username", string.Empty),
+											sourceConfig.GetString("APIKey", string.Empty),
+											sourceConfig.GetString("DefaultRegion", string.Empty),
+											sourceConfig.GetBoolean("UseInternalURL", true),
+											sourceConfig.GetString("ContainerPrefix", string.Empty)
+										);
+										break;
+									default:
+										LOG.Warn($"Unknown asset server type in section [{sourceName}].");
+										break;
+								}
+
+								serverList.Add(sourceName, serverConnector);
+							}
+							catch (SocketException e) {
+								LOG.Error($"Asset server of type '{type}' defined in section [{sourceName}] failed setup. Skipping server.", e);
+							}
+						}
+
+						if (serverConnector != null) {
+							parallelServerConnectors.Add(serverConnector);
+						}
+					}
+
+					if (parallelServerConnectors.Any()) {
+						serialParallelAssetServers.Add(parallelServerConnectors);
+					}
+				}
+			}
+			else {
+				LOG.Warn("Servers empty or not specified. No asset server sections configured.");
+			}
+
+			return serialParallelAssetServers;
+		}
+
+		private static ChattelConfiguration GetConfig(IConfig assetConfig, IEnumerable<IEnumerable<IAssetServer>> serialParallelAssetServers) {
+			// Set up caching
+			var cachePathRead = assetConfig?.GetString("CachePath", DEFAULT_DB_FOLDER_PATH) ?? DEFAULT_DB_FOLDER_PATH;
+
+			DirectoryInfo cacheFolder = null;
+
+			if (string.IsNullOrWhiteSpace(cachePathRead)) {
+				LOG.Info($"CachePath is empty, caching assets disabled.");
+			}
+			else if (!Directory.Exists(cachePathRead)) {
+				LOG.Info($"CachePath folder does not exist, caching assets disabled.");
+			}
+			else {
+				cacheFolder = new DirectoryInfo(cachePathRead);
+				LOG.Info($"Caching assets enabled at {cacheFolder.FullName}");
+			}
+
+			// Set up caching
+			var writeCachePath = assetConfig?.GetString("WriteCacheFilePath", string.Empty) ?? string.Empty;
+			var writeCacheRecordCount = (uint)Math.Max(0, assetConfig?.GetLong("WriteCacheRecordCount", DEFAULT_WRITECACHE_RECORD_COUNT) ?? DEFAULT_WRITECACHE_RECORD_COUNT);
+
+			if (string.IsNullOrWhiteSpace(writeCachePath) || writeCacheRecordCount <= 0 || cacheFolder == null) {
+				LOG.Warn($"WriteCacheFilePath is empty, WriteCacheRecordCount is zero, or caching is disabled. Crash recovery will be compromised.");
+			}
+			else {
+				var writeCacheFile = new FileInfo(writeCachePath);
+				LOG.Info($"Write cache enabled at {writeCacheFile.FullName} with {writeCacheRecordCount} records.");
+			}
+
+			return new ChattelConfiguration(cachePathRead, writeCachePath, writeCacheRecordCount, serialParallelAssetServers);
 		}
 
 		#endregion
@@ -273,6 +405,19 @@ namespace WHIP_LRU {
 				_isHandlingException = false;
 
 				if (e.IsTerminating) {
+
+					foreach (var server in _assetServersByName.Values) {
+						try {
+							server.Dispose();
+						}
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
+						catch {
+							// Ignore.
+						}
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+					}
+
+
 					// Preempt to not show a pile of puke if console was disabled.
 					Environment.Exit(1);
 				}

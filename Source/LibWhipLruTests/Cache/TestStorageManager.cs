@@ -38,7 +38,7 @@ namespace LibWhipLruTests.Cache {
 		public static readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_sm.whipwcache";
 		public const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 
-		private AssetCacheLmdb _readerCache;
+		private AssetLocalStorageLmdb _readerCache;
 		private ChattelReader _chattelReader;
 		private ChattelWriter _chattelWriter;
 
@@ -59,10 +59,10 @@ namespace LibWhipLruTests.Cache {
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
 			Directory.CreateDirectory(TestAssetCacheLmdb.DATABASE_FOLDER_PATH);
-			var chattelConfigRead = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT);
-			var chattelConfigWrite = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT);
+			var chattelConfigRead = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
+			var chattelConfigWrite = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
 
-			_readerCache = new AssetCacheLmdb(chattelConfigRead, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
+			_readerCache = new AssetLocalStorageLmdb(chattelConfigRead, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
 			_chattelReader = new ChattelReader(chattelConfigRead, _readerCache);
 			_chattelWriter = new ChattelWriter(chattelConfigWrite, _readerCache);
 		}

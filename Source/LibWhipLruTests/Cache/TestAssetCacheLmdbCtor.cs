@@ -62,7 +62,7 @@ namespace LibWhipLruTests.Cache {
 		public void Startup() {
 			// Folder has to be there or the config fails.
 			RebuildCacheFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
-			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH);
+			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH, assetServer: null);
 		}
 
 		[SetUp]
@@ -77,7 +77,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestAssetCacheLmdb_Ctor_DoesntThrow() {
-			Assert.DoesNotThrow(() => new AssetCacheLmdb(
+			Assert.DoesNotThrow(() => new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				DATABASE_MAX_SIZE_BYTES
 			));
@@ -85,8 +85,8 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestAssetCacheLmdb_Ctor_DBPathBlank_DoesntThrow() {
-			var chattelConfigRead = new ChattelConfiguration("");
-			Assert.DoesNotThrow(() => new AssetCacheLmdb(
+			var chattelConfigRead = new ChattelConfiguration("", assetServer: null);
+			Assert.DoesNotThrow(() => new AssetLocalStorageLmdb(
 				chattelConfigRead,
 				DATABASE_MAX_SIZE_BYTES
 			));
@@ -94,8 +94,8 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestAssetCacheLmdb_Ctor_DBPathNull_DoesntThrow() {
-			var chattelConfigRead = new ChattelConfiguration(null);
-			Assert.DoesNotThrow(() => new AssetCacheLmdb(
+			var chattelConfigRead = new ChattelConfiguration(null, assetServer: null);
+			Assert.DoesNotThrow(() => new AssetLocalStorageLmdb(
 				chattelConfigRead,
 				DATABASE_MAX_SIZE_BYTES
 			));
@@ -103,7 +103,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestAssetCacheLmdb_Ctor_DBSize0_ArgumentOutOfRangeException() {
-			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetCacheLmdb(
+			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				0
 			));
@@ -111,7 +111,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestAssetCacheLmdb_Ctor_DBSizeJustTooSmall_ArgumentOutOfRangeException() {
-			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetCacheLmdb(
+			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				uint.MaxValue - 1
 			));
@@ -119,7 +119,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestAssetCacheLmdb_Ctor_DBSizeMinimum_DoesntThrow() {
-			Assert.DoesNotThrow(() => new AssetCacheLmdb(
+			Assert.DoesNotThrow(() => new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				uint.MaxValue
 			));
@@ -129,7 +129,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestAssetCacheLmdb_Ctor_DBSizeJustOversize_ArgumentOutOfRangeException() {
-			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetCacheLmdb(
+			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				long.MaxValue + 1UL
 			));
@@ -137,7 +137,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public void TestAssetCacheLmdb_Ctor_DBSizeOversize_ArgumentOutOfRangeException() {
-			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetCacheLmdb(
+			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				ulong.MaxValue
 			));
@@ -149,15 +149,15 @@ namespace LibWhipLruTests.Cache {
 				Id = Guid.NewGuid(),
 			};
 
-			using (var cache = new AssetCacheLmdb(
+			using (var cache = new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				DATABASE_MAX_SIZE_BYTES
 			)) {
-				IChattelCache cacheViaInterface = cache;
-				cacheViaInterface.CacheAsset(asset);
+				IChattelLocalStorage cacheViaInterface = cache;
+				cacheViaInterface.StoreAsset(asset);
 			}
 
-			using (var cache = new AssetCacheLmdb(
+			using (var cache = new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				DATABASE_MAX_SIZE_BYTES
 			)) {

@@ -41,7 +41,7 @@ namespace LibWhipLru.Cache {
 		public delegate void FoundCallback(bool found);
 		public delegate void StorageResultCallback(PutResult result);
 
-		private readonly AssetCacheLmdb _cache;
+		private readonly AssetLocalStorageLmdb _cache;
 		private ChattelReader _assetReader;
 		private ChattelWriter _assetWriter;
 
@@ -61,7 +61,7 @@ namespace LibWhipLru.Cache {
 		/// <param name="reader">Reader.</param>
 		/// <param name="writer">Writer.</param>
 		public StorageManager(
-			AssetCacheLmdb cache,
+			AssetLocalStorageLmdb cache,
 			TimeSpan negativeCacheItemLifetime,
 			ChattelReader reader,
 			ChattelWriter writer

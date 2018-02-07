@@ -88,7 +88,7 @@
     <Compile Include="Util\PIDFileManager.cs" />
     <Compile Include="Server\ClientInfo.cs" />
     <Compile Include="Cache\OrderedGuidCache.cs" />
-    <Compile Include="Cache\AssetCacheLmdb.cs" />
+    <Compile Include="Cache\AssetLocalStorageLmdb.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Server\" />

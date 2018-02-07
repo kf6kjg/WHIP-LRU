@@ -35,7 +35,7 @@ namespace SpeedTests {
 		protected const string SERVICE_PASSWORD = "widjadidja";
 
 		private readonly LibWhipLru.Cache.StorageManager _libWhipLruStorageManager;
-		private readonly LibWhipLru.Cache.AssetCacheLmdb _libWhipLruCache;
+		private readonly LibWhipLru.Cache.AssetLocalStorageLmdb _libWhipLruCache;
 		private readonly LibWhipLru.WhipLru _libWhipLru;
 
 		public TestLibWhipLru() : base(SERVICE_ADDRESS, SERVICE_PORT, SERVICE_PASSWORD) {
@@ -62,10 +62,11 @@ namespace SpeedTests {
 			var config = new Chattel.ChattelConfiguration(
 				"SpeedTestLibWhipLru",
 				"SpeedTestLibWhipLru.wcache",
-				100
+				100,
+				(Chattel.IAssetServer) null
 			);
 
-			_libWhipLruCache = new LibWhipLru.Cache.AssetCacheLmdb(
+			_libWhipLruCache = new LibWhipLru.Cache.AssetLocalStorageLmdb(
 				config,
 				uint.MaxValue
 			);

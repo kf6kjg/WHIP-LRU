@@ -34,7 +34,7 @@ namespace SpeedTests {
 		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(60);
 
 		private readonly LibWhipLru.Cache.StorageManager _libWhipLruStorageManager;
-		private readonly LibWhipLru.Cache.AssetCacheLmdb _libWhipLruCache;
+		private readonly LibWhipLru.Cache.AssetLocalStorageLmdb _libWhipLruCache;
 		private readonly InWorldz.Data.Assets.Stratus.StratusAsset _knownAsset = new InWorldz.Data.Assets.Stratus.StratusAsset {
 			Id = Guid.NewGuid(),
 			CreateTime = DateTime.UtcNow,
@@ -71,10 +71,11 @@ namespace SpeedTests {
 			var config = new Chattel.ChattelConfiguration(
 				"TestLibWhipLruCache",
 				"TestLibWhipLruCache.wcache",
-				100
+				100,
+				(Chattel.IAssetServer) null
 			);
 
-			_libWhipLruCache = new LibWhipLru.Cache.AssetCacheLmdb(
+			_libWhipLruCache = new LibWhipLru.Cache.AssetLocalStorageLmdb(
 				config,
 				uint.MaxValue
 			);
