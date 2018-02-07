@@ -28,6 +28,7 @@ using System.IO;
 using Chattel;
 using InWorldz.Data.Assets.Stratus;
 using LibWhipLru.Cache;
+using NSubstitute;
 using NUnit.Framework;
 
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
@@ -361,6 +362,50 @@ namespace LibWhipLruTests.Cache {
 				Assert.AreEqual(baseAsset.Temporary, result.Temporary);
 				Assert.AreEqual(baseAsset.Type, result.Type);
 			}, Assert.Fail);
+		}
+
+		[Test]
+		public void TestStorageManager_GetAsset_SingleNoExist_CallsServerRequestAsset() {
+			var server = Substitute.For<IAssetServer>();
+			var config = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			var cache = new AssetLocalStorageLmdb(config, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
+			var reader = new ChattelReader(config, cache, false);
+			var writer = new ChattelWriter(config, cache, false);
+
+			var assetId = Guid.NewGuid();
+
+			var mgr = new StorageManager(
+				cache,
+				TimeSpan.FromMinutes(2),
+				reader,
+				writer
+			);
+			mgr.GetAsset(assetId, result => { }, () => { });
+
+			server.Received(1).RequestAssetSync(assetId);
+		}
+
+		[Test]
+		public void TestStorageManager_GetAsset_DoubleNoExist_CallsServerRequestOnlyOnce() {
+			// Tests the existence of a negative cache.
+			var server = Substitute.For<IAssetServer>();
+			var config = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			var cache = new AssetLocalStorageLmdb(config, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
+			var reader = new ChattelReader(config, cache, false);
+			var writer = new ChattelWriter(config, cache, false);
+
+			var assetId = Guid.NewGuid();
+
+			var mgr = new StorageManager(
+				cache,
+				TimeSpan.FromMinutes(2),
+				reader,
+				writer
+			);
+			mgr.GetAsset(assetId, result => { }, () => { });
+			mgr.GetAsset(assetId, result => { }, () => { });
+
+			server.Received(1).RequestAssetSync(assetId);
 		}
 
 		#endregion
