@@ -114,26 +114,24 @@ namespace LibWhipLru.Cache {
 				SpinWait.SpinUntil(() => _cache.AssetOnDisk(assetId));
 			}
 
-			if (_assetReader.HasUpstream) {
-				_assetReader.GetAssetAsync(assetId, asset => {
-					if (asset != null) {
-						successCallback(asset);
-						return;
-					}
+			_assetReader.GetAssetAsync(assetId, asset => {
+				if (asset != null) {
+					successCallback(asset);
+					return;
+				}
 
-					failureCallback();
+				failureCallback();
 
-					if (_negativeCache != null) {
-						_negativeCacheLock.EnterWriteLock();
-						try {
-							_negativeCache.Set(new System.Runtime.Caching.CacheItem(assetId.ToString("N"), 0), _negativeCachePolicy);
-						}
-						finally {
-							_negativeCacheLock.ExitWriteLock();
-						}
+				if (_negativeCache != null) {
+					_negativeCacheLock.EnterWriteLock();
+					try {
+						_negativeCache.Set(new System.Runtime.Caching.CacheItem(assetId.ToString("N"), 0), _negativeCachePolicy);
 					}
-				}, cacheResult ? ChattelReader.CacheRule.Normal : ChattelReader.CacheRule.SkipWrite);
-			}
+					finally {
+						_negativeCacheLock.ExitWriteLock();
+					}
+				}
+			}, cacheResult ? ChattelReader.CacheRule.Normal : ChattelReader.CacheRule.SkipWrite);
 		}
 
 		/// <summary>
