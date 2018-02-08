@@ -25,6 +25,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using Chattel;
 using InWorldz.Data.Assets.Stratus;
 using LibWhipLru.Cache;
@@ -259,6 +260,26 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
+		[Timeout(1000)]
+		public void TestStorageManager_GetAsset_Unknown_CallsFailureCallback() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var callbackWasCalled = false;
+			var stopWaitHandle = new AutoResetEvent(false);
+
+			mgr.GetAsset(Guid.NewGuid(), result => {  }, () => { callbackWasCalled = true; stopWaitHandle.Set(); });
+
+			stopWaitHandle.WaitOne();
+
+			Assert.True(callbackWasCalled);
+		}
+
+		[Test]
 		public void TestStorageManager_GetAsset_Unknown_IsNull() {
 			var mgr = new StorageManager(
 				_readerCache,
@@ -289,7 +310,8 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_GetAsset_Known_IsNotNull() {
+		[Timeout(1000)]
+		public void TestStorageManager_GetAsset_Known_CallsSuccessCallback() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -303,7 +325,31 @@ namespace LibWhipLruTests.Cache {
 				Id = id,
 			}, result => { });
 
-			mgr.GetAsset(id, result => { }, () => { });
+
+			var callbackWasCalled = false;
+			var stopWaitHandle = new AutoResetEvent(false);
+
+			mgr.GetAsset(id, result => { callbackWasCalled = true; stopWaitHandle.Set(); }, Assert.Fail);
+
+			stopWaitHandle.WaitOne();
+
+			Assert.True(callbackWasCalled);
+		}
+
+		[Test]
+		public void TestStorageManager_GetAsset_Known_IsNotNull() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var id = Guid.NewGuid();
+
+			mgr.StoreAsset(new StratusAsset {
+				Id = id,
+			}, result => { });
 
 			mgr.GetAsset(id, Assert.IsNotNull, Assert.Fail);
 		}
@@ -324,8 +370,6 @@ namespace LibWhipLruTests.Cache {
 			}, result => { });
 
 			mgr.GetAsset(id, result => { Assert.AreEqual(id, result.Id); }, Assert.Fail);
-
-
 		}
 
 		[Test]
