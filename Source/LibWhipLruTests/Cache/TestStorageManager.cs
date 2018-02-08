@@ -143,7 +143,171 @@ namespace LibWhipLruTests.Cache {
 
 		#endregion
 
-		// TODO: Check Asset
+		#region Check asset
+
+		[Test]
+		public void TestStorageManager_CheckAsset_EmptyId_ArgumentException() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			Assert.Throws<ArgumentException>(() => mgr.CheckAsset(Guid.Empty, result => { }));
+		}
+
+		[Test]
+		public void TestStorageManager_CheckAsset_Unknown_DoesntThrow() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			Assert.DoesNotThrow(() => mgr.CheckAsset(Guid.NewGuid(), result => { }));
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public void TestStorageManager_CheckAsset_Unknown_CallsCallback() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var callbackWasCalled = false;
+			var stopWaitHandle = new AutoResetEvent(false);
+
+			mgr.CheckAsset(Guid.NewGuid(), result => { callbackWasCalled = true; stopWaitHandle.Set(); });
+
+			stopWaitHandle.WaitOne();
+
+			Assert.True(callbackWasCalled);
+		}
+
+		[Test]
+		public void TestStorageManager_CheckAsset_Unknown_IsFalse() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			mgr.CheckAsset(Guid.NewGuid(), Assert.False);
+		}
+
+		[Test]
+		public void TestStorageManager_CheckAsset_Known_DoesntThrow() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var id = Guid.NewGuid();
+
+			mgr.StoreAsset(new StratusAsset {
+				Id = id,
+			}, result => { });
+
+			Assert.DoesNotThrow(() => mgr.CheckAsset(id, result => { }));
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public void TestStorageManager_CheckAsset_Known_CallsCallback() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var id = Guid.NewGuid();
+
+			mgr.StoreAsset(new StratusAsset {
+				Id = id,
+			}, result => { });
+
+			var callbackWasCalled = false;
+			var stopWaitHandle = new AutoResetEvent(false);
+
+			mgr.CheckAsset(id, result => { callbackWasCalled = true; stopWaitHandle.Set(); });
+
+			stopWaitHandle.WaitOne();
+
+			Assert.True(callbackWasCalled);
+		}
+
+		[Test]
+		public void TestStorageManager_CheckAsset_Known_IsTrue() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var id = Guid.NewGuid();
+
+			mgr.StoreAsset(new StratusAsset {
+				Id = id,
+			}, result => { });
+
+			mgr.CheckAsset(id, Assert.IsTrue);
+		}
+
+		[Test]
+		public void TestStorageManager_CheckAsset_SingleNoExist_CallsServerRequestAsset() {
+			var server = Substitute.For<IAssetServer>();
+			var config = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			var cache = new AssetLocalStorageLmdb(config, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
+			var reader = new ChattelReader(config, cache, false);
+			var writer = new ChattelWriter(config, cache, false);
+
+			var assetId = Guid.NewGuid();
+
+			var mgr = new StorageManager(
+				cache,
+				TimeSpan.FromMinutes(2),
+				reader,
+				writer
+			);
+			mgr.CheckAsset(assetId, result => { });
+
+			server.Received(1).RequestAssetSync(assetId);
+		}
+
+		[Test]
+		public void TestStorageManager_CheckAsset_DoubleNoExist_CallsServerRequestOnlyOnce() {
+			// Tests the existence of a negative cache.
+			var server = Substitute.For<IAssetServer>();
+			var config = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			var cache = new AssetLocalStorageLmdb(config, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
+			var reader = new ChattelReader(config, cache, false);
+			var writer = new ChattelWriter(config, cache, false);
+
+			var assetId = Guid.NewGuid();
+
+			var mgr = new StorageManager(
+				cache,
+				TimeSpan.FromMinutes(2),
+				reader,
+				writer
+			);
+			mgr.CheckAsset(assetId, result => { });
+			mgr.CheckAsset(assetId, result => { });
+
+			server.Received(1).RequestAssetSync(assetId);
+		}
+
+		#endregion
 
 		#region Putting assets
 
