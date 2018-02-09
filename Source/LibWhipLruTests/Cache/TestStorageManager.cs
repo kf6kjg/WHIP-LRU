@@ -26,6 +26,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Chattel;
 using InWorldz.Data.Assets.Stratus;
 using LibWhipLru.Cache;
@@ -373,7 +374,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_StoreAsset_DoesntThrowMultiple() {
+		public void TestStorageManager_StoreAsset_DoesntThrowDuplicateParallel() {
 			var mgr = new StorageManager(
 				_readerCache,
 				TimeSpan.FromMinutes(2),
@@ -381,19 +382,45 @@ namespace LibWhipLruTests.Cache {
 				_chattelWriter
 			);
 
-			Assert.DoesNotThrow(() => mgr.StoreAsset(new StratusAsset {
+			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
-			}, result => { }));
-			Assert.DoesNotThrow(() => mgr.StoreAsset(new StratusAsset {
-				Id = Guid.NewGuid(),
-			}, result => { }));
-			Assert.DoesNotThrow(() => mgr.StoreAsset(new StratusAsset {
-				Id = Guid.NewGuid(),
-			}, result => { }));
-			Assert.DoesNotThrow(() => mgr.StoreAsset(new StratusAsset {
-				Id = Guid.NewGuid(),
-			}, result => { }));
+			};
+
+			Parallel.Invoke(
+				() => Assert.DoesNotThrow(() => mgr.StoreAsset(asset, result => { })),
+				() => Assert.DoesNotThrow(() => mgr.StoreAsset(asset, result => { })),
+				() => Assert.DoesNotThrow(() => mgr.StoreAsset(asset, result => { })),
+				() => Assert.DoesNotThrow(() => mgr.StoreAsset(asset, result => { })),
+				() => Assert.DoesNotThrow(() => mgr.StoreAsset(asset, result => { }))
+			);
 		}
+
+		[Test]
+		public void TestStorageManager_StoreAsset_DoesntThrowMultipleParallel() {
+			var mgr = new StorageManager(
+				_readerCache,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			Parallel.Invoke(
+				() => Assert.DoesNotThrow(() => mgr.StoreAsset(new StratusAsset {
+					Id = Guid.NewGuid(),
+				}, result => { })),
+				() => Assert.DoesNotThrow(() => mgr.StoreAsset(new StratusAsset {
+					Id = Guid.NewGuid(),
+				}, result => { })),
+				() => Assert.DoesNotThrow(() => mgr.StoreAsset(new StratusAsset {
+					Id = Guid.NewGuid(),
+				}, result => { })),
+				() => Assert.DoesNotThrow(() => mgr.StoreAsset(new StratusAsset {
+					Id = Guid.NewGuid(),
+				}, result => { }))
+			);
+		}
+
+		// todo checks for send to server
 
 		#endregion
 
@@ -436,7 +463,7 @@ namespace LibWhipLruTests.Cache {
 			var callbackWasCalled = false;
 			var stopWaitHandle = new AutoResetEvent(false);
 
-			mgr.GetAsset(Guid.NewGuid(), result => {  }, () => { callbackWasCalled = true; stopWaitHandle.Set(); });
+			mgr.GetAsset(Guid.NewGuid(), result => { }, () => { callbackWasCalled = true; stopWaitHandle.Set(); });
 
 			stopWaitHandle.WaitOne();
 
