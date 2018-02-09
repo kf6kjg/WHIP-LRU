@@ -86,12 +86,12 @@ namespace UnitTests {
 			var chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH);
 			var chattelConfigWrite = new ChattelConfiguration(DATABASE_FOLDER_PATH);
 
-			var readerCache = new LibWhipLru.Cache.AssetLocalStorageLmdb(chattelConfigRead, DATABASE_MAX_SIZE_BYTES);
-			var chattelReader = new ChattelReader(chattelConfigRead, readerCache);
-			var chattelWriter = new ChattelWriter(chattelConfigWrite, readerCache);
+			var readerLocalStorage = new LibWhipLru.Cache.AssetLocalStorageLmdb(chattelConfigRead, DATABASE_MAX_SIZE_BYTES);
+			var chattelReader = new ChattelReader(chattelConfigRead, readerLocalStorage);
+			var chattelWriter = new ChattelWriter(chattelConfigWrite, readerLocalStorage);
 
-			var cacheManager = new LibWhipLru.Cache.StorageManager(
-				readerCache,
+			var storageManager = new LibWhipLru.Cache.StorageManager(
+				readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				chattelReader,
 				chattelWriter
@@ -102,7 +102,7 @@ namespace UnitTests {
 				Constants.SERVICE_PORT,
 				Constants.PASSWORD,
 				pidFileManager,
-				cacheManager
+				storageManager
 			);
 
 			_service.Start();

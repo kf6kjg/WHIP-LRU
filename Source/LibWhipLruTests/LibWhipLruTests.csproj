@@ -109,8 +109,8 @@
     <Compile Include="RandomUtil.cs" />
     <Compile Include="Cache\TestOrderedGuidCache.cs" />
     <Compile Include="Cache\TestStorageManager.cs" />
-    <Compile Include="Cache\TestAssetCacheLmdb.cs" />
-    <Compile Include="Cache\TestAssetCacheLmdbCtor.cs" />
+    <Compile Include="Cache\TestAssetLocalStorageLmdb.cs" />
+    <Compile Include="Cache\TestAssetLocalStorageLmdbCtor.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cache\" />

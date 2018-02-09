@@ -1,4 +1,4 @@
-﻿// AssetCacheLmdb.cs
+﻿// AssetLocalStorageLmdb.cs
 //
 // Author:
 //       Ricky C <>
@@ -54,33 +54,33 @@ namespace LibWhipLru.Cache {
 
 		public AssetLocalStorageLmdb(
 			ChattelConfiguration config,
-			ulong maxAssetCacheDiskSpaceByteCount
+			ulong maxAssetLocalStorageDiskSpaceByteCount
 		) {
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 
-			if (maxAssetCacheDiskSpaceByteCount < uint.MaxValue) {
-				throw new ArgumentOutOfRangeException(nameof(maxAssetCacheDiskSpaceByteCount), $"Asset cache disk space should be able to fit at least one maximum-sized asset, and thus should be at least {uint.MaxValue} bytes.");
+			if (maxAssetLocalStorageDiskSpaceByteCount < uint.MaxValue) {
+				throw new ArgumentOutOfRangeException(nameof(maxAssetLocalStorageDiskSpaceByteCount), $"Asset local storage disk space should be able to fit at least one maximum-sized asset, and thus should be at least {uint.MaxValue} bytes.");
 			}
 
-			if (maxAssetCacheDiskSpaceByteCount > long.MaxValue) {
-				throw new ArgumentOutOfRangeException(nameof(maxAssetCacheDiskSpaceByteCount), $"Asset cache underlying system doesn't support sizes larger than {long.MaxValue} bytes.");
+			if (maxAssetLocalStorageDiskSpaceByteCount > long.MaxValue) {
+				throw new ArgumentOutOfRangeException(nameof(maxAssetLocalStorageDiskSpaceByteCount), $"Asset local storage underlying system doesn't support sizes larger than {long.MaxValue} bytes.");
 			}
 
 			if (!_config.LocalStorageEnabled) {
-				// No caching? Don't do squat.
+				// No local storage? Don't do squat.
 				return;
 			}
 
 			try {
 				_dbenv = new LightningEnvironment(_config.LocalStorageFolder.FullName) {
-					MapSize = (long)maxAssetCacheDiskSpaceByteCount,
+					MapSize = (long)maxAssetLocalStorageDiskSpaceByteCount,
 					MaxDatabases = 1,
 				};
 
 				_dbenv.Open(EnvironmentOpenFlags.None, UnixAccessMode.OwnerRead | UnixAccessMode.OwnerWrite);
 			}
 			catch (LightningException e) {
-				throw new CacheException($"Given path invalid: '{_config.LocalStorageFolder.FullName}'", e);
+				throw new LocalStorageException($"Given path invalid: '{_config.LocalStorageFolder.FullName}'", e);
 			}
 
 			_activeIds = new OrderedGuidCache();
@@ -104,13 +104,13 @@ namespace LibWhipLru.Cache {
 				}
 			}
 			catch (Exception e) {
-				throw new CacheException($"Attempting to restore index from db threw an exception!", e);
+				throw new LocalStorageException($"Attempting to restore index from db threw an exception!", e);
 			}
 			LOG.Debug($"Restoring index complete.");
 		}
 
 		/// <summary>
-		/// Whether or not the ID is known to the cache - might or might not actually be available yet.
+		/// Whether or not the ID is known to local storage - might or might not actually be available yet.
 		/// </summary>
 		/// <returns>If the asset ID is known.</returns>
 		/// <param name="assetId">Asset identifier.</param>
@@ -119,7 +119,7 @@ namespace LibWhipLru.Cache {
 		}
 
 		/// <summary>
-		/// Whether or not the asset with that ID is stored in the cache and available for reading.
+		/// Whether or not the asset with that ID is stored in local storage and available for reading.
 		/// </summary>
 		/// <returns>If the asset ID is known and available.</returns>
 		/// <param name="assetId">Asset identifier.</param>
@@ -141,7 +141,7 @@ namespace LibWhipLru.Cache {
 			}
 
 			if (!_assetsBeingWritten.TryAdd(asset.Id, asset)) {
-				LOG.Debug($"Attempted to write an asset to cache, but another thread is already doing so.  Skipping write of {asset.Id} - please report as this shoudln't happen.");
+				LOG.Debug($"Attempted to write an asset to local storage, but another thread is already doing so.  Skipping write of {asset.Id} - please report as this shoudln't happen.");
 				// Can't add it, which means it's already being written to disk by another thread.  No need to continue.
 				// Shouldn't be possible to get here if Chattel's working correctly, so I'm not going to worry about the rapid return timing issue this creates: Chattel has code to handle it.
 				return;
@@ -151,7 +151,7 @@ namespace LibWhipLru.Cache {
 
 			// Writing is done, remove it from the work list.
 			_assetsBeingWritten.TryRemove(asset.Id, out StratusAsset temp);
-			LOG.Debug($"[ASSET_READER] Wrote an asset to cache: {asset.Id}");
+			LOG.Debug($"Wrote an asset to local storage: {asset.Id}");
 		}
 
 		void IChattelLocalStorage.PurgeAll() {
@@ -169,7 +169,7 @@ namespace LibWhipLru.Cache {
 			}
 
 			if (_assetsBeingWritten.TryGetValue(assetId, out asset)) {
-				LOG.Debug($"Attempted to read an asset from cache, but another thread is writing it. Shortcutting read of {assetId}");
+				LOG.Debug($"Attempted to read an asset from local storage, but another thread is writing it. Shortcutting read of {assetId}");
 				// Asset is currently being pushed to disk, so might as well return it now since I have it in memory.
 				return true;
 			}
@@ -281,14 +281,14 @@ namespace LibWhipLru.Cache {
 						}
 					}
 
-					throw new CacheException($"Asset with ID {assetId} not found in local storage!");
+					throw new LocalStorageException($"Asset with ID {assetId} not found in local storage!");
 				}
 			}
 			catch (LightningException e) {
-				throw new CacheException($"Attempting to read locally stored asset with ID {assetId} threw an exception!", e);
+				throw new LocalStorageException($"Attempting to read locally stored asset with ID {assetId} threw an exception!", e);
 			}
 			catch (ProtoBuf.ProtoException e) {
-				throw new CacheException($"Attempting to deserialize locally stored asset with ID {assetId} threw an exception!", e);
+				throw new LocalStorageException($"Attempting to deserialize locally stored asset with ID {assetId} threw an exception!", e);
 			}
 		}
 

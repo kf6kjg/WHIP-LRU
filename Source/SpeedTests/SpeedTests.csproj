@@ -82,7 +82,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestLibWhipLruCache.cs" />
+    <Compile Include="TestLibWhipLruLocalStorage.cs" />
     <Compile Include="RandomUtil.cs" />
     <Compile Include="TestLibWhipLru.cs" />
     <Compile Include="TestWhip.cs" />

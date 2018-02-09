@@ -1,4 +1,4 @@
-﻿// CacheException.cs
+﻿// LocalStorageException.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -24,14 +24,14 @@
 // THE SOFTWARE.
 using System;
 namespace LibWhipLru.Cache {
-	public class CacheException : Exception {
-		public CacheException() {
+	public class LocalStorageException : Exception {
+		public LocalStorageException() {
 		}
 
-		public CacheException(string message) : base(message) {
+		public LocalStorageException(string message) : base(message) {
 		}
 	
-		public CacheException(string message, Exception e) : base(message, e) {
+		public LocalStorageException(string message, Exception e) : base(message, e) {
 		}
 }
 }

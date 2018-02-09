@@ -28,7 +28,7 @@ namespace WHIP_LRU {
 
 		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
 
-		private static readonly string DEFAULT_DB_FOLDER_PATH = "cache";
+		private static readonly string DEFAULT_DB_FOLDER_PATH = "localStorage";
 
 		private static readonly string DEFAULT_WRITECACHE_FILE_PATH = "whiplru.wcache";
 
@@ -136,20 +136,20 @@ namespace WHIP_LRU {
 				}
 				var listenBacklogLength = (uint?)serverConfig?.GetInt("ConnectionQueueLength", (int)WHIPServer.DEFAULT_BACKLOG_LENGTH) ?? WHIPServer.DEFAULT_BACKLOG_LENGTH;
 
-				var cacheConfig = configSource.Configs["Cache"];
+				var localStorageConfig = configSource.Configs["LocalStorage"];
 
-				var pathToDatabaseFolder = cacheConfig?.GetString("DatabaseFolderPath", ChattelConfiguration.DEFAULT_DB_FOLDER_PATH) ?? ChattelConfiguration.DEFAULT_DB_FOLDER_PATH;
-				var maxAssetCacheDiskSpaceByteCount = (ulong?)cacheConfig?.GetLong("MaxDiskSpace", (long)AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES) ?? AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES;
-				var pathToWriteCacheFile = cacheConfig?.GetString("WriteCacheFilePath", ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH) ?? ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH;
-				var maxWriteCacheRecordCount = (uint?)cacheConfig?.GetInt("WriteCacheMaxRecords", (int)ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT) ?? ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT;
-				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)cacheConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
+				var pathToDatabaseFolder = localStorageConfig?.GetString("DatabaseFolderPath", ChattelConfiguration.DEFAULT_DB_FOLDER_PATH) ?? ChattelConfiguration.DEFAULT_DB_FOLDER_PATH;
+				var maxAssetLocalStorageDiskSpaceByteCount = (ulong?)localStorageConfig?.GetLong("MaxDiskSpace", (long)AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES) ?? AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES;
+				var pathToWriteCacheFile = localStorageConfig?.GetString("WriteCacheFilePath", ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH) ?? ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH;
+				var maxWriteCacheRecordCount = (uint?)localStorageConfig?.GetInt("WriteCacheMaxRecords", (int)ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT) ?? ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT;
+				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)localStorageConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
 
-				var readerCache = new AssetLocalStorageLmdb(chattelConfigRead, maxAssetCacheDiskSpaceByteCount);
-				var chattelReader = new ChattelReader(chattelConfigRead, readerCache); // TODO: add purge flag to CLI
-				var chattelWriter = new ChattelWriter(chattelConfigWrite, readerCache); // add purge flag to CLI
+				var readerLocalStorage = new AssetLocalStorageLmdb(chattelConfigRead, maxAssetLocalStorageDiskSpaceByteCount);
+				var chattelReader = new ChattelReader(chattelConfigRead, readerLocalStorage); // TODO: add purge flag to CLI
+				var chattelWriter = new ChattelWriter(chattelConfigWrite, readerLocalStorage); // add purge flag to CLI
 
 				var storageManager = new StorageManager(
-					readerCache,
+					readerLocalStorage,
 					negativeCacheItemLifetime,
 					chattelReader,
 					chattelWriter
@@ -313,27 +313,27 @@ namespace WHIP_LRU {
 		}
 
 		private static ChattelConfiguration GetConfig(IConfig assetConfig, IEnumerable<IEnumerable<IAssetServer>> serialParallelAssetServers) {
-			// Set up caching
-			var cachePathRead = assetConfig?.GetString("CachePath", DEFAULT_DB_FOLDER_PATH) ?? DEFAULT_DB_FOLDER_PATH;
+			// Set up local storage
+			var localStoragePathRead = assetConfig?.GetString("DatabaseFolderPath", DEFAULT_DB_FOLDER_PATH) ?? DEFAULT_DB_FOLDER_PATH;
 
-			DirectoryInfo cacheFolder = null;
+			DirectoryInfo localStorageFolder = null;
 
-			if (string.IsNullOrWhiteSpace(cachePathRead)) {
-				LOG.Info($"CachePath is empty, caching assets disabled.");
+			if (string.IsNullOrWhiteSpace(localStoragePathRead)) {
+				LOG.Info($"DatabaseFolderPath is empty, local storage of assets disabled.");
 			}
-			else if (!Directory.Exists(cachePathRead)) {
-				LOG.Info($"CachePath folder does not exist, caching assets disabled.");
+			else if (!Directory.Exists(localStoragePathRead)) {
+				LOG.Info($"DatabaseFolderPath folder does not exist, local storage of assets disabled.");
 			}
 			else {
-				cacheFolder = new DirectoryInfo(cachePathRead);
-				LOG.Info($"Caching assets enabled at {cacheFolder.FullName}");
+				localStorageFolder = new DirectoryInfo(localStoragePathRead);
+				LOG.Info($"Local storage of assets enabled at {localStorageFolder.FullName}");
 			}
 
-			// Set up caching
-			var writeCachePath = assetConfig?.GetString("WriteCacheFilePath", string.Empty) ?? string.Empty;
+			// Set up write cache
+			var writeCachePath = assetConfig?.GetString("WriteCacheFilePath", DEFAULT_WRITECACHE_FILE_PATH) ?? DEFAULT_WRITECACHE_FILE_PATH;
 			var writeCacheRecordCount = (uint)Math.Max(0, assetConfig?.GetLong("WriteCacheRecordCount", DEFAULT_WRITECACHE_RECORD_COUNT) ?? DEFAULT_WRITECACHE_RECORD_COUNT);
 
-			if (string.IsNullOrWhiteSpace(writeCachePath) || writeCacheRecordCount <= 0 || cacheFolder == null) {
+			if (string.IsNullOrWhiteSpace(writeCachePath) || writeCacheRecordCount <= 0 || localStorageFolder == null) {
 				LOG.Warn($"WriteCacheFilePath is empty, WriteCacheRecordCount is zero, or caching is disabled. Crash recovery will be compromised.");
 			}
 			else {
@@ -341,7 +341,7 @@ namespace WHIP_LRU {
 				LOG.Info($"Write cache enabled at {writeCacheFile.FullName} with {writeCacheRecordCount} records.");
 			}
 
-			return new ChattelConfiguration(cachePathRead, writeCachePath, writeCacheRecordCount, serialParallelAssetServers);
+			return new ChattelConfiguration(localStoragePathRead, writeCachePath, writeCacheRecordCount, serialParallelAssetServers);
 		}
 
 		#endregion

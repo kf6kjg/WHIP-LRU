@@ -34,7 +34,7 @@ namespace SpeedTests {
 			LOG.Info("Starting up speed tests...");
 
 			// Do some tests
-			using (var tests = new TestLibWhipLruCache()) {
+			using (var tests = new TestLibWhipLruLocalStorage()) {
 				tests.RunTests();
 			}
 

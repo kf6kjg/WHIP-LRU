@@ -1,4 +1,4 @@
-﻿// TestAssetCacheLmdb.cs
+﻿// TestAssetLocalStorageLmdb.cs
 //
 // Author:
 //       Ricky C <>
@@ -31,26 +31,26 @@ using NUnit.Framework;
 
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
-	public class TestAssetCacheLmdb {
+	public class TestAssetLocalStorageLmdb {
 		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb";
 		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue/*Min value to get tests to run*/;
 
 		private ChattelConfiguration _chattelConfigRead;
-		private AssetLocalStorageLmdb _cacheLmdb;
-		private IChattelLocalStorage _cache;
+		private AssetLocalStorageLmdb _localStorageLmdb;
+		private IChattelLocalStorage _localStorage;
 
 		[OneTimeSetUp]
 		public void Startup() {
 			// Folder has to be there or the config fails.
-			TestAssetCacheLmdbCtor.RebuildCacheFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
+			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
 			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH, assetServer: null);
 		}
 
 		[SetUp]
 		public void BeforeEveryTest() {
-			TestAssetCacheLmdbCtor.RebuildCacheFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
+			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
 
-			_cache = _cacheLmdb = new AssetLocalStorageLmdb(
+			_localStorage = _localStorageLmdb = new AssetLocalStorageLmdb(
 				_chattelConfigRead,
 				DATABASE_MAX_SIZE_BYTES
 			);
@@ -58,12 +58,12 @@ namespace LibWhipLruTests.Cache {
 
 		[TearDown]
 		public void CleanupAfterEveryTest() {
-			_cache = null;
-			IDisposable cacheDisposal = _cacheLmdb;
-			_cacheLmdb = null;
-			cacheDisposal.Dispose();
+			_localStorage = null;
+			IDisposable localStorageDisposal = _localStorageLmdb;
+			_localStorageLmdb = null;
+			localStorageDisposal.Dispose();
 
-			TestAssetCacheLmdbCtor.CleanCacheFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
+			TestAssetLocalStorageLmdbCtor.CleanLocalStorageFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
 		}
 
 		#region Contains and AssetOnDisk
@@ -72,49 +72,49 @@ namespace LibWhipLruTests.Cache {
 
 		#endregion
 
-		#region Cache Asset
+		#region Store Asset
 
 		[Test]
-		public void TestAssetCacheLmdb_StoreAsset_AssetOnDiskImmediately() {
+		public void TestAssetLocalStorageLmdb_StoreAsset_AssetOnDiskImmediately() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
 
-			_cache.StoreAsset(asset);
-			Assert.True(_cacheLmdb.AssetOnDisk(asset.Id));
+			_localStorage.StoreAsset(asset);
+			Assert.True(_localStorageLmdb.AssetOnDisk(asset.Id));
 		}
 
 		[Test]
-		public void TestAssetCacheLmdb_StoreAsset_ContainsImmediately() {
+		public void TestAssetLocalStorageLmdb_StoreAsset_ContainsImmediately() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
 
-			_cache.StoreAsset(asset);
-			Assert.True(_cacheLmdb.Contains(asset.Id));
+			_localStorage.StoreAsset(asset);
+			Assert.True(_localStorageLmdb.Contains(asset.Id));
 		}
 
 		[Test]
-		public void TestAssetCacheLmdb_StoreAsset_DoesntThrow() {
+		public void TestAssetLocalStorageLmdb_StoreAsset_DoesntThrow() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
 
-			Assert.DoesNotThrow(() => _cache.StoreAsset(asset));
+			Assert.DoesNotThrow(() => _localStorage.StoreAsset(asset));
 		}
 
 		[Test]
-		public void TestAssetCacheLmdb_StoreAsset_Null_ArgumentNullException() {
-			Assert.Throws<ArgumentNullException>(() => _cache.StoreAsset(null));
+		public void TestAssetLocalStorageLmdb_StoreAsset_Null_ArgumentNullException() {
+			Assert.Throws<ArgumentNullException>(() => _localStorage.StoreAsset(null));
 		}
 
 		[Test]
-		public void TestAssetCacheLmdb_StoreAsset_EmpyId_ArgumentException() {
+		public void TestAssetLocalStorageLmdb_StoreAsset_EmpyId_ArgumentException() {
 			var asset = new StratusAsset {
 				Id = Guid.Empty,
 			};
 
-			Assert.Throws<ArgumentException>(() => _cache.StoreAsset(asset));
+			Assert.Throws<ArgumentException>(() => _localStorage.StoreAsset(asset));
 		}
 
 		#endregion

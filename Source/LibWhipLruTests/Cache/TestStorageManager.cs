@@ -41,7 +41,7 @@ namespace LibWhipLruTests.Cache {
 		public static readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_sm.whipwcache";
 		public const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 
-		private AssetLocalStorageLmdb _readerCache;
+		private AssetLocalStorageLmdb _readerLocalStorage;
 		private ChattelReader _chattelReader;
 		private ChattelWriter _chattelWriter;
 
@@ -55,29 +55,29 @@ namespace LibWhipLruTests.Cache {
 			catch {
 			}
 			try {
-				Directory.Delete(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, true);
+				Directory.Delete(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, true);
 			}
 			catch {
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
-			Directory.CreateDirectory(TestAssetCacheLmdb.DATABASE_FOLDER_PATH);
-			var chattelConfigRead = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
-			var chattelConfigWrite = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
+			Directory.CreateDirectory(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH);
+			var chattelConfigRead = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
+			var chattelConfigWrite = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
 
-			_readerCache = new AssetLocalStorageLmdb(chattelConfigRead, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
-			_chattelReader = new ChattelReader(chattelConfigRead, _readerCache);
-			_chattelWriter = new ChattelWriter(chattelConfigWrite, _readerCache);
+			_readerLocalStorage = new AssetLocalStorageLmdb(chattelConfigRead, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
+			_chattelReader = new ChattelReader(chattelConfigRead, _readerLocalStorage);
+			_chattelWriter = new ChattelWriter(chattelConfigWrite, _readerLocalStorage);
 		}
 
 		[TearDown]
 		public void CleanupAfterEveryTest() {
-			IDisposable readerDispose = _readerCache;
-			_readerCache = null;
+			IDisposable readerDispose = _readerLocalStorage;
+			_readerLocalStorage = null;
 			readerDispose.Dispose();
 
 			File.Delete(WRITE_CACHE_FILE_PATH);
-			Directory.Delete(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, true);
+			Directory.Delete(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, true);
 		}
 
 		#region Ctor
@@ -85,7 +85,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_Ctor_DoesNotThrow() {
 			Assert.DoesNotThrow(() => new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -93,7 +93,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_Ctor_NullCache_ArgumentNullException() {
+		public void TestStorageManager_Ctor_NullLocalStorage_ArgumentNullException() {
 			Assert.Throws<ArgumentNullException>(() => new StorageManager(
 				null,
 				TimeSpan.FromMinutes(2),
@@ -105,7 +105,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_Ctor_NullReader_ArgumentNullException() {
 			Assert.Throws<ArgumentNullException>(() => new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				null,
 				_chattelWriter
@@ -115,7 +115,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_Ctor_NullWriter_ArgumentNullException() {
 			Assert.Throws<ArgumentNullException>(() => new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				null
@@ -125,7 +125,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_Ctor_NegativeTime_DoesntThrow() {
 			Assert.DoesNotThrow(() => new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(-1),
 				_chattelReader,
 				_chattelWriter
@@ -135,7 +135,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_Ctor_ZeroTime_DoesntThrow() {
 			Assert.DoesNotThrow(() => new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.Zero,
 				_chattelReader,
 				_chattelWriter
@@ -149,7 +149,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_CheckAsset_EmptyId_ArgumentException() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -161,7 +161,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_CheckAsset_Unknown_DoesntThrow() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -174,7 +174,7 @@ namespace LibWhipLruTests.Cache {
 		[Timeout(1000)]
 		public void TestStorageManager_CheckAsset_Unknown_CallsCallback() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -193,7 +193,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_CheckAsset_Unknown_IsFalse() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -205,7 +205,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_CheckAsset_Known_DoesntThrow() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -224,7 +224,7 @@ namespace LibWhipLruTests.Cache {
 		[Timeout(1000)]
 		public void TestStorageManager_CheckAsset_Known_CallsCallback() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -249,7 +249,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_CheckAsset_Known_IsTrue() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -267,15 +267,15 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_CheckAsset_SingleNoExist_CallsServerRequestAsset() {
 			var server = Substitute.For<IAssetServer>();
-			var config = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			var cache = new AssetLocalStorageLmdb(config, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
-			var reader = new ChattelReader(config, cache, false);
-			var writer = new ChattelWriter(config, cache, false);
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
+			var reader = new ChattelReader(config, localStorage, false);
+			var writer = new ChattelWriter(config, localStorage, false);
 
 			var assetId = Guid.NewGuid();
 
 			var mgr = new StorageManager(
-				cache,
+				localStorage,
 				TimeSpan.FromMinutes(2),
 				reader,
 				writer
@@ -289,15 +289,15 @@ namespace LibWhipLruTests.Cache {
 		public void TestStorageManager_CheckAsset_DoubleNoExist_CallsServerRequestOnlyOnce() {
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
-			var config = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			var cache = new AssetLocalStorageLmdb(config, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
-			var reader = new ChattelReader(config, cache, false);
-			var writer = new ChattelWriter(config, cache, false);
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
+			var reader = new ChattelReader(config, localStorage, false);
+			var writer = new ChattelWriter(config, localStorage, false);
 
 			var assetId = Guid.NewGuid();
 
 			var mgr = new StorageManager(
-				cache,
+				localStorage,
 				TimeSpan.FromMinutes(2),
 				reader,
 				writer
@@ -315,7 +315,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_StoreAsset_AssetNull_ArgumentNullException() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -327,7 +327,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_StoreAsset_EmptyId_ArgumentException() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -343,7 +343,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_StoreAsset_DoesntThrowFirstTime() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -359,7 +359,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_StoreAsset_DoesntThrowDuplicate() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -376,7 +376,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_StoreAsset_DoesntThrowDuplicateParallel() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -398,7 +398,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_StoreAsset_DoesntThrowMultipleParallel() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -420,7 +420,7 @@ namespace LibWhipLruTests.Cache {
 			);
 		}
 
-		// todo checks for send to server
+		// TODO: checks for send to server
 
 		#endregion
 
@@ -429,7 +429,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_GetAsset_EmptyId_ArgumentException() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -441,7 +441,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_GetAsset_Unknown_DoesntThrow() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -454,7 +454,7 @@ namespace LibWhipLruTests.Cache {
 		[Timeout(1000)]
 		public void TestStorageManager_GetAsset_Unknown_CallsFailureCallback() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -473,7 +473,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_GetAsset_Unknown_IsNull() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -485,7 +485,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_GetAsset_Known_DoesntThrow() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -504,7 +504,7 @@ namespace LibWhipLruTests.Cache {
 		[Timeout(1000)]
 		public void TestStorageManager_GetAsset_Known_CallsSuccessCallback() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -530,7 +530,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_GetAsset_Known_IsNotNull() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -548,7 +548,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_GetAsset_Known_HasSameId() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -566,7 +566,7 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_GetAsset_Known_IsIdentical() {
 			var mgr = new StorageManager(
-				_readerCache,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -602,15 +602,15 @@ namespace LibWhipLruTests.Cache {
 		[Test]
 		public void TestStorageManager_GetAsset_SingleNoExist_CallsServerRequestAsset() {
 			var server = Substitute.For<IAssetServer>();
-			var config = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			var cache = new AssetLocalStorageLmdb(config, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
-			var reader = new ChattelReader(config, cache, false);
-			var writer = new ChattelWriter(config, cache, false);
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
+			var reader = new ChattelReader(config, localStorage, false);
+			var writer = new ChattelWriter(config, localStorage, false);
 
 			var assetId = Guid.NewGuid();
 
 			var mgr = new StorageManager(
-				cache,
+				localStorage,
 				TimeSpan.FromMinutes(2),
 				reader,
 				writer
@@ -624,15 +624,15 @@ namespace LibWhipLruTests.Cache {
 		public void TestStorageManager_GetAsset_DoubleNoExist_CallsServerRequestOnlyOnce() {
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
-			var config = new ChattelConfiguration(TestAssetCacheLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			var cache = new AssetLocalStorageLmdb(config, TestAssetCacheLmdb.DATABASE_MAX_SIZE_BYTES);
-			var reader = new ChattelReader(config, cache, false);
-			var writer = new ChattelWriter(config, cache, false);
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
+			var reader = new ChattelReader(config, localStorage, false);
+			var writer = new ChattelWriter(config, localStorage, false);
 
 			var assetId = Guid.NewGuid();
 
 			var mgr = new StorageManager(
-				cache,
+				localStorage,
 				TimeSpan.FromMinutes(2),
 				reader,
 				writer

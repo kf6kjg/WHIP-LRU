@@ -1,4 +1,4 @@
-﻿// CacheManager.cs
+﻿// StorageManager.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -41,7 +41,7 @@ namespace LibWhipLru.Cache {
 		public delegate void FoundCallback(bool found);
 		public delegate void StorageResultCallback(PutResult result);
 
-		private readonly AssetLocalStorageLmdb _cache;
+		private readonly AssetLocalStorageLmdb _localStorage;
 		private ChattelReader _assetReader;
 		private ChattelWriter _assetWriter;
 
@@ -56,17 +56,17 @@ namespace LibWhipLru.Cache {
 		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.StorageManager"/> class.
 		/// A zero or negative value for the negativeCacheItemLifetime results in the negative cache being disabled.
 		/// </summary>
-		/// <param name="cache">Cache.</param>
+		/// <param name="localStorage">Local storage for assets.</param>
 		/// <param name="negativeCacheItemLifetime">Negative cache item lifetime.</param>
 		/// <param name="reader">Reader.</param>
 		/// <param name="writer">Writer.</param>
 		public StorageManager(
-			AssetLocalStorageLmdb cache,
+			AssetLocalStorageLmdb localStorage,
 			TimeSpan negativeCacheItemLifetime,
 			ChattelReader reader,
 			ChattelWriter writer
 		) {
-			_cache = cache ?? throw new ArgumentNullException(nameof(cache));
+			_localStorage = localStorage ?? throw new ArgumentNullException(nameof(localStorage));
 			_assetReader = reader ?? throw new ArgumentNullException(nameof(reader));
 			_assetWriter = writer ?? throw new ArgumentNullException(nameof(writer));
 
@@ -81,14 +81,14 @@ namespace LibWhipLru.Cache {
 		}
 
 		/// <summary>
-		/// Retrieves the asset. Tries the local cache first, then moves on to the remote storage systems.
+		/// Retrieves the asset. Tries local storage first, then moves on to the remote storage systems.
 		/// If neither could find the data, or if there is no remote storage set up, the failure callback is called.
 		/// </summary>
 		/// <param name="assetId">Asset identifier.</param>
 		/// <param name="successCallback">Callback called when the asset was successfully found.</param>
 		/// <param name="failureCallback">Callback called when there was a failure attempting to get the asset.</param>
-		/// <param name="cacheResult">Specifies to locally store the asset if it was fetched from a remote.</param>
-		public void GetAsset(Guid assetId, SuccessCallback successCallback, FailureCallback failureCallback, bool cacheResult = true) {
+		/// <param name="storeResultLocally">Specifies to locally store the asset if it was fetched from a remote.</param>
+		public void GetAsset(Guid assetId, SuccessCallback successCallback, FailureCallback failureCallback, bool storeResultLocally = true) {
 			successCallback = successCallback ?? throw new ArgumentNullException(nameof(successCallback));
 			failureCallback = failureCallback ?? throw new ArgumentNullException(nameof(failureCallback));
 			if (assetId == Guid.Empty) {
@@ -109,9 +109,9 @@ namespace LibWhipLru.Cache {
 			}
 
 			// Solves GET in middle of PUT situation.
-			if (_cache.Contains(assetId) && !_cache.AssetOnDisk(assetId)) {
+			if (_localStorage.Contains(assetId) && !_localStorage.AssetOnDisk(assetId)) {
 				// Asset exists, just might not be on disk yet. Wait here until the asset makes it to disk.
-				SpinWait.SpinUntil(() => _cache.AssetOnDisk(assetId));
+				SpinWait.SpinUntil(() => _localStorage.AssetOnDisk(assetId));
 			}
 
 			_assetReader.GetAssetAsync(assetId, asset => {
@@ -131,11 +131,11 @@ namespace LibWhipLru.Cache {
 						_negativeCacheLock.ExitWriteLock();
 					}
 				}
-			}, cacheResult ? ChattelReader.CacheRule.Normal : ChattelReader.CacheRule.SkipWrite);
+			}, storeResultLocally ? ChattelReader.CacheRule.Normal : ChattelReader.CacheRule.SkipWrite);
 		}
 
 		/// <summary>
-		/// Attempts to verify if the asset is known or not. Tries the local cache first, then moves on to the remote storage systems.
+		/// Attempts to verify if the asset is known or not. Tries the local storage first, then moves on to the remote storage systems.
 		/// </summary>
 		/// <param name="assetId">Asset identifier.</param>
 		/// <param name="foundCallback">Callback called when it is known if the asset is found or not.</param>
@@ -167,7 +167,7 @@ namespace LibWhipLru.Cache {
 		}
 
 		public IEnumerable<Guid> GetLocallyKnownAssetIds(string prefix) {
-			return _cache.ActiveIds(prefix);
+			return _localStorage.ActiveIds(prefix);
 		}
 
 		public enum PutResult {

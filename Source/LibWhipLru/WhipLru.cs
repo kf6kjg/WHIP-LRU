@@ -167,7 +167,7 @@ namespace LibWhipLru {
 
 		#region Handlers
 
-		private void HandleGetAsset(Guid assetId, Request req, bool cacheResult = true) {
+		private void HandleGetAsset(Guid assetId, Request req, bool storeResultLocally = true) {
 			if (assetId == Guid.Empty) {
 				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed."), req.Context);
 				return;
@@ -177,7 +177,7 @@ namespace LibWhipLru {
 			Exception exception = null;
 
 			try {
-				_storageManager.GetAsset(assetId, resultAsset => asset = resultAsset, () => {}, cacheResult);
+				_storageManager.GetAsset(assetId, resultAsset => asset = resultAsset, () => {}, storeResultLocally);
 			}
 			catch (Exception e) {
 				LOG.Debug($"Exception reading data for asset {assetId}", e);

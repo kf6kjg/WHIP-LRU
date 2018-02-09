@@ -83,7 +83,7 @@
     <Compile Include="Server\IByteArraySerializable.cs" />
     <Compile Include="Server\ServerResponseMsg.cs" />
     <Compile Include="Server\WHIPServer.cs" />
-    <Compile Include="Cache\CacheException.cs" />
+    <Compile Include="Cache\LocalStorageException.cs" />
     <Compile Include="Cache\StorageManager.cs" />
     <Compile Include="Util\PIDFileManager.cs" />
     <Compile Include="Server\ClientInfo.cs" />

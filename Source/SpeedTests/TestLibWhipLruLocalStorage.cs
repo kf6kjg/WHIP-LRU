@@ -1,4 +1,4 @@
-﻿// TestLibWhipLru.cs
+﻿// TestLibWhipLruLocalStorage.cs
 //
 // Author:
 //       Ricky Curtice <ricky@rwcproductions.com>
@@ -22,19 +22,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
 
 namespace SpeedTests {
-	public class TestLibWhipLruCache :IDisposable {
+	public class TestLibWhipLruLocalStorage : IDisposable {
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private const uint ITERATION_MAX = 1000;
 		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(60);
 
 		private readonly LibWhipLru.Cache.StorageManager _libWhipLruStorageManager;
-		private readonly LibWhipLru.Cache.AssetLocalStorageLmdb _libWhipLruCache;
+		private readonly LibWhipLru.Cache.AssetLocalStorageLmdb _libWhipLruLocalStorage;
 		private readonly InWorldz.Data.Assets.Stratus.StratusAsset _knownAsset = new InWorldz.Data.Assets.Stratus.StratusAsset {
 			Id = Guid.NewGuid(),
 			CreateTime = DateTime.UtcNow,
@@ -49,8 +50,8 @@ namespace SpeedTests {
 		private readonly System.Timers.Timer _timer;
 		private bool _cancelTest;
 
-		public TestLibWhipLruCache() {
-			LOG.Debug($"Initializing {nameof(TestLibWhipLruCache)}...");
+		public TestLibWhipLruLocalStorage() {
+			LOG.Debug($"Initializing {nameof(TestLibWhipLruLocalStorage)}...");
 
 			_timer = new System.Timers.Timer();
 			_timer.Elapsed += TimerExpired;
@@ -75,13 +76,13 @@ namespace SpeedTests {
 				(Chattel.IAssetServer) null
 			);
 
-			_libWhipLruCache = new LibWhipLru.Cache.AssetLocalStorageLmdb(
+			_libWhipLruLocalStorage = new LibWhipLru.Cache.AssetLocalStorageLmdb(
 				config,
 				uint.MaxValue
 			);
 
 			_libWhipLruStorageManager = new LibWhipLru.Cache.StorageManager(
-				_libWhipLruCache,
+				_libWhipLruLocalStorage,
 				TimeSpan.FromMinutes(2),
 				null,
 				null
@@ -89,13 +90,13 @@ namespace SpeedTests {
 
 			_libWhipLruStorageManager.StoreAsset(_knownAsset, result => {});
 
-			LOG.Debug($"Initialization of {nameof(TestLibWhipLruCache)} complete.");
+			LOG.Debug($"Initialization of {nameof(TestLibWhipLruLocalStorage)} complete.");
 		}
 
 		public bool RunTests() {
 			var status = true;
 
-			var methodInfos = typeof(TestLibWhipLruCache).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic);
+			var methodInfos = typeof(TestLibWhipLruLocalStorage).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic);
 			var stopWatch = new Stopwatch();
 			var testParams = new object[] { };
 			foreach (var methodInfo in methodInfos) {
@@ -104,7 +105,7 @@ namespace SpeedTests {
 				var counter = 0U;
 
 				try {
-					LOG.Debug($"Starting test {nameof(TestLibWhipLruCache)}.{methodInfo.Name}...");
+					LOG.Debug($"Starting test {nameof(TestLibWhipLruLocalStorage)}.{methodInfo.Name}...");
 					stopWatch.Restart();
 
 					_cancelTest = false;
@@ -118,10 +119,10 @@ namespace SpeedTests {
 
 					stopWatch.Stop();
 
-					LOG.Info($"Test {nameof(TestLibWhipLruCache)}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations." + (_cancelTest ? " And was cancelled during the last iteration." : string.Empty));
+					LOG.Info($"Test {nameof(TestLibWhipLruLocalStorage)}.{methodInfo.Name} took {stopWatch.ElapsedMilliseconds}ms over {counter} iterations." + (_cancelTest ? " And was cancelled during the last iteration." : string.Empty));
 				}
 				catch (Exception e) {
-					LOG.Warn($"Test {nameof(TestLibWhipLruCache)}.{methodInfo.Name} threw an exception after {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.", e);
+					LOG.Warn($"Test {nameof(TestLibWhipLruLocalStorage)}.{methodInfo.Name} threw an exception after {stopWatch.ElapsedMilliseconds}ms over {counter} iterations.", e);
 				}
 			}
 
@@ -228,15 +229,15 @@ namespace SpeedTests {
 			if (!disposedValue) {
 				if (disposing) {
 					// dispose managed state (managed objects).
-					LOG.Debug($"Cleaning up after {nameof(TestLibWhipLruCache)}...");
+					LOG.Debug($"Cleaning up after {nameof(TestLibWhipLruLocalStorage)}...");
 
-					IDisposable disposableCache = _libWhipLruCache;
+					IDisposable disposableCache = _libWhipLruLocalStorage;
 					disposableCache.Dispose();
 
 					System.IO.Directory.Delete("TestLibWhipLruCache", true);
 					System.IO.File.Delete("TestLibWhipLruCache.wcache");
 
-					LOG.Debug($"Clean up after {nameof(TestLibWhipLruCache)} complete.");
+					LOG.Debug($"Clean up after {nameof(TestLibWhipLruLocalStorage)} complete.");
 				}
 
 				// free unmanaged resources (unmanaged objects) and override a finalizer below.
@@ -246,12 +247,6 @@ namespace SpeedTests {
 				disposedValue = true;
 			}
 		}
-
-		// override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-		// ~TestLibWhipLruCache() {
-		//   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-		//   Dispose(false);
-		// }
 
 		// This code added to correctly implement the disposable pattern.
 		public void Dispose() {
