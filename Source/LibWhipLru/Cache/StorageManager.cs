@@ -40,6 +40,7 @@ namespace LibWhipLru.Cache {
 		public delegate void FailureCallback();
 		public delegate void FoundCallback(bool found);
 		public delegate void StorageResultCallback(PutResult result);
+		public delegate void PurgeResultCallback(PurgeResult result);
 
 		private readonly AssetLocalStorageLmdb _localStorage;
 		private ChattelReader _assetReader;
@@ -166,6 +167,12 @@ namespace LibWhipLru.Cache {
 			resultCallback(result);
 		}
 
+		public void PurgeAllLocalAssets() {
+		}
+
+		public void PurgeAsset(Guid assetId, PurgeResultCallback resultCallback) {
+		}
+
 		public IEnumerable<Guid> GetLocallyKnownAssetIds(string prefix) {
 			return _localStorage.ActiveIds(prefix);
 		}
@@ -174,6 +181,11 @@ namespace LibWhipLru.Cache {
 			DONE,
 			DUPLICATE,
 			FAILURE,
+		}
+
+		public enum PurgeResult {
+			DONE,
+			NOT_FOUND_LOCALLY,
 		}
 	}
 }

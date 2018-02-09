@@ -644,5 +644,253 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		#endregion
+
+		#region Purge All Assets marked local
+
+		// TODO: Purge should only remove assets that are marked as local
+
+		#endregion
+
+		#region Purge Asset
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_EmptyId_ArgumentException() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			Assert.Throws<ArgumentException>(() => mgr.PurgeAsset(Guid.Empty, result => { }));
+		}
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_DoesntThrowFirstTime() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			Assert.DoesNotThrow(() => mgr.PurgeAsset(Guid.NewGuid(), result => { }));
+		}
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_DoesntThrowDuplicate() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var assetId = Guid.NewGuid();
+
+			mgr.PurgeAsset(assetId, result => { });
+			Assert.DoesNotThrow(() => mgr.PurgeAsset(assetId, result => { }));
+		}
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_DoesntThrowMultiple() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			Assert.DoesNotThrow(() => mgr.PurgeAsset(Guid.NewGuid(), result => { }));
+			Assert.DoesNotThrow(() => mgr.PurgeAsset(Guid.NewGuid(), result => { }));
+			Assert.DoesNotThrow(() => mgr.PurgeAsset(Guid.NewGuid(), result => { }));
+			Assert.DoesNotThrow(() => mgr.PurgeAsset(Guid.NewGuid(), result => { }));
+		}
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_Unknown_CallsCallback() {
+			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
+			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
+
+			var mgr = new StorageManager(
+				localStorageLmdb,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var wait = new AutoResetEvent(false);
+			var callbackCalled = false;
+
+			mgr.PurgeAsset(Guid.NewGuid(), result => { callbackCalled = true; wait.Set(); });
+
+			wait.WaitOne();
+
+			Assert.True(callbackCalled);
+		}
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_Known_CallsCallback() {
+			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
+			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
+
+			var mgr = new StorageManager(
+				localStorageLmdb,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			mgr.StoreAsset(asset, result => { });
+
+			var wait = new AutoResetEvent(false);
+			var callbackCalled = false;
+
+			mgr.PurgeAsset(asset.Id, result => { callbackCalled = true; wait.Set(); });
+
+			wait.WaitOne();
+
+			Assert.True(callbackCalled);
+		}
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_Unknown_CallsLocalStoragePurge() {
+			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
+			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
+
+			var mgr = new StorageManager(
+				localStorageLmdb,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var assetId = Guid.NewGuid();
+
+			mgr.PurgeAsset(assetId, result => { });
+
+			chattelLocalStorage.Received(1).Purge(assetId);
+		}
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_Known_CallsLocalStoragePurge() {
+			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
+			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
+
+			var mgr = new StorageManager(
+				localStorageLmdb,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			mgr.StoreAsset(asset, result => { });
+
+			mgr.PurgeAsset(asset.Id, result => { });
+
+			chattelLocalStorage.Received(1).Purge(asset.Id);
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public void TestStorageManager_PurgeAsset_Unknown_ReturnsNotFoundLocally() {
+			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
+			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
+
+			var mgr = new StorageManager(
+				localStorageLmdb,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var assetId = Guid.NewGuid();
+
+			var wait = new AutoResetEvent(false);
+			var status = false;
+
+			mgr.PurgeAsset(assetId, result => { status = result == StorageManager.PurgeResult.NOT_FOUND_LOCALLY; wait.Set(); });
+
+			wait.WaitOne();
+
+			Assert.True(status);
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public void TestStorageManager_PurgeAsset_Known_ReturnsDone() {
+			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
+			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
+
+			var mgr = new StorageManager(
+				localStorageLmdb,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var assetId = Guid.NewGuid();
+
+			var wait = new AutoResetEvent(false);
+			var status = false;
+
+			mgr.PurgeAsset(assetId, result => { status = result == StorageManager.PurgeResult.DONE; wait.Set(); });
+
+			wait.WaitOne();
+
+			Assert.True(status);
+		}
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_DoesntRemoveOtherAsset() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			mgr.StoreAsset(asset, result => { });
+
+			mgr.PurgeAsset(Guid.NewGuid(), result => { });
+
+			Assert.True(_readerLocalStorage.AssetOnDisk(asset.Id));
+		}
+
+		[Test]
+		public void TestStorageManager_PurgeAsset_RemovesAsset() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			mgr.StoreAsset(asset, result => { });
+
+			mgr.PurgeAsset(asset.Id, result => { });
+
+			Assert.False(_readerLocalStorage.AssetOnDisk(asset.Id));
+		}
+
+		// remote purge should not be called - however there's no API for that ATM in Chattel so it can't be called.
+
+		#endregion
 	}
 }
