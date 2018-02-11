@@ -26,6 +26,10 @@ using System;
 using System.Security.Cryptography;
 
 namespace LibWhipLru.Server {
+	/// <summary>
+	/// Message from the server to a freshly connected client.
+	/// Designed from the server's perspective.
+	/// </summary>
 	public class AuthChallengeMsg : IByteArraySerializable {
 		private const short MESSAGE_SIZE = 8;
 		private const byte PACKET_IDENTIFIER = 0;
@@ -34,6 +38,9 @@ namespace LibWhipLru.Server {
 
 		private byte[] _challenge;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.AuthChallengeMsg"/> class, generating a challenge using a PRNG.
+		/// </summary>
 		public AuthChallengeMsg() {
 			_challenge = new byte[PHRASE_SIZE];
 			using (var random = RandomNumberGenerator.Create()) {
@@ -41,12 +48,20 @@ namespace LibWhipLru.Server {
 			}
 		}
 
+		/// <summary>
+		/// Gets the challenge string.
+		/// </summary>
+		/// <returns>The challenge.</returns>
 		public byte[] GetChallenge() {
 			var output = new byte[PHRASE_SIZE];
 			Buffer.BlockCopy(_challenge, 0, output, 0, _challenge.Length * sizeof(byte)); // Yes, sizeof(byte) is redundant, but it's also good documentation.
 			return output;
 		}
 
+		/// <summary>
+		/// Converts to a byte array for sending across the wire.
+		/// </summary>
+		/// <returns>The byte array.</returns>
 		public byte[] ToByteArray() {
 			var output = new byte[MESSAGE_SIZE];
 			/* Structure of message:
@@ -60,6 +75,9 @@ namespace LibWhipLru.Server {
 			return output;
 		}
 
+		/// <summary>
+		/// Response code used in the message.
+		/// </summary>
 		public enum ResponseCode : byte {
 			RC_FOUND = 10,
 			RC_NOTFOUND = 11,

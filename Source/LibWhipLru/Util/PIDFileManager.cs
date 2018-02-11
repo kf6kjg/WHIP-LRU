@@ -36,14 +36,24 @@ namespace LibWhipLru.Util {
 	/// Creates a file with this processes PID and status as the given pidfile or, if null, processname.pid
 	/// </summary>
 	public class PIDFileManager {
+		/// <summary>
+		/// Status of the software for storing in the process ID file.
+		/// </summary>
 		public enum Status {
 			Init = 0,
 			Ready,
 			Running,
 		}
 
+		/// <summary>
+		/// Path to the process ID file.
+		/// </summary>
 		public string PidFile { get; private set; }
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Util.PIDFileManager"/> class with the file located at the given path.
+		/// </summary>
+		/// <param name="pidFile">Pidfile path.</param>
 		public PIDFileManager(string pidFile) {
 			var thisProcess = Process.GetCurrentProcess();
 
@@ -55,6 +65,17 @@ namespace LibWhipLru.Util {
 			SetStatus(Status.Init);
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Util.PIDFileManager"/> class using the default pidfile path.
+		/// </summary>
+		public PIDFileManager()
+			: this(null) {
+		}
+
+		/// <summary>
+		/// Sets the current program status in the process ID file.
+		/// </summary>
+		/// <param name="status">Status.</param>
 		public void SetStatus(Status status) {
 			var pid = Process.GetCurrentProcess().Id;
 

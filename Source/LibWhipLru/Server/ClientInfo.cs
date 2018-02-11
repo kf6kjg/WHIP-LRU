@@ -22,9 +22,11 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
+
 namespace LibWhipLru.Server {
-	public class ClientInfo {
+	internal class ClientInfo {
 		public string RemoteEndpoint { get; internal set; }
 
 		public State State { get; internal set; }
@@ -37,7 +39,7 @@ namespace LibWhipLru.Server {
 		}
 	}
 
-	public enum State {
+	internal enum State {
 		Acceptance,
 		Challenged,
 		Ready,

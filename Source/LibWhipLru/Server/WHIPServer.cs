@@ -34,6 +34,9 @@ using System.Threading;
 using log4net;
 
 namespace LibWhipLru.Server {
+	/// <summary>
+	/// A fairly generic WHIP server implementation. Actual message handling is done in callbacks.
+	/// </summary>
 	public class WHIPServer : IDisposable {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -55,10 +58,18 @@ namespace LibWhipLru.Server {
 		private int _listenBacklogLength;
 
 		private ConcurrentDictionary<string, ClientInfo> _activeConnections = new ConcurrentDictionary<string, ClientInfo>();
-		public IEnumerable<ClientInfo> ActiveConnections => _activeConnections.Values; // Automatic lock and snapshot each access.
+		internal IEnumerable<ClientInfo> ActiveConnections => _activeConnections.Values; // Automatic lock and snapshot each access.
 
 		private RequestReceivedDelegate _requestHandler;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.WHIPServer"/> class.
+		/// </summary>
+		/// <param name="requestHandler">Request handler.</param>
+		/// <param name="address">Address.</param>
+		/// <param name="port">Port.</param>
+		/// <param name="password">Password.</param>
+		/// <param name="listenBacklogLength">Listen backlog length.</param>
 		public WHIPServer(RequestReceivedDelegate requestHandler, string address = DEFAULT_ADDRESS, uint port = DEFAULT_PORT, string password = DEFAULT_PASSWORD, uint listenBacklogLength = DEFAULT_BACKLOG_LENGTH) {
 			LOG.Debug($"{address}:{port} - Initializing server.");
 
@@ -123,6 +134,9 @@ namespace LibWhipLru.Server {
 			}
 		}
 
+		/// <summary>
+		/// Stop this the listening server, letting it finish out whatever it was working on in the background.
+		/// </summary>
 		public void Stop() {
 			LOG.Debug($"{_localEndPoint} - Stopping server.");
 
@@ -304,8 +318,7 @@ namespace LibWhipLru.Server {
 			else {
 				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Zero bytes received. Client must have closed the connection.");
 				state.Client.State = State.Disconnected;
-				ClientInfo junk;
-				_activeConnections.TryRemove(state.Client.RemoteEndpoint, out junk);
+				_activeConnections.TryRemove(state.Client.RemoteEndpoint, out var junk);
 			}
 		}
 
@@ -346,8 +359,7 @@ namespace LibWhipLru.Server {
 			else {
 				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Client disconnected before response could be sent.");
 				state.Client.State = State.Disconnected;
-				ClientInfo junk;
-				_activeConnections.TryRemove(state.Client.RemoteEndpoint, out junk);
+				_activeConnections.TryRemove(state.Client.RemoteEndpoint, out var junk);
 				handler.Shutdown(SocketShutdown.Both);
 				handler.Close();
 			}
@@ -391,8 +403,7 @@ namespace LibWhipLru.Server {
 			else {
 				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Client disconnected before response could be sent and the connection closed.");
 				state.Client.State = State.Disconnected;
-				ClientInfo junk;
-				_activeConnections.TryRemove(state.Client.RemoteEndpoint, out junk);
+				_activeConnections.TryRemove(state.Client.RemoteEndpoint, out var junk);
 				handler.Shutdown(SocketShutdown.Both);
 				handler.Close();
 			}
@@ -416,8 +427,7 @@ namespace LibWhipLru.Server {
 			}
 
 			state.Client.State = State.Disconnected;
-			ClientInfo junk;
-			_activeConnections.TryRemove(state.Client.RemoteEndpoint, out junk);
+			_activeConnections.TryRemove(state.Client.RemoteEndpoint, out var junk);
 		}
 
 		// State object for reading client data asynchronously  
@@ -447,6 +457,10 @@ namespace LibWhipLru.Server {
 
 		private bool disposedValue; // To detect redundant calls
 
+		/// <summary>
+		/// Part of the IDisposable pattern.
+		/// </summary>
+		/// <param name="disposing"></param>
 		protected virtual void Dispose(bool disposing) {
 			if (!disposedValue) {
 				if (disposing) {
@@ -467,7 +481,13 @@ namespace LibWhipLru.Server {
 		//   Dispose(false);
 		// }
 
-		// This code added to correctly implement the disposable pattern.
+		/// <summary>
+		/// Releases all resource used by the <see cref="T:LibWhipLru.Server.WHIPServer"/> object.
+		/// </summary>
+		/// <remarks>Call <see cref="Dispose()"/> when you are finished using the <see cref="T:LibWhipLru.Server.WHIPServer"/>. The
+		/// <see cref="Dispose()"/> method leaves the <see cref="T:LibWhipLru.Server.WHIPServer"/> in an unusable state. After
+		/// calling <see cref="Dispose()"/>, you must release all references to the <see cref="T:LibWhipLru.Server.WHIPServer"/>
+		/// so the garbage collector can reclaim the memory that the <see cref="T:LibWhipLru.Server.WHIPServer"/> was occupying.</remarks>
 		public void Dispose() {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(true);

@@ -39,6 +39,9 @@ using log4net;
 using static InWorldz.Whip.Client.ClientRequestMsg;
 
 namespace LibWhipLru {
+	/// <summary>
+	/// Main class that controls the whole WHIP-LRU process.
+	/// </summary>
 	public class WhipLru {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -54,6 +57,15 @@ namespace LibWhipLru {
 
 		private BlockingCollection<Request> _requests;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.WhipLru"/> class.
+		/// </summary>
+		/// <param name="address">Address to listen on.</param>
+		/// <param name="port">Port to listen on.</param>
+		/// <param name="password">Password to filter conenctions by.</param>
+		/// <param name="pidFileManager">Pidfile manager.</param>
+		/// <param name="storageManager">Storage manager.</param>
+		/// <param name="listenBacklogLength">Listen backlog length.</param>
 		public WhipLru(
 			string address,
 			uint port,
@@ -107,6 +119,9 @@ namespace LibWhipLru {
 			Task.Run(() => { foreach (var request in _requests.GetConsumingEnumerable()) { ProcessRequest(request); } });
 		}
 
+		/// <summary>
+		/// Stop the service and tells existing connections to finish off.
+		/// </summary>
 		public void Stop() {
 			LOG.Debug($"{_address}:{_port} - Stopping service.");
 

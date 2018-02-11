@@ -22,27 +22,52 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace LibWhipLru.Cache {
+	/// <summary>
+	/// Stores the asset IDs in a manner that makes it easy to clear out the least recently used assets AND gain enough space for the incoming assets.
+	/// </summary>
 	public class OrderedGuidCache {
-		private ConcurrentDictionary<Guid, MetaAsset> cache;
+		private ConcurrentDictionary<Guid, MetaAsset> _cache;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.OrderedGuidCache"/> class.
+		/// </summary>
 		public OrderedGuidCache() {
-			cache = new ConcurrentDictionary<Guid, MetaAsset>();
+			_cache = new ConcurrentDictionary<Guid, MetaAsset>();
 		}
 
-		public uint Count => (uint)cache.Count;
+		/// <summary>
+		/// Gets the count of cached entries.
+		/// </summary>
+		/// <value>The count.</value>
+		public uint Count => (uint)_cache.Count;
 
-		public bool TryAdd(Guid uuid, ulong size) => cache.TryAdd(uuid, new MetaAsset{ Id = uuid, LastAccessed = DateTimeOffset.UtcNow, Size = size, });
+		/// <summary>
+		/// Tries to add a new entry to the cache. Does nothing to disk.
+		/// </summary>
+		/// <returns><c>true</c>, if add was successful, <c>false</c> otherwise.</returns>
+		/// <param name="uuid">Asset ID.</param>
+		/// <param name="size">Size of asset in bytes.</param>
+		public bool TryAdd(Guid uuid, ulong size) => _cache.TryAdd(uuid, new MetaAsset{ Id = uuid, LastAccessed = DateTimeOffset.UtcNow, Size = size, });
 
-		public void Clear() => cache.Clear();
+		/// <summary>
+		/// Empties the memory cache. Does nothing to disk.
+		/// </summary>
+		public void Clear() => _cache.Clear();
 
+		/// <summary>
+		/// Checks to see if this contains the specified asset ID.
+		/// </summary>
+		/// <returns>The contains.</returns>
+		/// <param name="uuid">Asset ID.</param>
 		public bool Contains(Guid uuid) {
-			if (cache.TryGetValue(uuid, out var ma)) {
+			if (_cache.TryGetValue(uuid, out var ma)) {
 				ma.LastAccessed = DateTimeOffset.UtcNow;
 
 				return true;
@@ -51,8 +76,13 @@ namespace LibWhipLru.Cache {
 			return false;
 		}
 
+		/// <summary>
+		/// Gets the asset size in bytes.
+		/// </summary>
+		/// <returns>The size in bytes.</returns>
+		/// <param name="uuid">Asset ID.</param>
 		public ulong? AssetSize(Guid uuid) {
-			if (cache.TryGetValue(uuid, out var ma)) {
+			if (_cache.TryGetValue(uuid, out var ma)) {
 				ma.LastAccessed = DateTimeOffset.UtcNow;
 
 				return ma.Size;
@@ -61,16 +91,26 @@ namespace LibWhipLru.Cache {
 			return null;
 		}
 
+		/// <summary>
+		/// Sets the asset size in bytes.
+		/// </summary>
+		/// <param name="uuid">Asset ID.</param>
+		/// <param name="size">Size.</param>
 		public void AssetSize(Guid uuid, ulong size) {
-			if (cache.TryGetValue(uuid, out var ma)) {
+			if (_cache.TryGetValue(uuid, out var ma)) {
 				ma.LastAccessed = DateTimeOffset.UtcNow;
 
 				ma.Size = size;
 			}
 		}
 
+		/// <summary>
+		/// Returns all locally known asset IDs in the cache that start with the given prefix.
+		/// </summary>
+		/// <returns>Asset IDs.</returns>
+		/// <param name="prefix">Prefix.</param>
 		public IEnumerable<Guid> ItemsWithPrefix(string prefix) {
-			var matchingKvps = cache.Where(kvp => kvp.Key.ToString("N").StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
+			var matchingKvps = _cache.Where(kvp => kvp.Key.ToString("N").StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase));
 
 			foreach(var kvp in matchingKvps) {
 				kvp.Value.LastAccessed = DateTimeOffset.UtcNow;
@@ -79,8 +119,13 @@ namespace LibWhipLru.Cache {
 			return matchingKvps.Select(kvp => kvp.Key);
 		}
 
+		/// <summary>
+		/// Tries to remove the given asset ID from the cache. Does not do anything to disk.
+		/// </summary>
+		/// <returns><c>true</c>, if remove was tryed, <c>false</c> otherwise.</returns>
+		/// <param name="uuid">UUID.</param>
 		public bool TryRemove(Guid uuid) {
-			return cache.TryRemove(uuid, out var trash);
+			return _cache.TryRemove(uuid, out var trash);
 		}
 
 		/// <summary>
@@ -89,7 +134,7 @@ namespace LibWhipLru.Cache {
 		/// </summary>
 		/// <param name="size">Size</param>
 		public IEnumerable<Guid> Remove(ulong size, out ulong sizeCleared) {
-			var sorted = cache.Values.OrderBy(ma => ma.LastAccessed);
+			var sorted = _cache.Values.OrderBy(ma => ma.LastAccessed);
 
 			var removed = new List<Guid>();
 			sizeCleared = 0;

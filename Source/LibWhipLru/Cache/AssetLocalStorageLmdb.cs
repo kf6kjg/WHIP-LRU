@@ -35,6 +35,10 @@ using InWorldz.Data.Assets.Stratus;
 using LightningDB;
 
 namespace LibWhipLru.Cache {
+	/// <summary>
+	/// Local storage using the LMDB data storage backend for speed, reliability, and minimal overhead in CPU, memory, or disk space.
+	/// Note that an LMDB file only ever grows in size, even across purges - just space internally is opened up. Please read about LMDB to learn why.
+	/// </summary>
 	public class AssetLocalStorageLmdb : IChattelLocalStorage, IDisposable {
 		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = uint.MaxValue/*4TB, maximum size of single asset*/;
 
@@ -51,7 +55,12 @@ namespace LibWhipLru.Cache {
 		private readonly OrderedGuidCache _activeIds;
 		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
 
-
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.AssetLocalStorageLmdb"/> class specified to be limited to the given amount of disk space.
+		/// It's highly recommended to set the disk space limit to a multiple of the block size so that you don't waste space you could be using.
+		/// </summary>
+		/// <param name="config">ChattelConfiguration object.</param>
+		/// <param name="maxAssetLocalStorageDiskSpaceByteCount">Max asset local storage disk space, in bytes.</param>
 		public AssetLocalStorageLmdb(
 			ChattelConfiguration config,
 			ulong maxAssetLocalStorageDiskSpaceByteCount

@@ -28,6 +28,10 @@ using System.Text;
 using InWorldz.Whip.Client;
 
 namespace LibWhipLru.Server {
+	/// <summary>
+	/// Message from the server to a WHIP client.
+	/// Designed from the server's perspective.
+	/// </summary>
 	public class ServerResponseMsg : IByteArraySerializable {
 		private const short DATA_SZ_TAG_LOC = HEADER_SIZE - 4;
 		private const short HEADER_SIZE = 37;
@@ -44,11 +48,22 @@ namespace LibWhipLru.Server {
 		private ServerResponseMsg() {
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.ServerResponseMsg"/> class that is not intended to return any data.
+		/// </summary>
+		/// <param name="code">Code.</param>
+		/// <param name="assetId">Asset identifier.</param>
 		public ServerResponseMsg(ResponseCode code, Guid assetId) {
 			_assetId = assetId;
 			_code = code;
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.ServerResponseMsg"/> class intended to return an asset.
+		/// </summary>
+		/// <param name="code">Code.</param>
+		/// <param name="assetId">Asset identifier.</param>
+		/// <param name="data">Data.</param>
 		public ServerResponseMsg(ResponseCode code, Guid assetId, byte[] data) : this(code, assetId) {
 			if (data.Length + HEADER_SIZE <= MAX_DATA_SIZE) {
 				_data = new byte[data.Length];
@@ -59,6 +74,12 @@ namespace LibWhipLru.Server {
 			}
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.ServerResponseMsg"/> class intended to convey a string message, such as an error.
+		/// </summary>
+		/// <param name="code">Code.</param>
+		/// <param name="assetId">Asset identifier.</param>
+		/// <param name="message">Message.</param>
 		public ServerResponseMsg(ResponseCode code, Guid assetId, string message) : this(code, assetId) {
 			var encoding = new UTF8Encoding();
 
@@ -70,10 +91,18 @@ namespace LibWhipLru.Server {
 			}
 		}
 
+		/// <summary>
+		/// Returns a summary of the header values for logging.
+		/// </summary>
+		/// <returns>The header summary.</returns>
 		public string GetHeaderSummary() {
 			return $"Code: {_code}, AssetID: {_assetId}, Size: {_data?.Length}";
 		}
 
+		/// <summary>
+		/// Converts this message to a btye array for sending via interbunny.
+		/// </summary>
+		/// <returns>The byte array.</returns>
 		public byte[] ToByteArray() {
 			var output = new byte[HEADER_SIZE + (_data?.Length ?? 0)];
 			/* Structure of message:
@@ -105,6 +134,9 @@ namespace LibWhipLru.Server {
 			return output;
 		}
 
+		/// <summary>
+		/// Response code for the message.
+		/// </summary>
 		public enum ResponseCode : byte {
 			RC_FOUND = 10,
 			RC_NOTFOUND = 11,

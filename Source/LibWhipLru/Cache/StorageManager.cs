@@ -31,6 +31,9 @@ using InWorldz.Data.Assets.Stratus;
 using log4net;
 
 namespace LibWhipLru.Cache {
+	/// <summary>
+	/// Controls the coming and going of all assets through WHIP-LRU so that the memory caching and other features run smoothly.
+	/// </summary>
 	public class StorageManager {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -142,6 +145,11 @@ namespace LibWhipLru.Cache {
 		/// <param name="foundCallback">Callback called when it is known if the asset is found or not.</param>
 		public void CheckAsset(Guid assetId, FoundCallback foundCallback) => GetAsset(assetId, asset => foundCallback(asset != null), () => foundCallback(false));
 
+		/// <summary>
+		/// Stores the asset.  Mainly just a wrapper for the 
+		/// </summary>
+		/// <param name="asset">Asset.</param>
+		/// <param name="resultCallback">Result callback.</param>
 		public void StoreAsset(StratusAsset asset, StorageResultCallback resultCallback) {
 			asset = asset ?? throw new ArgumentNullException(nameof(asset));
 			resultCallback = resultCallback ?? throw new ArgumentNullException(nameof(resultCallback));
@@ -167,22 +175,43 @@ namespace LibWhipLru.Cache {
 			resultCallback(result);
 		}
 
+		/// <summary>
+		/// Purges all assets that have the "local" flag set from both disk and memory.
+		/// Never touches the remotes.
+		/// </summary>
 		public void PurgeAllLocalAssets() {
 		}
 
+		/// <summary>
+		/// Purges the given asset from disk and memory.
+		/// Never touches the remotes.
+		/// </summary>
+		/// <param name="assetId">Asset identifier.</param>
+		/// <param name="resultCallback">Result callback.</param>
 		public void PurgeAsset(Guid assetId, PurgeResultCallback resultCallback) {
 		}
 
+		/// <summary>
+		/// Gets the locally known asset identifiers that match the given prefix.
+		/// </summary>
+		/// <returns>The locally known asset identifiers.</returns>
+		/// <param name="prefix">Prefix.</param>
 		public IEnumerable<Guid> GetLocallyKnownAssetIds(string prefix) {
 			return _localStorage.ActiveIds(prefix);
 		}
 
+		/// <summary>
+		/// Result of attempting to store an asset.
+		/// </summary>
 		public enum PutResult {
 			DONE,
 			DUPLICATE,
 			FAILURE,
 		}
 
+		/// <summary>
+		/// Result of attempting to purge an asset.
+		/// </summary>
 		public enum PurgeResult {
 			DONE,
 			NOT_FOUND_LOCALLY,

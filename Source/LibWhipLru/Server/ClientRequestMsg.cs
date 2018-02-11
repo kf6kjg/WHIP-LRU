@@ -28,6 +28,10 @@ using InWorldz.Whip.Client;
 using static InWorldz.Whip.Client.ClientRequestMsg;
 
 namespace LibWhipLru.Server {
+	/// <summary>
+	/// Message from an authorized client to the server to request an asset.
+	/// Designed from the server's perspective.
+	/// </summary>
 	public class ClientRequestMsg : IByteArrayAppendable {
 		private const short REQUEST_TYPE_LOC = 0;
 		private const short DATA_SIZE_MARKER_LOC = 33;
@@ -37,14 +41,36 @@ namespace LibWhipLru.Server {
 
 		private long _bytesRead;
 
+		/// <summary>
+		/// Gets the request type.
+		/// </summary>
+		/// <value>The type.</value>
 		public RequestType Type { get; private set; }
 		private bool _typeIsReady;
+
+		/// <summary>
+		/// Gets the asset identifier requested.
+		/// </summary>
+		/// <value>The asset identifier.</value>
 		public Guid AssetId { get; private set; }
 		private bool _assetIdIsReady;
+
+		/// <summary>
+		/// Access to the data byte array that was sent from the client as payload.
+		/// </summary>
 		public byte[] Data;
 		private int _dataWritePointer = 0;
+
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="T:LibWhipLru.Server.ClientRequestMsg"/> is ready.
+		/// </summary>
+		/// <value><c>true</c> if is ready; otherwise, <c>false</c>.</value>
 		public bool IsReady { get; private set; }
 
+		/// <summary>
+		/// Gets a header summary useful in logging.
+		/// </summary>
+		/// <returns>The header summary.</returns>
 		public string GetHeaderSummary() {
 			return $"Type: {Type}, AssetID: {AssetId}, Size: {Data?.Length}";
 		}
