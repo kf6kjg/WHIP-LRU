@@ -65,23 +65,41 @@
     <Reference Include="nunit.framework">
       <HintPath>..\..\packages\NUnit.3.9.0\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="LibreMetaverse.Types">
-      <HintPath>..\..\packages\LibreMetaverse.Types.1.2.1.151\lib\net461\LibreMetaverse.Types.dll</HintPath>
-    </Reference>
-    <Reference Include="LibreMetaverse.StructuredData">
-      <HintPath>..\..\packages\LibreMetaverse.StructuredData.1.2.1.151\lib\net461\LibreMetaverse.StructuredData.dll</HintPath>
-    </Reference>
     <Reference Include="System.Reflection.TypeExtensions">
       <HintPath>..\..\packages\System.Reflection.TypeExtensions.4.4.0\lib\net461\System.Reflection.TypeExtensions.dll</HintPath>
     </Reference>
-    <Reference Include="LibreMetaverse">
-      <HintPath>..\..\packages\LibreMetaverse.1.2.1.151\lib\net461\LibreMetaverse.dll</HintPath>
-    </Reference>
     <Reference Include="protobuf-net">
-      <HintPath>..\..\packages\protobuf-net.2.3.3\lib\net40\protobuf-net.dll</HintPath>
+      <HintPath>..\..\packages\protobuf-net.2.3.6\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="LibreMetaverse.Types">
+      <HintPath>..\..\packages\LibreMetaverse.Types.1.2.5.188\lib\net461\LibreMetaverse.Types.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse.StructuredData">
+      <HintPath>..\..\packages\LibreMetaverse.StructuredData.1.2.5.188\lib\net461\LibreMetaverse.StructuredData.dll</HintPath>
     </Reference>
     <Reference Include="Chattel">
-      <HintPath>..\..\packages\Chattel.1.5.0.66\lib\net461\Chattel.dll</HintPath>
+      <HintPath>..\..\packages\Chattel.2.0.0.98\lib\net461\Chattel.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Encoding">
+      <HintPath>..\..\packages\System.Security.Cryptography.Encoding.4.3.0\lib\net46\System.Security.Cryptography.Encoding.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Primitives">
+      <HintPath>..\..\packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Algorithms">
+      <HintPath>..\..\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net461\System.Security.Cryptography.Algorithms.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.X509Certificates">
+      <HintPath>..\..\packages\System.Security.Cryptography.X509Certificates.4.3.0\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http">
+      <HintPath>..\..\packages\System.Net.Http.4.3.3\lib\net46\System.Net.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="LibreMetaverse">
+      <HintPath>..\..\packages\LibreMetaverse.1.2.5.188\lib\net461\LibreMetaverse.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

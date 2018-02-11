@@ -66,10 +66,13 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="protobuf-net">
-      <HintPath>..\..\packages\protobuf-net.2.3.3\lib\net40\protobuf-net.dll</HintPath>
+      <HintPath>..\..\packages\protobuf-net.2.3.6\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="Chattel">
-      <HintPath>..\..\packages\Chattel.1.5.0.66\lib\net461\Chattel.dll</HintPath>
+      <HintPath>..\..\packages\Chattel.2.0.0.98\lib\net461\Chattel.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
