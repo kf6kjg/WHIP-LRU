@@ -42,8 +42,7 @@ namespace LibWhipLru.Cache {
 		public void Clear() => cache.Clear();
 
 		public bool Contains(Guid uuid) {
-			MetaAsset ma;
-			if (cache.TryGetValue(uuid, out ma)) {
+			if (cache.TryGetValue(uuid, out var ma)) {
 				ma.LastAccessed = DateTimeOffset.UtcNow;
 
 				return true;
@@ -53,8 +52,7 @@ namespace LibWhipLru.Cache {
 		}
 
 		public ulong? AssetSize(Guid uuid) {
-			MetaAsset ma;
-			if (cache.TryGetValue(uuid, out ma)) {
+			if (cache.TryGetValue(uuid, out var ma)) {
 				ma.LastAccessed = DateTimeOffset.UtcNow;
 
 				return ma.Size;
@@ -64,8 +62,7 @@ namespace LibWhipLru.Cache {
 		}
 
 		public void AssetSize(Guid uuid, ulong size) {
-			MetaAsset ma;
-			if (cache.TryGetValue(uuid, out ma)) {
+			if (cache.TryGetValue(uuid, out var ma)) {
 				ma.LastAccessed = DateTimeOffset.UtcNow;
 
 				ma.Size = size;
@@ -83,8 +80,7 @@ namespace LibWhipLru.Cache {
 		}
 
 		public bool TryRemove(Guid uuid) {
-			MetaAsset trash;
-			return cache.TryRemove(uuid, out trash);
+			return cache.TryRemove(uuid, out var trash);
 		}
 
 		/// <summary>
