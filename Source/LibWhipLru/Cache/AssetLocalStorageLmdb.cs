@@ -138,6 +138,10 @@ namespace LibWhipLru.Cache {
 
 		#region IChattelLocalStorage
 
+		/// <summary>
+		/// Stores the asset in local storage.
+		/// </summary>
+		/// <param name="asset">Asset to store.</param>
 		void IChattelLocalStorage.StoreAsset(StratusAsset asset) {
 			asset = asset ?? throw new ArgumentNullException(nameof(asset));
 
@@ -163,14 +167,31 @@ namespace LibWhipLru.Cache {
 			LOG.Debug($"Wrote an asset to local storage: {asset.Id}");
 		}
 
+		/// <summary>
+		/// Purges all items that match the passed filter.
+		/// Fields in each filter element are handled in as an AND condition, while sibling filters are handled in an OR condition.
+		/// Thus if you wanted to purge all assets that have the temp flag set true OR all assets with the local flag set true, you'd have an array of two filter objects, the first would set the temp flag to true, the second would set the local flag to true.
+		/// If instead you wanted to purge all assets that have the temp flag set true AND local flag set true, you'd have an array of a single filter object with both the temp flag and the local flag set to true.
+		/// A null or blank list results in all assets being purged.
+		/// </summary>
 		void IChattelLocalStorage.PurgeAll(IEnumerable<AssetFilter> assetFilter) {
 			throw new NotImplementedException();
 		}
 
+		/// <summary>
+		/// Purge the specified asset from local storage.
+		/// </summary>
+		/// <param name="assetId">Asset identifier.</param>
 		void IChattelLocalStorage.Purge(Guid assetId) {
 			throw new NotImplementedException();
 		}
 
+		/// <summary>
+		/// Requests that an asset be fetched from local storage.
+		/// </summary>
+		/// <returns><c>true</c>, if get asset was found, <c>false</c> otherwise.</returns>
+		/// <param name="assetId">Asset identifier.</param>
+		/// <param name="asset">The resulting asset.</param>
 		bool IChattelLocalStorage.TryGetAsset(Guid assetId, out StratusAsset asset) {
 			if (!_config.LocalStorageEnabled) {
 				asset = null;
@@ -326,7 +347,13 @@ namespace LibWhipLru.Cache {
 			Dispose(false);
 		}
 
-		// This code added to correctly implement the disposable pattern.
+		/// <summary>
+		/// Releases all resource used by this object.
+		/// </summary>
+		/// <remarks>Call <see cref="IDisposable.Dispose()"/> when you are finished using the objec. The
+		/// <see cref="IDisposable.Dispose()"/> method leaves the object in an unusable state. After
+		/// calling <see cref="IDisposable.Dispose()"/>, you must release all references to the object
+		/// so the garbage collector can reclaim the memory that the object was occupying.</remarks>
 		void IDisposable.Dispose() {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(true);
