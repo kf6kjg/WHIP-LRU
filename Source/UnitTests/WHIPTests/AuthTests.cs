@@ -31,7 +31,7 @@ using NUnit.Framework;
 
 namespace UnitTests.WHIPTests {
 	[TestFixture]
-	public class AuthTests {
+	public static class AuthTests {
 		public const byte CHALLENGE_PACKET_IDENTIFIER = 0;
 		public const ushort CHALLENGE_MESSAGE_SIZE = 8;
 		public const ushort CHALLENGE_SIZE = 7;
@@ -47,7 +47,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(2000)]
-		public void TestAuthChallengeOnConnect() {
+		public static void TestAuthChallengeOnConnect() {
 			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
 				socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
 
@@ -65,7 +65,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(2000)]
-		public void TestAuthStatusErrorWithInvalidPassword() {
+		public static void TestAuthStatusErrorWithInvalidPassword() {
 			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
 				socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
 
@@ -91,7 +91,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(2000)]
-		public void TestAuthStatusErrorWithBadPasswordUsingStaticMethod() {
+		public static void TestAuthStatusErrorWithBadPasswordUsingStaticMethod() {
 			Assert.Throws<AuthException>(() => {
 				Connect(password: "notthepassword");
 			}, "Static auth method failed.");
@@ -99,7 +99,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(2000)]
-		public void TestAuthStatusGood() {
+		public static void TestAuthStatusGood() {
 			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
 				socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
 
@@ -125,7 +125,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(2000)]
-		public void TestAuthStatusGoodUsingStaticMethod() {
+		public static void TestAuthStatusGoodUsingStaticMethod() {
 			Assert.DoesNotThrow(() => {
 				Connect();
 			}, "Static auth method failed.");

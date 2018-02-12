@@ -29,19 +29,19 @@ using NUnit.Framework;
 
 namespace UnitTests.WHIPTests {
 	[TestFixture]
-	public class GetPutTests {
-		private RemoteServer _provider;
+	public static class GetPutTests {
+		private static RemoteServer _provider;
 
-		private Asset _asset;
+		private static Asset _asset;
 
 		[OneTimeSetUp]
-		public void Setup() {
+		public static void Setup() {
 			_provider = new RemoteServer(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT, Constants.PASSWORD);
 			_provider.Start();
 		}
 
 		[SetUp]
-		public void PretestPrep() {
+		public static void PretestPrep() {
 			_asset = new Asset(
 				Guid.NewGuid().ToString("N"),
 				7, // Notecard
@@ -55,13 +55,13 @@ namespace UnitTests.WHIPTests {
 		}
 
 		[OneTimeTearDown]
-		public void Teardown() {
+		public static void Teardown() {
 			_provider.Stop();
 		}
 
 		[Test]
 		[Timeout(60000)]
-		public void TestCheckServerStatus() {
+		public static void TestCheckServerStatus() {
 			string result = null;
 
 			Assert.DoesNotThrow(() => {
@@ -73,7 +73,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationGETDoesNotFail() {
+		public static void TestOperationGETDoesNotFail() {
 			_provider.PutAsset(_asset);
 
 			Assert.DoesNotThrow(() => {
@@ -83,7 +83,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationGETReturnsMatch() {
+		public static void TestOperationGETReturnsMatch() {
 			_provider.PutAsset(_asset);
 
 			var asset = _provider.GetAsset(_asset.Uuid);
@@ -100,7 +100,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationPUTDoesNotFail() {
+		public static void TestOperationPUTDoesNotFail() {
 			Assert.DoesNotThrow(() => {
 				_provider.PutAsset(_asset);
 			}, "Failed to put the asset.");

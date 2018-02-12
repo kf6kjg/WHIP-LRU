@@ -30,9 +30,9 @@ using NUnit.Framework;
 
 namespace UnitTests.WHIPTests {
 	[TestFixture]
-	public class ServiceTests {
+	public static class ServiceTests {
 		[Test]
-		public void TestServiceListening() {
+		public static void TestServiceListening() {
 			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
 				Assert.DoesNotThrow(() => {
 					socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
@@ -41,13 +41,13 @@ namespace UnitTests.WHIPTests {
 		}
 
 		[Test]
-		public void TestPIDFileExists() {
+		public static void TestPIDFileExists() {
 			FileAssert.Exists(Constants.PID_FILE_PATH, "Missing expected pidfile.");
 		}
 
 		[Test]
 		[Timeout(5000)]
-		public void TestServiceMultipleBadRequests() {
+		public static void TestServiceMultipleBadRequests() {
 			using (var socket = AuthTests.Connect()) {
 				var assetId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
 
@@ -68,7 +68,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(5000)]
-		public void TestServiceMultipleGoodRequests() {
+		public static void TestServiceMultipleGoodRequests() {
 			using (var socket = AuthTests.Connect()) {
 				for (var index = 0; index < 10; ++index) {
 					var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString());

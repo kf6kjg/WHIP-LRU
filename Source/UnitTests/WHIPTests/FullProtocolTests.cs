@@ -32,16 +32,16 @@ using NUnit.Framework;
 
 namespace UnitTests.WHIPTests {
 	[TestFixture]
-	public class FullProtocolTests {
-		private Socket _socket;
+	public static class FullProtocolTests {
+		private static Socket _socket;
 
 		[OneTimeSetUp]
-		public void Setup() {
+		public static void Setup() {
 			_socket = AuthTests.Connect();
 		}
 
 		[OneTimeTearDown]
-		public void Teardown() {
+		public static void Teardown() {
 			_socket.Dispose();
 			_socket = null;
 		}
@@ -50,7 +50,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationGETWithInvalidIdReturnsError() {
+		public static void TestOperationGETWithInvalidIdReturnsError() {
 			var assetId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, assetId);
@@ -65,7 +65,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationGETWithRandomIdReturnsNotFound() {
+		public static void TestOperationGETWithRandomIdReturnsNotFound() {
 			var assetId = Guid.NewGuid().ToString("N");
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.GET, assetId);
@@ -80,7 +80,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationGETWithValidIdReturnsCorrectAsset() {
+		public static void TestOperationGETWithValidIdReturnsCorrectAsset() {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure storing asset for test.");
 
@@ -105,7 +105,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationGETWithValidIdReturnsFound() {
+		public static void TestOperationGETWithValidIdReturnsFound() {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure storing asset for test.");
 
@@ -128,7 +128,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationGET_DONTCACHEWithValidIdReturnsOk() {
+		public static void TestOperationGET_DONTCACHEWithValidIdReturnsOk() {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure storing asset for test.");
 
@@ -148,7 +148,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationMAINT_PURGELOCALSReturnsOk() {
+		public static void TestOperationMAINT_PURGELOCALSReturnsOk() {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.MAINT_PURGELOCALS, Guid.Empty.ToString("N"));
 			request.Send(_socket);
 
@@ -165,7 +165,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationPURGEWithInvalidIdReturnsError() {
+		public static void TestOperationPURGEWithInvalidIdReturnsError() {
 			var assetId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, assetId);
@@ -180,7 +180,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationPURGEWithRandomIdReturnsNotFound() {
+		public static void TestOperationPURGEWithRandomIdReturnsNotFound() {
 			var assetId = Guid.NewGuid().ToString("N");
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.PURGE, assetId);
@@ -195,7 +195,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationPURGEWithValidIdReturnsOk() {
+		public static void TestOperationPURGEWithValidIdReturnsOk() {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
@@ -211,7 +211,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationPURGEWithValidIdRemovedItem() {
+		public static void TestOperationPURGEWithValidIdRemovedItem() {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
@@ -240,7 +240,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationPUTWithDuplicateIdReturnsError() {
+		public static void TestOperationPUTWithDuplicateIdReturnsError() {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
@@ -258,7 +258,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationPUTWithValidIdReturnsOk() {
+		public static void TestOperationPUTWithValidIdReturnsOk() {
 			var asset = new Asset(
 				Guid.NewGuid().ToString("N"),
 				7, // Notecard
@@ -288,7 +288,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationSTATUS_GETHasExpectedValue() {
+		public static void TestOperationSTATUS_GETHasExpectedValue() {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString("N"));
 			request.Send(_socket);
 
@@ -303,7 +303,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationSTATUS_GETReturnsOk() {
+		public static void TestOperationSTATUS_GETReturnsOk() {
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.STATUS_GET, Guid.Empty.ToString("N"));
 			request.Send(_socket);
 
@@ -320,7 +320,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationSTORED_ASSET_IDS_GETHasExpectedEntry() {
+		public static void TestOperationSTORED_ASSET_IDS_GETHasExpectedEntry() {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
@@ -340,7 +340,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationSTORED_ASSET_IDS_GETReturnsOk() {
+		public static void TestOperationSTORED_ASSET_IDS_GETReturnsOk() {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 
@@ -362,7 +362,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationTESTWithInvalidIdReturnsError() {
+		public static void TestOperationTESTWithInvalidIdReturnsError() {
 			var assetId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, assetId);
@@ -377,7 +377,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationTESTWithRandomIdReturnsNotFound() {
+		public static void TestOperationTESTWithRandomIdReturnsNotFound() {
 			var assetId = Guid.NewGuid().ToString("N");
 
 			var request = new ClientRequestMsg(ClientRequestMsg.RequestType.TEST, assetId);
@@ -392,7 +392,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestOperationTESTWithValidIdReturnsFound() {
+		public static void TestOperationTESTWithValidIdReturnsFound() {
 			var asset = CreateAndPutAsset(_socket);
 			Assert.NotNull(asset, "Failure putting asset while prepping for test.");
 

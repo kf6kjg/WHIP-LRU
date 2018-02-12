@@ -30,16 +30,16 @@ using NUnit.Framework;
 
 namespace UnitTests.WHIPTests {
 	[TestFixture]
-	public class StressTests {
-		private Socket _socket;
+	public static class StressTests {
+		private static Socket _socket;
 
 		[OneTimeSetUp]
-		public void Setup() {
+		public static void Setup() {
 			_socket = AuthTests.Connect();
 		}
 
 		[OneTimeTearDown]
-		public void Teardown() {
+		public static void Teardown() {
 			_socket.Dispose();
 			_socket = null;
 		}
@@ -48,7 +48,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestStressConnectCycling1000() {
+		public static void TestStressConnectCycling1000() {
 			for (var i = 0; i < 1000; ++i) {
 				using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
 					socket.Connect(Constants.SERVICE_ADDRESS, Constants.SERVICE_PORT);
@@ -58,7 +58,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestStressConnectCyclingParallel1000() {
+		public static void TestStressConnectCyclingParallel1000() {
 			var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
 			Parallel.For(0, 1000, options, index => {
 				using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) {
@@ -73,7 +73,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestStressPUTRandomFixedSizeAsset1000() {
+		public static void TestStressPUTRandomFixedSizeAsset1000() {
 			for (var i = 0; i < 1000; ++i) {
 				var asset = FullProtocolTests.CreateAndPutAsset(_socket, RandomBytes(10000, 10000));
 				Assert.NotNull(asset, "Stress test failed.");
@@ -82,7 +82,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestStressPUTRandomFixedSizeAssetParallel1000() {
+		public static void TestStressPUTRandomFixedSizeAssetParallel1000() {
 			var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
 			Parallel.For(0, 1000, options, index => {
 				using (var socket = AuthTests.Connect()) {
@@ -95,7 +95,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestStressPUTRandomVariableSizeAsset1000() {
+		public static void TestStressPUTRandomVariableSizeAsset1000() {
 			for (var i = 0; i < 1000; ++i) {
 				var asset = FullProtocolTests.CreateAndPutAsset(_socket, RandomBytes());
 				Assert.NotNull(asset, "Stress test failed.");
@@ -104,7 +104,7 @@ namespace UnitTests.WHIPTests {
 
 		[Test]
 		[Timeout(60000)]
-		public void TestStressPUTRandomVariableSizeAssetParallel1000() {
+		public static void TestStressPUTRandomVariableSizeAssetParallel1000() {
 			var options = new ParallelOptions { MaxDegreeOfParallelism = 4 };
 			Parallel.For(0, 1000, options, index => {
 				using (var socket = AuthTests.Connect()) {

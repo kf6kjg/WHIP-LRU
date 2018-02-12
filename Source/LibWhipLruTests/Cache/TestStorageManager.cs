@@ -37,17 +37,17 @@ using NUnit.Framework;
 
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
-	public class TestStorageManager {
+	public static class TestStorageManager {
 		public static readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_sm.whipwcache";
 		public const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 
-		private AssetLocalStorageLmdb _readerLocalStorage;
-		private ChattelReader _chattelReader;
-		private ChattelWriter _chattelWriter;
+		private static AssetLocalStorageLmdb _readerLocalStorage;
+		private static ChattelReader _chattelReader;
+		private static ChattelWriter _chattelWriter;
 
 
 		[SetUp]
-		public void BeforeEveryTest() {
+		public static void BeforeEveryTest() {
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
 			try {
 				File.Delete(WRITE_CACHE_FILE_PATH);
@@ -71,7 +71,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[TearDown]
-		public void CleanupAfterEveryTest() {
+		public static void CleanupAfterEveryTest() {
 			IDisposable readerDispose = _readerLocalStorage;
 			_readerLocalStorage = null;
 			readerDispose.Dispose();
@@ -83,7 +83,7 @@ namespace LibWhipLruTests.Cache {
 		#region Ctor
 
 		[Test]
-		public void TestStorageManager_Ctor_DoesNotThrow() {
+		public static void TestStorageManager_Ctor_DoesNotThrow() {
 			Assert.DoesNotThrow(() => new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -93,7 +93,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_Ctor_NullLocalStorage_ArgumentNullException() {
+		public static void TestStorageManager_Ctor_NullLocalStorage_ArgumentNullException() {
 			Assert.Throws<ArgumentNullException>(() => new StorageManager(
 				null,
 				TimeSpan.FromMinutes(2),
@@ -103,7 +103,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_Ctor_NullReader_ArgumentNullException() {
+		public static void TestStorageManager_Ctor_NullReader_ArgumentNullException() {
 			Assert.Throws<ArgumentNullException>(() => new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -113,7 +113,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_Ctor_NullWriter_ArgumentNullException() {
+		public static void TestStorageManager_Ctor_NullWriter_ArgumentNullException() {
 			Assert.Throws<ArgumentNullException>(() => new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -123,7 +123,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_Ctor_NegativeTime_DoesntThrow() {
+		public static void TestStorageManager_Ctor_NegativeTime_DoesntThrow() {
 			Assert.DoesNotThrow(() => new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(-1),
@@ -133,7 +133,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_Ctor_ZeroTime_DoesntThrow() {
+		public static void TestStorageManager_Ctor_ZeroTime_DoesntThrow() {
 			Assert.DoesNotThrow(() => new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.Zero,
@@ -147,7 +147,7 @@ namespace LibWhipLruTests.Cache {
 		#region Check asset
 
 		[Test]
-		public void TestStorageManager_CheckAsset_EmptyId_ArgumentException() {
+		public static void TestStorageManager_CheckAsset_EmptyId_ArgumentException() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -159,7 +159,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_CheckAsset_Unknown_DoesntThrow() {
+		public static void TestStorageManager_CheckAsset_Unknown_DoesntThrow() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -172,7 +172,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		[Timeout(1000)]
-		public void TestStorageManager_CheckAsset_Unknown_CallsCallback() {
+		public static void TestStorageManager_CheckAsset_Unknown_CallsCallback() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -191,7 +191,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_CheckAsset_Unknown_IsFalse() {
+		public static void TestStorageManager_CheckAsset_Unknown_IsFalse() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -203,7 +203,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_CheckAsset_Known_DoesntThrow() {
+		public static void TestStorageManager_CheckAsset_Known_DoesntThrow() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -222,7 +222,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		[Timeout(1000)]
-		public void TestStorageManager_CheckAsset_Known_CallsCallback() {
+		public static void TestStorageManager_CheckAsset_Known_CallsCallback() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -247,7 +247,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_CheckAsset_Known_IsTrue() {
+		public static void TestStorageManager_CheckAsset_Known_IsTrue() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -265,7 +265,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_CheckAsset_SingleNoExist_CallsServerRequestAsset() {
+		public static void TestStorageManager_CheckAsset_SingleNoExist_CallsServerRequestAsset() {
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
 			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
@@ -286,7 +286,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_CheckAsset_DoubleNoExist_CallsServerRequestOnlyOnce() {
+		public static void TestStorageManager_CheckAsset_DoubleNoExist_CallsServerRequestOnlyOnce() {
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
@@ -313,7 +313,7 @@ namespace LibWhipLruTests.Cache {
 		#region Putting assets
 
 		[Test]
-		public void TestStorageManager_StoreAsset_AssetNull_ArgumentNullException() {
+		public static void TestStorageManager_StoreAsset_AssetNull_ArgumentNullException() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -325,7 +325,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_StoreAsset_EmptyId_ArgumentException() {
+		public static void TestStorageManager_StoreAsset_EmptyId_ArgumentException() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -341,7 +341,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_StoreAsset_DoesntThrowFirstTime() {
+		public static void TestStorageManager_StoreAsset_DoesntThrowFirstTime() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -357,7 +357,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_StoreAsset_DoesntThrowDuplicate() {
+		public static void TestStorageManager_StoreAsset_DoesntThrowDuplicate() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -374,7 +374,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_StoreAsset_DoesntThrowDuplicateParallel() {
+		public static void TestStorageManager_StoreAsset_DoesntThrowDuplicateParallel() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -396,7 +396,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_StoreAsset_DoesntThrowMultipleParallel() {
+		public static void TestStorageManager_StoreAsset_DoesntThrowMultipleParallel() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -427,7 +427,7 @@ namespace LibWhipLruTests.Cache {
 		#region Get Assets
 
 		[Test]
-		public void TestStorageManager_GetAsset_EmptyId_ArgumentException() {
+		public static void TestStorageManager_GetAsset_EmptyId_ArgumentException() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -439,7 +439,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_GetAsset_Unknown_DoesntThrow() {
+		public static void TestStorageManager_GetAsset_Unknown_DoesntThrow() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -452,7 +452,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		[Timeout(1000)]
-		public void TestStorageManager_GetAsset_Unknown_CallsFailureCallback() {
+		public static void TestStorageManager_GetAsset_Unknown_CallsFailureCallback() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -471,7 +471,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_GetAsset_Unknown_IsNull() {
+		public static void TestStorageManager_GetAsset_Unknown_IsNull() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -483,7 +483,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_GetAsset_Known_DoesntThrow() {
+		public static void TestStorageManager_GetAsset_Known_DoesntThrow() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -502,7 +502,7 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		[Timeout(1000)]
-		public void TestStorageManager_GetAsset_Known_CallsSuccessCallback() {
+		public static void TestStorageManager_GetAsset_Known_CallsSuccessCallback() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -528,7 +528,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_GetAsset_Known_IsNotNull() {
+		public static void TestStorageManager_GetAsset_Known_IsNotNull() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -546,7 +546,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_GetAsset_Known_HasSameId() {
+		public static void TestStorageManager_GetAsset_Known_HasSameId() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -564,7 +564,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_GetAsset_Known_IsIdentical() {
+		public static void TestStorageManager_GetAsset_Known_IsIdentical() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -600,7 +600,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_GetAsset_SingleNoExist_CallsServerRequestAsset() {
+		public static void TestStorageManager_GetAsset_SingleNoExist_CallsServerRequestAsset() {
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
 			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
@@ -621,7 +621,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_GetAsset_DoubleNoExist_CallsServerRequestOnlyOnce() {
+		public static void TestStorageManager_GetAsset_DoubleNoExist_CallsServerRequestOnlyOnce() {
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
@@ -654,7 +654,7 @@ namespace LibWhipLruTests.Cache {
 		#region Purge Asset
 
 		[Test]
-		public void TestStorageManager_PurgeAsset_EmptyId_ArgumentException() {
+		public static void TestStorageManager_PurgeAsset_EmptyId_ArgumentException() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -666,7 +666,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_PurgeAsset_DoesntThrowFirstTime() {
+		public static void TestStorageManager_PurgeAsset_DoesntThrowFirstTime() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -678,7 +678,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_PurgeAsset_DoesntThrowDuplicate() {
+		public static void TestStorageManager_PurgeAsset_DoesntThrowDuplicate() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -693,7 +693,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_PurgeAsset_DoesntThrowMultiple() {
+		public static void TestStorageManager_PurgeAsset_DoesntThrowMultiple() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -708,12 +708,10 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_PurgeAsset_Unknown_CallsCallback() {
-			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
-			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
-
+		[Timeout(1000)]
+		public static void TestStorageManager_PurgeAsset_Unknown_CallsCallback() {
 			var mgr = new StorageManager(
-				localStorageLmdb,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -730,12 +728,10 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_PurgeAsset_Known_CallsCallback() {
-			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
-			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
-
+		[Timeout(1000)]
+		public static void TestStorageManager_PurgeAsset_Known_CallsCallback() {
 			var mgr = new StorageManager(
-				localStorageLmdb,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -758,31 +754,10 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_PurgeAsset_Unknown_CallsLocalStoragePurge() {
-			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
-			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
-
+		[Timeout(1000)]
+		public static void TestStorageManager_PurgeAsset_Unknown_DoesntRemoveKnown() {
 			var mgr = new StorageManager(
-				localStorageLmdb,
-				TimeSpan.FromMinutes(2),
-				_chattelReader,
-				_chattelWriter
-			);
-
-			var assetId = Guid.NewGuid();
-
-			mgr.PurgeAsset(assetId, result => { });
-
-			chattelLocalStorage.Received(1).Purge(assetId);
-		}
-
-		[Test]
-		public void TestStorageManager_PurgeAsset_Known_CallsLocalStoragePurge() {
-			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
-			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
-
-			var mgr = new StorageManager(
-				localStorageLmdb,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -792,21 +767,61 @@ namespace LibWhipLruTests.Cache {
 				Id = Guid.NewGuid(),
 			};
 
-			mgr.StoreAsset(asset, result => { });
+			var wait = new AutoResetEvent(false);
 
-			mgr.PurgeAsset(asset.Id, result => { });
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+			wait.Reset();
 
-			chattelLocalStorage.Received(1).Purge(asset.Id);
+			mgr.PurgeAsset(Guid.NewGuid(), result => wait.Set());
+			wait.WaitOne();
+			wait.Reset();
+
+			var status = false;
+
+			mgr.CheckAsset(asset.Id, result => { status = result; wait.Set(); });
+			wait.WaitOne();
+
+			Assert.True(status);
 		}
 
 		[Test]
 		[Timeout(1000)]
-		public void TestStorageManager_PurgeAsset_Unknown_ReturnsNotFoundLocally() {
-			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
-			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
-
+		public static void TestStorageManager_PurgeAsset_Known_RemovesItem() {
 			var mgr = new StorageManager(
-				localStorageLmdb,
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			var wait = new AutoResetEvent(false);
+
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+			wait.Reset();
+
+			mgr.PurgeAsset(asset.Id, result => wait.Set());
+			wait.WaitOne();
+			wait.Reset();
+
+			var status = false;
+
+			mgr.CheckAsset(asset.Id, result => { status = result; wait.Set(); });
+			wait.WaitOne();
+
+			Assert.False(status);
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestStorageManager_PurgeAsset_Unknown_ReturnsNotFoundLocally() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -826,12 +841,9 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		[Timeout(1000)]
-		public void TestStorageManager_PurgeAsset_Known_ReturnsDone() {
-			var localStorageLmdb = Substitute.For<AssetLocalStorageLmdb>();
-			IChattelLocalStorage chattelLocalStorage = localStorageLmdb;
-
+		public static void TestStorageManager_PurgeAsset_Known_ReturnsDone() {
 			var mgr = new StorageManager(
-				localStorageLmdb,
+				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
 				_chattelReader,
 				_chattelWriter
@@ -850,7 +862,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_PurgeAsset_DoesntRemoveOtherAsset() {
+		public static void TestStorageManager_PurgeAsset_DoesntRemoveOtherAsset() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),
@@ -870,7 +882,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestStorageManager_PurgeAsset_RemovesAsset() {
+		public static void TestStorageManager_PurgeAsset_RemovesAsset() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
 				TimeSpan.FromMinutes(2),

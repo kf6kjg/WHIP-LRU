@@ -30,11 +30,11 @@ using NUnit.Framework;
 
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
-	public class TestOrderedGuidCache {
+	public static class TestOrderedGuidCache {
 		#region Ctor
 
 		[Test]
-		public void TestOrderedGuidCache_Ctor_DoesntThrow() {
+		public static void TestOrderedGuidCache_Ctor_DoesntThrow() {
 			Assert.DoesNotThrow(() => new OrderedGuidCache());
 		}
 
@@ -43,13 +43,13 @@ namespace LibWhipLruTests.Cache {
 		#region TryAdd
 
 		[Test]
-		public void TestOrderedGuidCache_TryAdd_FirstTime_ReturnsTrue() {
+		public static void TestOrderedGuidCache_TryAdd_FirstTime_ReturnsTrue() {
 			var cache = new OrderedGuidCache();
 			Assert.True(cache.TryAdd(Guid.NewGuid(), 0));
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_TryAdd_Multiple_ReturnsTrue() {
+		public static void TestOrderedGuidCache_TryAdd_Multiple_ReturnsTrue() {
 			var cache = new OrderedGuidCache();
 			Assert.True(cache.TryAdd(Guid.NewGuid(), 1));
 			Assert.True(cache.TryAdd(Guid.NewGuid(), 2));
@@ -57,7 +57,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_TryAdd_Duplicate_ReturnsFalse() {
+		public static void TestOrderedGuidCache_TryAdd_Duplicate_ReturnsFalse() {
 			var cache = new OrderedGuidCache();
 			var guid = Guid.NewGuid();
 			cache.TryAdd(guid, 1);
@@ -69,13 +69,13 @@ namespace LibWhipLruTests.Cache {
 		#region Count
 
 		[Test]
-		public void TestOrderedGuidCache_Count_Fresh_IsZero() {
+		public static void TestOrderedGuidCache_Count_Fresh_IsZero() {
 			var cache = new OrderedGuidCache();
 			Assert.AreEqual(0, cache.Count);
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_Count_Returns3AfterAdding3() {
+		public static void TestOrderedGuidCache_Count_Returns3AfterAdding3() {
 			var cache = new OrderedGuidCache();
 			cache.TryAdd(Guid.NewGuid(), 1);
 			cache.TryAdd(Guid.NewGuid(), 2);
@@ -88,7 +88,7 @@ namespace LibWhipLruTests.Cache {
 		#region Clear
 
 		[Test]
-		public void TestOrderedGuidCache_Clear_ResultsInCountZero() {
+		public static void TestOrderedGuidCache_Clear_ResultsInCountZero() {
 			var cache = new OrderedGuidCache();
 			cache.TryAdd(Guid.NewGuid(), 0);
 			cache.Clear();
@@ -100,14 +100,14 @@ namespace LibWhipLruTests.Cache {
 		#region Contains
 
 		[Test]
-		public void TestOrderedGuidCache_Contains_DoesntFindUnknown() {
+		public static void TestOrderedGuidCache_Contains_DoesntFindUnknown() {
 			var cache = new OrderedGuidCache();
 			cache.TryAdd(Guid.NewGuid(), 0);
 			Assert.False(cache.Contains(Guid.NewGuid()));
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_Contains_FindsKnown() {
+		public static void TestOrderedGuidCache_Contains_FindsKnown() {
 			var cache = new OrderedGuidCache();
 			var guid = Guid.NewGuid();
 			cache.TryAdd(Guid.NewGuid(), 1);
@@ -117,7 +117,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_Contains_DoesntFindRemovedItem() {
+		public static void TestOrderedGuidCache_Contains_DoesntFindRemovedItem() {
 			var cache = new OrderedGuidCache();
 			var guid = Guid.NewGuid();
 			cache.TryAdd(Guid.NewGuid(), 1);
@@ -132,7 +132,7 @@ namespace LibWhipLruTests.Cache {
 		#region AssetSize Get
 
 		[Test]
-		public void TestOrderedGuidCache_AssetSizeGet_Known_SizeCorrect() {
+		public static void TestOrderedGuidCache_AssetSizeGet_Known_SizeCorrect() {
 			var cache = new OrderedGuidCache();
 			var guid = Guid.NewGuid();
 			cache.TryAdd(Guid.NewGuid(), 1);
@@ -142,7 +142,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_AssetSizeGet_Unknown_Null() {
+		public static void TestOrderedGuidCache_AssetSizeGet_Unknown_Null() {
 			var cache = new OrderedGuidCache();
 			var guid = Guid.NewGuid();
 			cache.TryAdd(Guid.NewGuid(), 1);
@@ -155,7 +155,7 @@ namespace LibWhipLruTests.Cache {
 		#region AssetSize Set
 
 		[Test]
-		public void TestOrderedGuidCache_AssetSizeSet_Known_SizeUpdated() {
+		public static void TestOrderedGuidCache_AssetSizeSet_Known_SizeUpdated() {
 			var cache = new OrderedGuidCache();
 			var guid = Guid.NewGuid();
 			cache.TryAdd(Guid.NewGuid(), 1);
@@ -168,7 +168,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_AssetSizeSet_Unknown_NoChange() {
+		public static void TestOrderedGuidCache_AssetSizeSet_Unknown_NoChange() {
 			var cache = new OrderedGuidCache();
 			var guid1 = Guid.NewGuid();
 			var guid2 = Guid.NewGuid();
@@ -187,7 +187,7 @@ namespace LibWhipLruTests.Cache {
 		#region ItemsWithPrefix
 
 		[Test]
-		public void TestOrderedGuidCache_ItemsWithPrefix_DoesntFindUnknown() {
+		public static void TestOrderedGuidCache_ItemsWithPrefix_DoesntFindUnknown() {
 			var cache = new OrderedGuidCache();
 			cache.TryAdd(Guid.Parse("67bdbe4a-1f93-4316-8c32-ae7a168a00e4"), 1);
 			cache.TryAdd(Guid.Parse("fcf84364-5fbd-4866-b8a7-35b93a20dbc6"), 2);
@@ -196,7 +196,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_ItemsWithPrefix_FindsSingularKnown() {
+		public static void TestOrderedGuidCache_ItemsWithPrefix_FindsSingularKnown() {
 			var cache = new OrderedGuidCache();
 			var guid = Guid.Parse("fcf84364-5fbd-4866-b8a7-35b93a20dbc6");
 			cache.TryAdd(guid, 1);
@@ -209,7 +209,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_ItemsWithPrefix_FindsMultipleKnown() {
+		public static void TestOrderedGuidCache_ItemsWithPrefix_FindsMultipleKnown() {
 			var cache = new OrderedGuidCache();
 			var guid1 = Guid.Parse("fcf84364-5fbd-4866-b8a7-35b93a20dbc6");
 			cache.TryAdd(guid1, 1);
@@ -229,7 +229,7 @@ namespace LibWhipLruTests.Cache {
 		#region TryRemove
 
 		[Test]
-		public void TestOrderedGuidCache_TryRemove_DoesntRemoveUnknown() {
+		public static void TestOrderedGuidCache_TryRemove_DoesntRemoveUnknown() {
 			var cache = new OrderedGuidCache();
 			cache.TryAdd(Guid.NewGuid(), 0);
 			Assert.False(cache.TryRemove(Guid.NewGuid()));
@@ -237,7 +237,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_TryRemove_DoesRemoveKnown() {
+		public static void TestOrderedGuidCache_TryRemove_DoesRemoveKnown() {
 			var cache = new OrderedGuidCache();
 			var guid = Guid.NewGuid();
 			cache.TryAdd(Guid.NewGuid(), 1);
@@ -253,7 +253,7 @@ namespace LibWhipLruTests.Cache {
 		#region Remove
 
 		[Test]
-		public void TestOrderedGuidCache_Remove_Empty_ReturnsEmptyAndZero() {
+		public static void TestOrderedGuidCache_Remove_Empty_ReturnsEmptyAndZero() {
 			var cache = new OrderedGuidCache();
 			var removed = cache.Remove(100, out var sizeCleared);
 			Assert.IsEmpty(removed);
@@ -261,7 +261,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_Remove_RemovesItems() {
+		public static void TestOrderedGuidCache_Remove_RemovesItems() {
 			var cache = new OrderedGuidCache();
 			cache.TryAdd(Guid.NewGuid(), 2);
 			cache.TryAdd(Guid.NewGuid(), 4);
@@ -273,7 +273,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_Remove_ReportsCorrectSizeCleared() {
+		public static void TestOrderedGuidCache_Remove_ReportsCorrectSizeCleared() {
 			var cache = new OrderedGuidCache();
 			cache.TryAdd(Guid.NewGuid(), 2);
 			cache.TryAdd(Guid.NewGuid(), 4);
@@ -285,7 +285,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_Remove_ReturnsLeastRecentlyAccessedItems() {
+		public static void TestOrderedGuidCache_Remove_ReturnsLeastRecentlyAccessedItems() {
 			var cache = new OrderedGuidCache();
 
 			var guidRemoved1 = Guid.NewGuid();
@@ -320,7 +320,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_Remove_CacheDoesntContainRemovedItems() {
+		public static void TestOrderedGuidCache_Remove_CacheDoesntContainRemovedItems() {
 			var cache = new OrderedGuidCache();
 
 			var guidRemoved1 = Guid.NewGuid();
@@ -355,7 +355,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestOrderedGuidCache_Remove_LeavesMostRecentlyAccessedItems() {
+		public static void TestOrderedGuidCache_Remove_LeavesMostRecentlyAccessedItems() {
 			var cache = new OrderedGuidCache();
 
 			var guidRemoved1 = Guid.NewGuid();

@@ -35,19 +35,19 @@ namespace LibWhipLruTests.Cache {
 		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb";
 		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue/*Min value to get tests to run*/;
 
-		private ChattelConfiguration _chattelConfigRead;
-		private AssetLocalStorageLmdb _localStorageLmdb;
-		private IChattelLocalStorage _localStorage;
+		private static ChattelConfiguration _chattelConfigRead;
+		private static AssetLocalStorageLmdb _localStorageLmdb;
+		private static IChattelLocalStorage _localStorage;
 
 		[OneTimeSetUp]
-		public void Startup() {
+		public static void Startup() {
 			// Folder has to be there or the config fails.
 			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
 			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH, assetServer: null);
 		}
 
 		[SetUp]
-		public void BeforeEveryTest() {
+		public static void BeforeEveryTest() {
 			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
 
 			_localStorage = _localStorageLmdb = new AssetLocalStorageLmdb(
@@ -57,7 +57,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[TearDown]
-		public void CleanupAfterEveryTest() {
+		public static void CleanupAfterEveryTest() {
 			_localStorage = null;
 			IDisposable localStorageDisposal = _localStorageLmdb;
 			_localStorageLmdb = null;
@@ -75,7 +75,7 @@ namespace LibWhipLruTests.Cache {
 		#region Store Asset
 
 		[Test]
-		public void TestAssetLocalStorageLmdb_StoreAsset_AssetOnDiskImmediately() {
+		public static void TestAssetLocalStorageLmdb_StoreAsset_AssetOnDiskImmediately() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -85,7 +85,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestAssetLocalStorageLmdb_StoreAsset_ContainsImmediately() {
+		public static void TestAssetLocalStorageLmdb_StoreAsset_ContainsImmediately() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -95,7 +95,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestAssetLocalStorageLmdb_StoreAsset_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdb_StoreAsset_DoesntThrow() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -104,12 +104,12 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public void TestAssetLocalStorageLmdb_StoreAsset_Null_ArgumentNullException() {
+		public static void TestAssetLocalStorageLmdb_StoreAsset_Null_ArgumentNullException() {
 			Assert.Throws<ArgumentNullException>(() => _localStorage.StoreAsset(null));
 		}
 
 		[Test]
-		public void TestAssetLocalStorageLmdb_StoreAsset_EmpyId_ArgumentException() {
+		public static void TestAssetLocalStorageLmdb_StoreAsset_EmpyId_ArgumentException() {
 			var asset = new StratusAsset {
 				Id = Guid.Empty,
 			};
