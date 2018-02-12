@@ -24,6 +24,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using Chattel;
 using InWorldz.Data.Assets.Stratus;
 using LibWhipLru.Cache;
@@ -116,6 +117,352 @@ namespace LibWhipLruTests.Cache {
 
 			Assert.Throws<ArgumentException>(() => _localStorage.StoreAsset(asset));
 		}
+
+		#endregion
+
+		#region PurgeAll
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_Null_EmptyLocalStorage_DoesntThrow() {
+			Assert.DoesNotThrow(() => _localStorage.PurgeAll(null));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_Null_NonEmptyLocalStorage_DoesntThrow() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+			_localStorage.StoreAsset(assetTest);
+
+			Assert.DoesNotThrow(() => _localStorage.PurgeAll(null));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_Null_NonEmptyLocalStorage_RemovesDiskEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+			_localStorage.StoreAsset(assetTest);
+			_localStorage.PurgeAll(null);
+
+			Assert.False(_localStorageLmdb.AssetOnDisk(assetTest.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_Null_NonEmptyLocalStorage_RemovesMemoryEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+			_localStorage.StoreAsset(assetTest);
+			_localStorage.PurgeAll(null);
+
+			Assert.False(_localStorageLmdb.Contains(assetTest.Id));
+		}
+
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_EmptyList_EmptyLocalStorage_DoesntThrow() {
+			Assert.DoesNotThrow(() => _localStorage.PurgeAll(new List<AssetFilter>{ }));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_EmptyList_NonEmptyLocalStorage_DoesntThrow() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+			_localStorage.StoreAsset(assetTest);
+
+			Assert.DoesNotThrow(() => _localStorage.PurgeAll(new List<AssetFilter> { }));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_EmptyList_NonEmptyLocalStorage_RemovesDiskEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+			_localStorage.StoreAsset(assetTest);
+			_localStorage.PurgeAll(new List<AssetFilter> { });
+
+			Assert.False(_localStorageLmdb.AssetOnDisk(assetTest.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_EmptyList_NonEmptyLocalStorage_RemovesMemoryEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+			_localStorage.StoreAsset(assetTest);
+			_localStorage.PurgeAll(new List<AssetFilter> { });
+
+			Assert.False(_localStorageLmdb.Contains(assetTest.Id));
+		}
+
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_EmptyLocalStorage_DoesntThrow() {
+			Assert.DoesNotThrow(() => _localStorage.PurgeAll(new List<AssetFilter> {
+				new AssetFilter {
+					LocalFilter = true,
+				}
+			}));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Match_NonEmptyLocalStorage_DoesntThrow() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = true,
+			};
+			_localStorage.StoreAsset(assetTest);
+
+			Assert.DoesNotThrow(() => _localStorage.PurgeAll(new List<AssetFilter> {
+				new AssetFilter {
+					LocalFilter = true,
+				}
+			}));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Match_NonEmptyLocalStorage_RemovesDiskEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = true,
+			};
+			_localStorage.StoreAsset(assetTest);
+
+			_localStorage.PurgeAll(new List<AssetFilter> {
+				new AssetFilter {
+					LocalFilter = true,
+				}
+			});
+
+			Assert.False(_localStorageLmdb.AssetOnDisk(assetTest.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Match_NonEmptyLocalStorage_RemovesMemoryEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = true,
+			};
+			_localStorage.StoreAsset(assetTest);
+
+			_localStorage.PurgeAll(new List<AssetFilter> {
+				new AssetFilter {
+					LocalFilter = true,
+				}
+			});
+
+			Assert.False(_localStorageLmdb.Contains(assetTest.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Nonmatch_NonEmptyLocalStorage_DoesntThrow() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = false,
+			};
+			_localStorage.StoreAsset(assetTest);
+
+			Assert.DoesNotThrow(() => _localStorage.PurgeAll(new List<AssetFilter> {
+				new AssetFilter {
+					LocalFilter = true,
+				}
+			}));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Nonmatch_NonEmptyLocalStorage_DoesntRemoveDiskEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = false,
+			};
+			_localStorage.StoreAsset(assetTest);
+
+			_localStorage.PurgeAll(new List<AssetFilter> {
+				new AssetFilter {
+					LocalFilter = true,
+				}
+			});
+
+			Assert.True(_localStorageLmdb.AssetOnDisk(assetTest.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Nonmatch_NonEmptyLocalStorage_DoesntRemoveMemoryEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = false,
+			};
+			_localStorage.StoreAsset(assetTest);
+
+			_localStorage.PurgeAll(new List<AssetFilter> {
+				new AssetFilter {
+					LocalFilter = true,
+				}
+			});
+
+			Assert.True(_localStorageLmdb.Contains(assetTest.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_OneMatch_OneNonmatch_Correct() {
+			var assetTest1 = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = true,
+			};
+			var assetTest2 = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = false,
+			};
+			_localStorage.StoreAsset(assetTest1);
+			_localStorage.StoreAsset(assetTest2);
+
+			_localStorage.PurgeAll(new List<AssetFilter> {
+				new AssetFilter {
+					LocalFilter = true,
+				}
+			});
+
+			Assert.False(_localStorageLmdb.AssetOnDisk(assetTest1.Id));
+			Assert.True(_localStorageLmdb.AssetOnDisk(assetTest2.Id));
+		}
+
+		#endregion
+
+		#region Purge
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Purge_EmpyId_ArgumentException() {
+			Assert.Throws<ArgumentException>(() => _localStorage.Purge(Guid.Empty));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Purge_Unknown_AssetNotFoundException() {
+			Assert.Throws<AssetNotFoundException>(() => _localStorage.Purge(Guid.NewGuid()));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Purge_Known_DoesntThrow() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			_localStorage.StoreAsset(assetTest);
+
+			Assert.DoesNotThrow(() => _localStorage.Purge(assetTest.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Purge_NonEmptyLocalStorage_RemovesDiskEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			_localStorage.StoreAsset(assetTest);
+
+			_localStorage.Purge(assetTest.Id);
+
+			Assert.False(_localStorageLmdb.AssetOnDisk(assetTest.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Purge_NonEmptyLocalStorage_RemovesMemoryEntry() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			_localStorage.StoreAsset(assetTest);
+
+			_localStorage.Purge(assetTest.Id);
+
+			Assert.False(_localStorageLmdb.Contains(assetTest.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Purge_NonEmptyLocalStorage_LeavesOtherDiskEntry() {
+			var assetTest1 = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+			var assetTest2 = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			_localStorage.StoreAsset(assetTest1);
+			_localStorage.StoreAsset(assetTest2);
+
+			_localStorage.Purge(assetTest1.Id);
+
+			Assert.True(_localStorageLmdb.AssetOnDisk(assetTest2.Id));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Purge_NonEmptyLocalStorage_LeavesOtherMemoryEntry() {
+			var assetTest1 = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+			var assetTest2 = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			_localStorage.StoreAsset(assetTest1);
+			_localStorage.StoreAsset(assetTest2);
+
+			_localStorage.Purge(assetTest1.Id);
+
+			Assert.True(_localStorageLmdb.Contains(assetTest2.Id));
+		}
+
+		#endregion
+
+		#region TryGetAsset
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_TryGetAsset_EmpyId_ArgumentException() {
+			Assert.Throws<ArgumentException>(() => _localStorage.TryGetAsset(Guid.Empty, out var assetResult));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_TryGetAsset_Unknown_False() {
+			Assert.False(_localStorage.TryGetAsset(Guid.NewGuid(), out var assetResult));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_TryGetAsset_Unknown_OutNull() {
+			_localStorage.TryGetAsset(Guid.NewGuid(), out var assetResult);
+			Assert.Null(assetResult);
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_TryGetAsset_Known_True() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			_localStorage.StoreAsset(assetTest);
+
+			Assert.True(_localStorage.TryGetAsset(assetTest.Id, out var assetResult));
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_TryGetAsset_Known_OutEqual() {
+			var assetTest = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			_localStorage.StoreAsset(assetTest);
+
+			_localStorage.TryGetAsset(assetTest.Id, out var assetResult);
+
+			Assert.AreEqual(assetTest, assetResult);
+		}
+
+		#endregion
+
+		#region Dispose
+
+		// Not testable since we've got an active instance already on it.
+		// Actually, it's being tested repeatedly via the disposal/reactivation on every test.
 
 		#endregion
 	}

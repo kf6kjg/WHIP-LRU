@@ -193,6 +193,15 @@ namespace LibWhipLru.Cache {
 		/// Never touches the remotes.
 		/// </summary>
 		public void PurgeAllLocalAssets() {
+			IChattelLocalStorage chattelStorage = _localStorage;
+
+			// TODO: optimize this by having an index of all local=true assets and then just iterating that calling the per-item purge.
+
+			chattelStorage.PurgeAll(new List<AssetFilter> {
+				new AssetFilter {
+					LocalFilter = true,
+				}
+			});
 		}
 
 		/// <summary>
@@ -202,6 +211,23 @@ namespace LibWhipLru.Cache {
 		/// <param name="assetId">Asset identifier.</param>
 		/// <param name="resultCallback">Result callback.</param>
 		public void PurgeAsset(Guid assetId, PurgeResultCallback resultCallback) {
+			if (assetId == Guid.Empty) {
+				throw new ArgumentException("Asset Id should not be empty.", nameof(assetId));
+			}
+
+			IChattelLocalStorage chattelStorage = _localStorage;
+
+			var result = PurgeResult.NOT_FOUND_LOCALLY;
+
+			try {
+				chattelStorage.Purge(assetId);
+				result = PurgeResult.DONE;
+			}
+			catch (AssetNotFoundException) {
+				// Nothing to do here.
+			}
+
+			resultCallback(result);
 		}
 
 		/// <summary>

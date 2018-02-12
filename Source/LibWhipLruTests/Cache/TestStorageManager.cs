@@ -735,7 +735,145 @@ namespace LibWhipLruTests.Cache {
 
 		#region Purge All Assets marked local
 
-		// TODO: Purge should only remove assets that are marked as local
+		[Test]
+		public static void TestStorageManager_PurgeAllLocalAsset_EmptyLocalStorage_DoesntThrow() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			Assert.DoesNotThrow(mgr.PurgeAllLocalAssets);
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestStorageManager_PurgeAllLocalAsset_NonEmptyLocalStorage_DoesntThrow() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			var wait = new AutoResetEvent(false);
+
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+
+			Assert.DoesNotThrow(mgr.PurgeAllLocalAssets);
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestStorageManager_PurgeAllLocalAsset_NonEmptyLocalStorage_RemovedLocal() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = true,
+			};
+
+			var wait = new AutoResetEvent(false);
+
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+
+			mgr.PurgeAllLocalAssets();
+
+			var foundAsset = true; // Put in opposite state to what is expected.
+
+			wait.Reset();
+			mgr.CheckAsset(asset.Id, found => { foundAsset = found; wait.Set(); });
+			wait.Set();
+
+			Assert.False(foundAsset);
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestStorageManager_PurgeAllLocalAsset_NonEmptyLocalStorage_DidntRemoveNonLocal() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = false,
+			};
+
+			var wait = new AutoResetEvent(false);
+
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+
+			mgr.PurgeAllLocalAssets();
+
+			var foundAsset = false; // Put in opposite state to what is expected.
+
+			wait.Reset();
+			mgr.CheckAsset(asset.Id, found => { foundAsset = found; wait.Set(); });
+			wait.Set();
+
+			Assert.True(foundAsset);
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestStorageManager_PurgeAllLocalAsset_NonEmptyLocalStorage_OnlyRemovesLocal() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset1 = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = true,
+			};
+			var asset2 = new StratusAsset {
+				Id = Guid.NewGuid(),
+				Local = false,
+			};
+
+			var wait = new AutoResetEvent(false);
+
+			mgr.StoreAsset(asset1, result => wait.Set());
+			wait.WaitOne();
+
+			wait.Reset();
+			mgr.StoreAsset(asset2, result => wait.Set());
+			wait.WaitOne();
+
+			mgr.PurgeAllLocalAssets();
+
+			var foundAsset1 = true; // Put in opposite state to what is expected.
+			var foundAsset2 = false;
+
+			wait.Reset();
+			mgr.CheckAsset(asset1.Id, found => { foundAsset1 = found; wait.Set(); });
+			wait.Set();
+			wait.Reset();
+			mgr.CheckAsset(asset2.Id, found => { foundAsset2 = found; wait.Set(); });
+			wait.Set();
+
+			Assert.False(foundAsset1);
+			Assert.True(foundAsset2);
+		}
 
 		#endregion
 

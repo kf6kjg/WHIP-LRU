@@ -179,7 +179,31 @@ namespace LibWhipLru.Cache {
 		/// A null or blank list results in all assets being purged.
 		/// </summary>
 		void IChattelLocalStorage.PurgeAll(IEnumerable<AssetFilter> assetFilter) {
-			throw new NotImplementedException();
+			if (assetFilter == null || !assetFilter.Any()) {
+				if (_activeIds.Count > 0) {
+					LOG.Warn("Unfiltered purge of all assets called. Proceeding with purge of all locally stored assets!");
+					try {
+						_activeIds.Clear();
+
+						using (var tx = _dbenv.BeginTransaction())
+						using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.None })) {
+							tx.TruncateDatabase(db);
+							tx.Commit();
+						}
+					}
+					catch (LightningException e) {
+						if (e.StatusCode != LightningDB.Native.Lmdb.MDB_NOTFOUND) {
+							throw;
+						}
+						// DB must be empty.
+					}
+				}
+				else {
+					LOG.Info("Unfiltered purge of all assets called, but the DB was already empty.");
+				}
+			}
+
+			// TODO: iterate through everything finding the matches.
 		}
 
 		/// <summary>
@@ -187,7 +211,28 @@ namespace LibWhipLru.Cache {
 		/// </summary>
 		/// <param name="assetId">Asset identifier.</param>
 		void IChattelLocalStorage.Purge(Guid assetId) {
-			throw new NotImplementedException();
+			if (assetId == Guid.Empty) {
+				throw new ArgumentException("Asset Id should not be empty.", nameof(assetId));
+			}
+
+			if (_activeIds.TryRemove(assetId)) {
+				try {
+					LOG.Info($"Purging {assetId}.");
+					using (var tx = _dbenv.BeginTransaction())
+					using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.None })) {
+						tx.Delete(db, assetId.ToByteArray());
+						tx.Commit();
+					}
+				}
+				catch (LightningException e) {
+					if (e.StatusCode == LightningDB.Native.Lmdb.MDB_NOTFOUND) {
+						throw new AssetNotFoundException(assetId, e);
+					}
+				}
+			}
+			else {
+				throw new AssetNotFoundException(assetId);
+			}
 		}
 
 		/// <summary>
