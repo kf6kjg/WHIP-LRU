@@ -129,6 +129,61 @@ namespace LibWhipLruTests.Cache {
 
 		#endregion
 
+		#region AssetSize Get
+
+		[Test]
+		public void TestOrderedGuidCache_AssetSizeGet_Known_SizeCorrect() {
+			var cache = new OrderedGuidCache();
+			var guid = Guid.NewGuid();
+			cache.TryAdd(Guid.NewGuid(), 1);
+			cache.TryAdd(guid, 2);
+			cache.TryAdd(Guid.NewGuid(), 3);
+			Assert.AreEqual(2, cache.AssetSize(guid));
+		}
+
+		[Test]
+		public void TestOrderedGuidCache_AssetSizeGet_Unknown_Null() {
+			var cache = new OrderedGuidCache();
+			var guid = Guid.NewGuid();
+			cache.TryAdd(Guid.NewGuid(), 1);
+			cache.TryAdd(Guid.NewGuid(), 3);
+			Assert.IsNull(cache.AssetSize(guid));
+		}
+
+		#endregion
+
+		#region AssetSize Set
+
+		[Test]
+		public void TestOrderedGuidCache_AssetSizeSet_Known_SizeUpdated() {
+			var cache = new OrderedGuidCache();
+			var guid = Guid.NewGuid();
+			cache.TryAdd(Guid.NewGuid(), 1);
+			cache.TryAdd(guid, 2);
+			cache.TryAdd(Guid.NewGuid(), 3);
+
+			cache.AssetSize(guid, 10);
+
+			Assert.AreEqual(10, cache.AssetSize(guid));
+		}
+
+		[Test]
+		public void TestOrderedGuidCache_AssetSizeSet_Unknown_NoChange() {
+			var cache = new OrderedGuidCache();
+			var guid1 = Guid.NewGuid();
+			var guid2 = Guid.NewGuid();
+			var guid3 = Guid.NewGuid();
+			cache.TryAdd(guid1, 1);
+			cache.TryAdd(guid3, 3);
+
+			cache.AssetSize(guid2, 10);
+
+			Assert.AreEqual(1, cache.AssetSize(guid1));
+			Assert.AreEqual(3, cache.AssetSize(guid3));
+		}
+
+		#endregion
+
 		#region ItemsWithPrefix
 
 		[Test]
