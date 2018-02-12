@@ -138,10 +138,10 @@ namespace WHIP_LRU {
 
 				var localStorageConfig = configSource.Configs["LocalStorage"];
 
-				var pathToDatabaseFolder = localStorageConfig?.GetString("DatabaseFolderPath", ChattelConfiguration.DEFAULT_DB_FOLDER_PATH) ?? ChattelConfiguration.DEFAULT_DB_FOLDER_PATH;
+				var pathToDatabaseFolder = localStorageConfig?.GetString("DatabaseFolderPath", DEFAULT_DB_FOLDER_PATH) ?? DEFAULT_DB_FOLDER_PATH;
 				var maxAssetLocalStorageDiskSpaceByteCount = (ulong?)localStorageConfig?.GetLong("MaxDiskSpace", (long)AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES) ?? AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES;
-				var pathToWriteCacheFile = localStorageConfig?.GetString("WriteCacheFilePath", ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH) ?? ChattelConfiguration.DEFAULT_WRITECACHE_FILE_PATH;
-				var maxWriteCacheRecordCount = (uint?)localStorageConfig?.GetInt("WriteCacheMaxRecords", (int)ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT) ?? ChattelConfiguration.DEFAULT_WRITECACHE_RECORD_COUNT;
+				var pathToWriteCacheFile = localStorageConfig?.GetString("WriteCacheFilePath", DEFAULT_WRITECACHE_FILE_PATH) ?? DEFAULT_WRITECACHE_FILE_PATH;
+				var maxWriteCacheRecordCount = (uint?)localStorageConfig?.GetInt("WriteCacheMaxRecords", (int)DEFAULT_WRITECACHE_RECORD_COUNT) ?? DEFAULT_WRITECACHE_RECORD_COUNT;
 				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)localStorageConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
 
 				var readerLocalStorage = new AssetLocalStorageLmdb(chattelConfigRead, maxAssetLocalStorageDiskSpaceByteCount);

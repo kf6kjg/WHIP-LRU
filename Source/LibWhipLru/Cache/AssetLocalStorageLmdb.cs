@@ -163,7 +163,7 @@ namespace LibWhipLru.Cache {
 			LOG.Debug($"Wrote an asset to local storage: {asset.Id}");
 		}
 
-		void IChattelLocalStorage.PurgeAll() {
+		void IChattelLocalStorage.PurgeAll(IEnumerable<AssetFilter> assetFilter) {
 			throw new NotImplementedException();
 		}
 

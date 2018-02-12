@@ -72,7 +72,7 @@
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="Chattel">
-      <HintPath>..\..\packages\Chattel.2.0.0.98\lib\net461\Chattel.dll</HintPath>
+      <HintPath>..\..\packages\Chattel.2.1.0.101\lib\net461\Chattel.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
