@@ -172,6 +172,19 @@ namespace LibWhipLru.Cache {
 				result = PutResult.FAILURE;
 			}
 
+			if (result == PutResult.DONE) {
+				// Clear negative cache entry.
+				if (_negativeCache != null) {
+					_negativeCacheLock.EnterWriteLock();
+					try {
+						_negativeCache.Remove(asset.Id.ToString("N"));
+					}
+					finally {
+						_negativeCacheLock.ExitWriteLock();
+					}
+				}
+			}
+
 			resultCallback(result);
 		}
 

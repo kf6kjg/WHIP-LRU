@@ -421,6 +421,67 @@ namespace LibWhipLruTests.Cache {
 			);
 		}
 
+		[Test]
+		[Timeout(1000)]
+		public static void TestStorageManager_StoreAsset_AbleToFindAsset() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			var wait = new AutoResetEvent(false);
+
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+
+			var found = false;
+
+			wait.Reset();
+			mgr.CheckAsset(asset.Id, foundResult => { found = foundResult; wait.Set(); });
+			wait.WaitOne();
+
+			Assert.IsTrue(found);
+		}
+
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestStorageManager_StoreAsset_AbleToFindAssetAfterFailure() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			var wait = new AutoResetEvent(false);
+
+			mgr.CheckAsset(asset.Id, foundResult => wait.Set());
+			wait.WaitOne();
+
+			wait.Reset();
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+
+			var found = false;
+
+			wait.Reset();
+			mgr.CheckAsset(asset.Id, foundResult => { found = foundResult; wait.Set(); });
+			wait.WaitOne();
+
+			Assert.IsTrue(found);
+		}
+
 		// TODO: checks for send to server
 
 		#endregion
