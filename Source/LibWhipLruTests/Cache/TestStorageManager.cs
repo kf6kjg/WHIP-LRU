@@ -37,6 +37,7 @@ using NUnit.Framework;
 
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
+	[NonParallelizable]
 	public static class TestStorageManager {
 		public static readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_sm.whipwcache";
 		public const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
