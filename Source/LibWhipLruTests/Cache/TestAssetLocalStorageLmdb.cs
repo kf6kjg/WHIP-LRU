@@ -31,7 +31,7 @@ using NUnit.Framework;
 
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
-	public class TestAssetLocalStorageLmdb {
+	public static class TestAssetLocalStorageLmdb {
 		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb";
 		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue/*Min value to get tests to run*/;
 

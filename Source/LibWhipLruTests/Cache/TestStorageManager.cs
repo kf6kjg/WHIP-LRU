@@ -483,6 +483,7 @@ namespace LibWhipLruTests.Cache {
 
 
 		[Test]
+		[Timeout(1000)]
 		public static void TestStorageManager_StoreAsset_CallsServerPutAsset() {
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, server);
@@ -864,12 +865,7 @@ namespace LibWhipLruTests.Cache {
 			wait.WaitOne();
 			wait.Reset();
 
-			var status = false;
-
-			mgr.CheckAsset(asset.Id, result => { status = result; wait.Set(); });
-			wait.WaitOne();
-
-			Assert.True(status);
+			Assert.True(_readerLocalStorage.AssetOnDisk(asset.Id));
 		}
 
 		[Test]
@@ -894,14 +890,8 @@ namespace LibWhipLruTests.Cache {
 
 			mgr.PurgeAsset(asset.Id, result => wait.Set());
 			wait.WaitOne();
-			wait.Reset();
 
-			var status = false;
-
-			mgr.CheckAsset(asset.Id, result => { status = result; wait.Set(); });
-			wait.WaitOne();
-
-			Assert.False(status);
+			Assert.False(_readerLocalStorage.AssetOnDisk(asset.Id));
 		}
 
 		[Test]
@@ -917,13 +907,13 @@ namespace LibWhipLruTests.Cache {
 			var assetId = Guid.NewGuid();
 
 			var wait = new AutoResetEvent(false);
-			var status = false;
+			StorageManager.PurgeResult status = StorageManager.PurgeResult.DONE;
 
-			mgr.PurgeAsset(assetId, result => { status = result == StorageManager.PurgeResult.NOT_FOUND_LOCALLY; wait.Set(); });
+			mgr.PurgeAsset(assetId, result => { status = result; wait.Set(); });
 
 			wait.WaitOne();
 
-			Assert.True(status);
+			Assert.AreEqual(StorageManager.PurgeResult.NOT_FOUND_LOCALLY, status);
 		}
 
 		[Test]
@@ -936,19 +926,26 @@ namespace LibWhipLruTests.Cache {
 				_chattelWriter
 			);
 
-			var assetId = Guid.NewGuid();
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
 
 			var wait = new AutoResetEvent(false);
-			var status = false;
 
-			mgr.PurgeAsset(assetId, result => { status = result == StorageManager.PurgeResult.DONE; wait.Set(); });
-
+			mgr.StoreAsset(asset, result => wait.Set());
 			wait.WaitOne();
 
-			Assert.True(status);
+			StorageManager.PurgeResult status = StorageManager.PurgeResult.NOT_FOUND_LOCALLY;
+
+			wait.Reset();
+			mgr.PurgeAsset(asset.Id, result => { status = result; wait.Set(); });
+			wait.WaitOne();
+
+			Assert.AreEqual(StorageManager.PurgeResult.DONE, status);
 		}
 
 		[Test]
+		[Timeout(1000)]
 		public static void TestStorageManager_PurgeAsset_DoesntRemoveOtherAsset() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
@@ -961,14 +958,20 @@ namespace LibWhipLruTests.Cache {
 				Id = Guid.NewGuid(),
 			};
 
-			mgr.StoreAsset(asset, result => { });
+			var wait = new AutoResetEvent(false);
 
-			mgr.PurgeAsset(Guid.NewGuid(), result => { });
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+
+			wait.Reset();
+			mgr.PurgeAsset(Guid.NewGuid(), result => wait.Set());
+			wait.WaitOne();
 
 			Assert.True(_readerLocalStorage.AssetOnDisk(asset.Id));
 		}
 
 		[Test]
+		[Timeout(1000)]
 		public static void TestStorageManager_PurgeAsset_RemovesAsset() {
 			var mgr = new StorageManager(
 				_readerLocalStorage,
@@ -981,9 +984,14 @@ namespace LibWhipLruTests.Cache {
 				Id = Guid.NewGuid(),
 			};
 
-			mgr.StoreAsset(asset, result => { });
+			var wait = new AutoResetEvent(false);
 
-			mgr.PurgeAsset(asset.Id, result => { });
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+
+			wait.Reset();
+			mgr.PurgeAsset(asset.Id, result => wait.Set());
+			wait.WaitOne();
 
 			Assert.False(_readerLocalStorage.AssetOnDisk(asset.Id));
 		}
