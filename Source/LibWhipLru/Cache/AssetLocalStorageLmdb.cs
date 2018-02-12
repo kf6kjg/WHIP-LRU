@@ -28,7 +28,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using Chattel;
 using InWorldz.Data.Assets.Stratus;
@@ -101,8 +100,13 @@ namespace LibWhipLru.Cache {
 					// Probably not the most effecient way to do this.
 					var assetData = tx.CreateCursor(db)
 						.Select(kvp => {
-							var str = Encoding.UTF8.GetString(kvp.Key);
-							return Guid.TryParse(str, out Guid assetId) ? new Tuple<Guid, uint>(assetId, (uint)kvp.Value.Length) : null;
+							try {
+								var assetId = new Guid(kvp.Key);
+								return new Tuple<Guid, uint>(assetId, (uint)kvp.Value.Length);
+							}
+							catch (ArgumentException) {
+								return null;
+							}
 						})
 						.Where(assetId => assetId != null)
 					;
@@ -238,7 +242,7 @@ namespace LibWhipLru.Cache {
 				try {
 					using (var tx = _dbenv.BeginTransaction())
 					using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
-						tx.Put(db, Encoding.UTF8.GetBytes(asset.Id.ToString("N")), buffer);
+						tx.Put(db, asset.Id.ToByteArray(), buffer);
 						tx.Commit();
 					}
 
@@ -275,7 +279,7 @@ namespace LibWhipLru.Cache {
 									using (var tx = _dbenv.BeginTransaction())
 									using (var db = tx.OpenDatabase("assetstore")) {
 										foreach (var assetId in removedAssetIds) {
-											tx.Delete(db, Encoding.UTF8.GetBytes(assetId.ToString("N")));
+											tx.Delete(db, asset.Id.ToByteArray());
 										}
 										tx.Commit();
 									}
@@ -305,7 +309,7 @@ namespace LibWhipLru.Cache {
 			try {
 				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
 				using (var db = tx.OpenDatabase("assetstore")) {
-					if (tx.TryGet(db, Encoding.UTF8.GetBytes(assetId.ToString("N")), out byte[] buffer)) {
+					if (tx.TryGet(db, assetId.ToByteArray(), out byte[] buffer)) {
 						using (var stream = new MemoryStream(buffer)) {
 							return ProtoBuf.Serializer.Deserialize<StratusAsset>(stream);
 						}
