@@ -905,5 +905,46 @@ namespace LibWhipLruTests.Cache {
 		// remote purge should not be called - however there's no API for that ATM in Chattel so it can't be called.
 
 		#endregion
+
+		#region GetLocallyKnownAssetIds
+
+		[Test]
+		public static void TestStorageManager_GetLocallyKnownAssetIds_None_Empty() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var ids = mgr.GetLocallyKnownAssetIds("000");	
+			Assert.IsEmpty(ids);
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestStorageManager_GetLocallyKnownAssetIds_Single_FoundMatch() {
+			var mgr = new StorageManager(
+				_readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				_chattelReader,
+				_chattelWriter
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			var wait = new AutoResetEvent(false);
+
+			mgr.StoreAsset(asset, result => wait.Set());
+
+			wait.WaitOne();
+
+			var ids = mgr.GetLocallyKnownAssetIds(asset.Id.ToString("N").Substring(0, 3));
+			Assert.That(ids, Has.Member(asset.Id));
+		}
+
+		#endregion
 	}
 }
