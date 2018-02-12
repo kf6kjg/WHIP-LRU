@@ -449,7 +449,6 @@ namespace LibWhipLruTests.Cache {
 			Assert.IsTrue(found);
 		}
 
-
 		[Test]
 		[Timeout(1000)]
 		public static void TestStorageManager_StoreAsset_AbleToFindAssetAfterFailure() {
@@ -482,7 +481,33 @@ namespace LibWhipLruTests.Cache {
 			Assert.IsTrue(found);
 		}
 
-		// TODO: checks for send to server
+
+		[Test]
+		public static void TestStorageManager_StoreAsset_CallsServerPutAsset() {
+			var server = Substitute.For<IAssetServer>();
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, server);
+			var readerLocalStorage = new AssetLocalStorageLmdb(config, uint.MaxValue);
+			var reader = new ChattelReader(config, readerLocalStorage);
+			var writer = new ChattelWriter(config, readerLocalStorage);
+
+			var mgr = new StorageManager(
+				readerLocalStorage,
+				TimeSpan.FromMinutes(2),
+				reader,
+				writer
+			);
+
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			var wait = new AutoResetEvent(false);
+
+			mgr.StoreAsset(asset, result => wait.Set());
+			wait.WaitOne();
+
+			server.Received(1).StoreAssetSync(asset);
+		}
 
 		#endregion
 
