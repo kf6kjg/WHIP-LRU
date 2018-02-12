@@ -197,6 +197,10 @@ namespace LibWhipLru.Cache {
 		/// <param name="assetId">Asset identifier.</param>
 		/// <param name="asset">The resulting asset.</param>
 		bool IChattelLocalStorage.TryGetAsset(Guid assetId, out StratusAsset asset) {
+			if (assetId == Guid.Empty) {
+				throw new ArgumentException("Empty Id not allowed", nameof(assetId));
+			}
+
 			if (!_config.LocalStorageEnabled) {
 				asset = null;
 				return false;
