@@ -186,7 +186,7 @@ namespace LibWhipLru.Cache {
 						_activeIds.Clear();
 
 						using (var tx = _dbenv.BeginTransaction())
-						using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.None })) {
+						using (var db = tx.OpenDatabase("assetstore")) {
 							tx.TruncateDatabase(db);
 							tx.Commit();
 						}
@@ -201,9 +201,70 @@ namespace LibWhipLru.Cache {
 				else {
 					LOG.Info("Unfiltered purge of all assets called, but the DB was already empty.");
 				}
+
+				return;
 			}
 
-			// TODO: iterate through everything finding the matches.
+			LOG.Info($"Starting to purge assets that match any one of {assetFilter.Count()} filters...");
+
+			var assetIdsToPurge = new List<Guid>();
+
+			try {
+				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
+				using (var db = tx.OpenDatabase("assetstore")) {
+					// Probably not the most effecient way to do this.
+					var cursor = tx
+						.CreateCursor(db)
+						;
+
+					cursor.MoveToFirst();
+
+					do { // Tried to use LINQ but it just kept throwing errors, so I went with the LMDB way.
+						var kvp = cursor.GetCurrent();
+
+						Guid assetId;
+
+						try {
+							assetId = new Guid(kvp.Key);
+						}
+						catch (ArgumentException) {
+							continue;
+						}
+
+						StratusAsset asset;
+						try {
+							using (var stream = new MemoryStream(kvp.Value)) {
+								asset = ProtoBuf.Serializer.Deserialize<StratusAsset>(stream);
+							}
+						}
+						catch {
+							continue;
+						}
+
+						foreach (var filter in assetFilter) {
+							if (filter.MatchAsset(asset)) {
+								assetIdsToPurge.Add(assetId);
+								break; // Only needs to match one of the filters.
+							}
+						}
+					} while (cursor.MoveNext());
+				}
+			}
+			catch (LightningException) {
+				// Most likely the DB doesn't exist or has nothing in it.
+				return;
+			}
+
+			LOG.Info($"Purging {assetIdsToPurge.Count()} assets that matched any one of {assetFilter.Count()} filters.");
+
+			foreach (var assetId in assetIdsToPurge) {
+				try {
+					((IChattelLocalStorage)this).Purge(assetId);
+				}
+				catch (AssetNotFoundException e) {
+					LOG.Info($"Was unable to purge asset {assetId}, even though it was a match to the filter. Reason noted below.", e);
+				}
+			}
 		}
 
 		/// <summary>
