@@ -795,7 +795,7 @@ namespace LibWhipLruTests.Cache {
 
 			wait.Reset();
 			mgr.CheckAsset(asset.Id, found => { foundAsset = found; wait.Set(); });
-			wait.Set();
+			wait.WaitOne();
 
 			Assert.False(foundAsset);
 		}
@@ -826,7 +826,7 @@ namespace LibWhipLruTests.Cache {
 
 			wait.Reset();
 			mgr.CheckAsset(asset.Id, found => { foundAsset = found; wait.Set(); });
-			wait.Set();
+			wait.WaitOne();
 
 			Assert.True(foundAsset);
 		}
@@ -866,10 +866,10 @@ namespace LibWhipLruTests.Cache {
 
 			wait.Reset();
 			mgr.CheckAsset(asset1.Id, found => { foundAsset1 = found; wait.Set(); });
-			wait.Set();
+			wait.WaitOne();
 			wait.Reset();
 			mgr.CheckAsset(asset2.Id, found => { foundAsset2 = found; wait.Set(); });
-			wait.Set();
+			wait.WaitOne();
 
 			Assert.False(foundAsset1);
 			Assert.True(foundAsset2);
