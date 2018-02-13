@@ -128,9 +128,11 @@
     <Compile Include="Cache\TestStorageManager.cs" />
     <Compile Include="Cache\TestAssetLocalStorageLmdb.cs" />
     <Compile Include="Cache\TestAssetLocalStorageLmdbCtor.cs" />
+    <Compile Include="Util\TestPIDFileManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cache\" />
+    <Folder Include="Util\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
