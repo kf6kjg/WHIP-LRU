@@ -159,8 +159,10 @@ namespace LibWhipLru {
 					HandleGetAsset(req.RequestMessage.AssetId, req, false);
 					break;
 				case RequestType.MAINT_PURGELOCALS:
+					HandlePurgeAssetsMarkedLocal(req);
+					break;
 				case RequestType.PURGE:
-					req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty), req.Context);
+					HandlePurgeAsset(req.RequestMessage.AssetId, req);
 					break;
 				case RequestType.PUT:
 					HandlePutAsset(req.RequestMessage.AssetId, req.RequestMessage.Data, req);
@@ -261,6 +263,49 @@ namespace LibWhipLru {
 			var ids = _storageManager.GetLocallyKnownAssetIds(prefix);
 
 			req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty, string.Join(",", ids.Select(id => id.ToString("N")))), req.Context);
+		}
+
+		private void HandlePurgeAsset(Guid assetId, Request req) {
+			if (assetId == Guid.Empty) {
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Zero UUID not allowed."), req.Context);
+			}
+
+			StorageManager.PurgeResult result = StorageManager.PurgeResult.NOT_FOUND_LOCALLY;
+			var error = false;
+
+			try {
+				_storageManager.PurgeAsset(assetId, purgeResult => result = purgeResult);
+			}
+			catch (Exception e) {
+				LOG.Debug($"Exception purging asset {assetId}", e);
+				error = true;
+			}
+
+			if (error) {
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, assetId, "Error processing request."), req.Context);
+			}
+			else {
+				req.ResponseHandler(new ServerResponseMsg(result == StorageManager.PurgeResult.DONE ? ServerResponseMsg.ResponseCode.RC_OK : ServerResponseMsg.ResponseCode.RC_NOTFOUND, assetId), req.Context);
+			}
+		}
+
+		private void HandlePurgeAssetsMarkedLocal(Request req) {
+			var error = false;
+
+			try {
+				_storageManager.PurgeAllLocalAssets();
+			}
+			catch (Exception e) {
+				LOG.Debug($"Exception purging assets marked local.", e);
+				error = true;
+			}
+
+			if (error) {
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty, "Error processing request."), req.Context);
+			}
+			else {
+				req.ResponseHandler(new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_OK, Guid.Empty), req.Context);
+			}
 		}
 
 		private void HandlePutAsset(Guid assetId, byte[] data, Request req) {
