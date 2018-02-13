@@ -129,10 +129,12 @@
     <Compile Include="Cache\TestAssetLocalStorageLmdb.cs" />
     <Compile Include="Cache\TestAssetLocalStorageLmdbCtor.cs" />
     <Compile Include="Util\TestPIDFileManager.cs" />
+    <Compile Include="Server\TestAuthChallengeMsg.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cache\" />
     <Folder Include="Util\" />
+    <Folder Include="Server\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

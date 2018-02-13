@@ -74,15 +74,5 @@ namespace LibWhipLru.Server {
 
 			return output;
 		}
-
-		/// <summary>
-		/// Response code used in the message.
-		/// </summary>
-		public enum ResponseCode : byte {
-			RC_FOUND = 10,
-			RC_NOTFOUND = 11,
-			RC_ERROR = 12,
-			RC_OK = 13,
-		};
 	}
 }
