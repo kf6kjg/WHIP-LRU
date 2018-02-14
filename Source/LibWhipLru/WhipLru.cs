@@ -75,7 +75,21 @@ namespace LibWhipLru {
 		) {
 			LOG.Debug($"{address}:{port} - Initializing service.");
 
+			if (port > 0xFFFF) { // Only 16 bits worth of ports out there.
+				throw new ArgumentOutOfRangeException(nameof(port), "Port must be between 0 and 65535 inclusive!");
+			}
+
+			if (listenBacklogLength <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(listenBacklogLength), "Having a backlog of nothing makes no sense!");
+			}
+
 			_address = address ?? throw new ArgumentNullException(nameof(address));
+
+			// Verify the address is either in IPv4 dotted notation, or IPv6 colon notation, AND that it's a valid IP address.
+			if (!((address.Contains(".") || address.Contains(":")) && System.Net.IPAddress.TryParse(address, out var addr))) {
+				throw new ArgumentOutOfRangeException(nameof(address), "A valid IPv4 or IPv6 address is needed.");
+			}
+
 			_port = port;
 			_password = password;
 			_listenBacklogLength = listenBacklogLength;
