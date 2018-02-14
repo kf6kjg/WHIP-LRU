@@ -50,7 +50,7 @@ namespace LibWhipLru.Server {
 			var output = new byte[MESSAGE_SIZE];
 			/* Structure of message:
 			 * (1 byte) Packet ID
-			 * (7 bytes) Token phrase
+			 * (1 byte) Status
 			 */
 			output[0] = PACKET_IDENTIFIER;
 			output[1] = (byte)_status;
