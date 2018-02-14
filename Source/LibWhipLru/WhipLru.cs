@@ -127,7 +127,7 @@ namespace LibWhipLru {
 				_pidFileManager?.SetStatus(PIDFileManager.Status.Ready);
 			}
 
-			_requests.CompleteAdding();
+			_requests?.CompleteAdding();
 		}
 
 		private void ServerTaskExceptionHandler(Task serviceTask) {
