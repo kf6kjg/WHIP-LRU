@@ -58,8 +58,9 @@ namespace LibWhipLru.Server {
 		/// <summary>
 		/// Access to the data byte array that was sent from the client as payload.
 		/// </summary>
-		public byte[] Data;
-		private int _dataWritePointer = 0;
+		public byte[] Data { get => _data; }
+		private byte[] _data;
+		private int _dataWritePointer;
 
 		/// <summary>
 		/// Gets a value indicating whether this <see cref="T:LibWhipLru.Server.ClientRequestMsg"/> is ready.
@@ -72,7 +73,7 @@ namespace LibWhipLru.Server {
 		/// </summary>
 		/// <returns>The header summary.</returns>
 		public string GetHeaderSummary() {
-			return $"Type: {Type}, AssetID: {AssetId}, Size: {Data?.Length}";
+			return $"Type: {Type}, AssetID: {AssetId}, Size: {_data?.Length}";
 		}
 
 		/// <summary>
@@ -104,8 +105,7 @@ namespace LibWhipLru.Server {
 
 			if (!_assetIdIsReady && _bytesRead >= UUID_TAG_LOCATION + UUID_LEN) {
 				var idString = Encoding.ASCII.GetString(data, UUID_TAG_LOCATION, UUID_LEN);
-				Guid id;
-				if (Guid.TryParse(idString, out id)) {
+				if (Guid.TryParse(idString, out var id)) {
 					AssetId = id;
 					_assetIdIsReady = true;
 				}
@@ -114,29 +114,29 @@ namespace LibWhipLru.Server {
 				}
 			}
 
-			if (Data == null && _bytesRead >= DATA_SIZE_MARKER_LOC + 4) {
+			if (_data == null && _bytesRead >= DATA_SIZE_MARKER_LOC + 4) {
 				var dataSize = Math.Max(0, InWorldz.Whip.Client.Util.NTOHL(data, DATA_SIZE_MARKER_LOC)); // No, you don't get to send me negative numbers.
-				Data = new byte[dataSize];
+				_data = new byte[dataSize];
 
 				var bytesToRead = Math.Min(dataSize, data.Length - HEADER_SIZE);
 
 				if (dataSize > 0) {
 					// We are processing a packet of data that has the header.
-					Buffer.BlockCopy(data, HEADER_SIZE, Data, 0, bytesToRead);
+					Buffer.BlockCopy(data, HEADER_SIZE, _data, 0, bytesToRead);
 				}
 
 				_dataWritePointer = bytesToRead;
 			}
-			else {
+			else if (_data != null) {
 				// Processing a pure data packet.
-				var bytesToRead = Math.Min(data.Length, Data.Length - _dataWritePointer);
+				var bytesToRead = Math.Min(data.Length, _data.Length - _dataWritePointer);
 
-				Buffer.BlockCopy(data, 0, Data, _dataWritePointer, bytesToRead);
+				Buffer.BlockCopy(data, 0, _data, _dataWritePointer, bytesToRead);
 
 				_dataWritePointer += bytesToRead;
 			}
 
-			IsReady = _dataWritePointer >= Data.Length;
+			IsReady = _dataWritePointer >= _data?.Length;
 
 			return IsReady;
 		}

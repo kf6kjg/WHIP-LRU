@@ -36,7 +36,7 @@ namespace LibWhipLru.Server {
 		private const short PHRASE_SIZE = 7;
 		private const short PHRASE_LOCATION = 1;
 
-		private byte[] _challenge;
+		private readonly byte[] _challenge;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.AuthChallengeMsg"/> class, generating a challenge using a PRNG.

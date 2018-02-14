@@ -32,7 +32,7 @@ namespace LibWhipLru.Server {
 		private const short MESSAGE_SIZE = 2;
 		private const byte PACKET_IDENTIFIER = 1;
 
-		private StatusType _status;
+		private readonly StatusType _status;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.AuthStatusMsg"/> class.

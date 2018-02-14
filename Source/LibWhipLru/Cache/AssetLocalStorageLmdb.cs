@@ -48,8 +48,7 @@ namespace LibWhipLru.Cache {
 		private readonly ConcurrentDictionary<Guid, StratusAsset> _assetsBeingWritten = new ConcurrentDictionary<Guid, StratusAsset>();
 
 		private LightningEnvironment _dbenv;
-		private object _dbenv_lock = new object();
-		private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+		private readonly object _dbenv_lock = new object();
 
 		private readonly OrderedGuidCache _activeIds;
 		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
@@ -401,7 +400,9 @@ namespace LibWhipLru.Cache {
 							// else skip as another thread is already clearing some space.
 						}
 						finally {
-							if (lockTaken) Monitor.Exit(_dbenv_lock);
+							if (lockTaken) {
+								Monitor.Exit(_dbenv_lock);
+							}
 						}
 
 						// Retry the asset storage now that we've got some space.
@@ -444,9 +445,6 @@ namespace LibWhipLru.Cache {
 
 		protected virtual void Dispose(bool disposing) {
 			if (!disposedValue) {
-				//if (disposing) {
-				//}
-
 				// Free unmanaged resources (unmanaged objects) and override a finalizer below.
 				_dbenv?.Dispose();
 				_dbenv = null;
@@ -472,7 +470,7 @@ namespace LibWhipLru.Cache {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(true);
 			// Uncomment the following line if the finalizer is overridden above.
-			// GC.SuppressFinalize(this);
+			GC.SuppressFinalize(this);
 		}
 
 		#endregion

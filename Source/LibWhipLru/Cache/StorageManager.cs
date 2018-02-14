@@ -46,8 +46,8 @@ namespace LibWhipLru.Cache {
 		public delegate void PurgeResultCallback(PurgeResult result);
 
 		private readonly AssetLocalStorageLmdb _localStorage;
-		private ChattelReader _assetReader;
-		private ChattelWriter _assetWriter;
+		private readonly ChattelReader _assetReader;
+		private readonly ChattelWriter _assetWriter;
 
 		/// <summary>
 		/// Stores IDs that are failures.  No need to disk backup, it's OK to lose this info in a restart.

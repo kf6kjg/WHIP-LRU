@@ -33,7 +33,7 @@ namespace LibWhipLru.Cache {
 	/// Stores the asset IDs in a manner that makes it easy to clear out the least recently used assets AND gain enough space for the incoming assets.
 	/// </summary>
 	public class OrderedGuidCache {
-		private ConcurrentDictionary<Guid, MetaAsset> _cache;
+		private readonly ConcurrentDictionary<Guid, MetaAsset> _cache;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.OrderedGuidCache"/> class.
