@@ -26,7 +26,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -48,7 +47,7 @@ namespace LibWhipLru {
 		private readonly StorageManager _storageManager;
 		private readonly PIDFileManager _pidFileManager;
 		private WHIPServer _server;
-		private Thread _serviceThread;
+		private Task _serviceTask;
 
 		private string _address;
 		private uint _port;
@@ -97,19 +96,11 @@ namespace LibWhipLru {
 			LOG.Debug($"{_address}:{_port} - Starting service");
 
 			_server = new WHIPServer(RequestReceivedDelegate, _address, _port, _password, _listenBacklogLength);
-			_serviceThread = new Thread(_server.Start) {
-				IsBackground = true
-			};
-			try {
-				_serviceThread.Start();
-				_pidFileManager?.SetStatus(PIDFileManager.Status.Running);
-			}
-			catch (SocketException e) {
-				LOG.Error("Unable to bind to address or port. Is something already listening on it, or have you granted permissions for WHIP_LRU to listen?", e);
-			}
-			catch (Exception e) {
-				LOG.Warn("Exception during server execution, automatically restarting.", e);
-			}
+			_serviceTask = new Task(_server.Start, TaskCreationOptions.LongRunning);
+			_serviceTask.ContinueWith(ServerTaskExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
+
+			_serviceTask.Start();
+			_pidFileManager?.SetStatus(PIDFileManager.Status.Running);
 
 			_requests = new BlockingCollection<Request>();
 
@@ -130,13 +121,18 @@ namespace LibWhipLru {
 				Thread.Sleep(100);
 			}
 			finally {
-				_serviceThread?.Abort();
+				_server?.Stop();
 				_server = null;
-				_serviceThread = null;
+				_serviceTask = null;
 				_pidFileManager?.SetStatus(PIDFileManager.Status.Ready);
 			}
 
 			_requests.CompleteAdding();
+		}
+
+		private void ServerTaskExceptionHandler(Task serviceTask) {
+			LOG.Error("Server process error(s).", serviceTask.Exception);
+			Stop();
 		}
 
 		private void RequestReceivedDelegate(ClientRequestMsg request, WHIPServer.RequestResponseDelegate responseHandler, object context) {
