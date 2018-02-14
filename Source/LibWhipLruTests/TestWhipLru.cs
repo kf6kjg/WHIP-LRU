@@ -120,9 +120,9 @@ namespace LibWhipLruTests {
 		}
 
 		[Test]
-		public static void TestWhipLru_Ctor5_ZeroPort_ArgumentOutOfRangeException() {
-			LOG.Info($"Executing {nameof(TestWhipLru_Ctor5_ZeroPort_ArgumentOutOfRangeException)}");
-			Assert.Throws<ArgumentOutOfRangeException>(() => new WhipLru(
+		public static void TestWhipLru_Ctor5_0Port_DoesntThrow() {
+			LOG.Info($"Executing {nameof(TestWhipLru_Ctor5_0Port_DoesntThrow)}");
+			Assert.DoesNotThrow(() => new WhipLru(
 				ADDRESS,
 				0,
 				PASSWORD,
@@ -158,7 +158,7 @@ namespace LibWhipLruTests {
 		[Test]
 		public static void TestWhipLru_Ctor5_NullPidFileManager_ArgumentNullException() {
 			LOG.Info($"Executing {nameof(TestWhipLru_Ctor5_NullPidFileManager_ArgumentNullException)}");
-			Assert.Throws<ArgumentOutOfRangeException>(() => new WhipLru(
+			Assert.Throws<ArgumentNullException>(() => new WhipLru(
 				ADDRESS,
 				PORT,
 				PASSWORD,
@@ -170,7 +170,7 @@ namespace LibWhipLruTests {
 		[Test]
 		public static void TestWhipLru_Ctor5_NullStorageManager_ArgumentNullException() {
 			LOG.Info($"Executing {nameof(TestWhipLru_Ctor5_NullStorageManager_ArgumentNullException)}");
-			Assert.Throws<ArgumentOutOfRangeException>(() => new WhipLru(
+			Assert.Throws<ArgumentNullException>(() => new WhipLru(
 				ADDRESS,
 				PORT,
 				PASSWORD,
