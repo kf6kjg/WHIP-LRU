@@ -131,12 +131,14 @@ namespace LibWhipLru {
 			LOG.Debug($"{_address}:{_port} - Stopping service.");
 
 			try {
-				_server?.Dispose();
+				_server?.Stop();
 				Thread.Sleep(100);
 			}
 			finally {
-				_server?.Stop();
+				_server?.Dispose();
 				_server = null;
+				Thread.Sleep(600); // Wait for the server to clear.
+				_serviceTask?.Dispose();
 				_serviceTask = null;
 				_pidFileManager?.SetStatus(PIDFileManager.Status.Ready);
 			}

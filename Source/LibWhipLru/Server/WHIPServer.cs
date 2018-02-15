@@ -130,7 +130,7 @@ namespace LibWhipLru.Server {
 				listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
 
 				// Wait until a connection is made before continuing.  
-				_allDone.WaitOne();
+				_allDone.WaitOne(500); // Have to have a timeout or you can run across a situation where this jsut hangs arund instead of dying after stop is called.
 			}
 		}
 
@@ -465,7 +465,9 @@ namespace LibWhipLru.Server {
 			if (!disposedValue) {
 				if (disposing) {
 					// Dispose managed state (managed objects).
-					Stop();
+					_isRunning = false;
+					_allDone.Set();
+					_allDone.Dispose();
 				}
 
 				// free unmanaged resources (unmanaged objects) and override a finalizer below.
