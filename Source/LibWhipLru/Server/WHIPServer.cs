@@ -257,58 +257,53 @@ namespace LibWhipLru.Server {
 				if (complete) {
 					IByteArraySerializable response = null;
 
-					switch (state.Client.State) {
-						case State.Ready: {
-							// There might be more data, so store the data received so far.
-							var message = state.Message as ClientRequestMsg;
+					if (state.Client.State == State.Ready) {
+						// There might be more data, so store the data received so far.
+						var message = state.Message as ClientRequestMsg;
 
-							state.Client.RequestInfo = $"{message.Type.ToString().Substring(3)} {message.AssetId}"; // Substring removes the "RT_"
-							LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Request message completed: {message?.GetHeaderSummary()}");
+						state.Client.RequestInfo = $"{message.Type.ToString().Substring(3)} {message.AssetId}"; // Substring removes the "RT_"
+						LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Request message completed: {message?.GetHeaderSummary()}");
 
-							try {
-								_requestHandler(message, RequestResponseCallback, state);
-							}
-							catch (Exception e) {
-								LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught from request handler while processing message.", e);
-								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
-								StartReceive(state, new ClientRequestMsg(), ReadCallback);
-								return;
-							}
+						try {
+							_requestHandler(message, RequestResponseCallback, state);
 						}
-						break;
-						// State.Challenged:
-						default: {
-							// Wants to know status, reply accordingly.
-							var message = state.Message as AuthResponseMsg;
+						catch (Exception e) {
+							LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught from request handler while processing message.", e);
+							Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
+							StartReceive(state, new ClientRequestMsg(), ReadCallback);
+							return;
+						}
+					}
+					else { // State.Challenged, or not recognized.
+						// Wants to know status, reply accordingly.
+						var message = state.Message as AuthResponseMsg;
 
-							var hashCorrect = message?.ChallengeHash == state.CorrectChallengeHash;
+						var hashCorrect = message?.ChallengeHash == state.CorrectChallengeHash;
 
-							LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Auth response completed: " + (hashCorrect ? "Hash correct." : "Hash not correct, auth failed."));
+						LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Auth response completed: " + (hashCorrect ? "Hash correct." : "Hash not correct, auth failed."));
 
-							response = new AuthStatusMsg(hashCorrect ? AuthStatusMsg.StatusType.AS_SUCCESS : AuthStatusMsg.StatusType.AS_FAILURE);
+						response = new AuthStatusMsg(hashCorrect ? AuthStatusMsg.StatusType.AS_SUCCESS : AuthStatusMsg.StatusType.AS_FAILURE);
 
+						if (hashCorrect) {
+							state.Message = new ClientRequestMsg();
+							state.Client.State = State.Ready;
+						}
+
+						try {
 							if (hashCorrect) {
-								state.Message = new ClientRequestMsg();
-								state.Client.State = State.Ready;
-							}
-
-							try {
-								if (hashCorrect) {
-									Send(state, response);
-									StartReceive(state, new ClientRequestMsg(), ReadCallback);
-								}
-								else {
-									SendAndClose(state, response);
-								}
-							}
-							catch (Exception e) {
-								LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding to client.", e);
-								Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
+								Send(state, response);
 								StartReceive(state, new ClientRequestMsg(), ReadCallback);
-								return;
+							}
+							else {
+								SendAndClose(state, response);
 							}
 						}
-						break;
+						catch (Exception e) {
+							LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding to client.", e);
+							Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
+							StartReceive(state, new ClientRequestMsg(), ReadCallback);
+							return;
+						}
 					}
 				}
 				else {
