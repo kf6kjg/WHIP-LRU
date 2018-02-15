@@ -235,29 +235,31 @@ namespace LibWhipLru {
 
 -General
   Clients Connected: {connections?.Count() ?? 0}
--Client Status
 ");
-			foreach (var clientInfo in connections) {
-				output.Append($"  {clientInfo.RemoteEndpoint}: ");
+			if (connections != null) {
+				output.Append($@"-Client Status
+");
+				foreach (var clientInfo in connections) {
+					output.Append($"  {clientInfo.RemoteEndpoint}: ");
 
-				var connectionSeconds = (DateTimeOffset.UtcNow - clientInfo.Started).TotalSeconds;
+					var connectionSeconds = (DateTimeOffset.UtcNow - clientInfo.Started).TotalSeconds;
 
-				if (clientInfo.State == State.Acceptance) {
-					output.Append("Unauthenticated");
-				}
-				if (clientInfo.State == State.Disconnected) {
-					output.Append("DISCONNECTED");
-				}
-				else if (clientInfo.RequestInfo != null) {
-					output.Append($"ACTIVE {connectionSeconds} [{clientInfo.RequestInfo}]");
-				}
-				else {
-					output.Append($"IDLE {connectionSeconds}");
-				}
+					if (clientInfo.State == State.Acceptance) {
+						output.Append("Unauthenticated");
+					}
+					if (clientInfo.State == State.Disconnected) {
+						output.Append("DISCONNECTED");
+					}
+					else if (clientInfo.RequestInfo != null) {
+						output.Append($"ACTIVE {connectionSeconds} [{clientInfo.RequestInfo}]");
+					}
+					else {
+						output.Append($"IDLE {connectionSeconds}");
+					}
 
-				output.Append("\n");
+					output.Append("\n");
+				}
 			}
-
 			output.Append($@"-VFS Backend
   Disk queue size: 
   Avg Disk Queue Wait: ms
