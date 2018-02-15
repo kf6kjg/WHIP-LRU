@@ -60,12 +60,14 @@ namespace SpeedTests {
 			try {
 				System.IO.Directory.Delete("TestLibWhipLruCache", true);
 			}
-			catch (Exception) {
+			catch {
+				// Don't care.
 			}
 			try {
 				System.IO.File.Delete("TestLibWhipLruCache.wcache");
 			}
-			catch (Exception) {
+			catch {
+				// Don't care.
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
@@ -100,7 +102,9 @@ namespace SpeedTests {
 			var stopWatch = new Stopwatch();
 			var testParams = new object[] { };
 			foreach (var methodInfo in methodInfos) {
-				if (!methodInfo.Name.StartsWith("Test", StringComparison.InvariantCulture)) continue;
+				if (!methodInfo.Name.StartsWith("Test", StringComparison.InvariantCulture)) {
+					continue;
+				}
 
 				var counter = 0U;
 
@@ -113,7 +117,9 @@ namespace SpeedTests {
 					_timer.Start();
 					for (; counter < ITERATION_MAX; ++counter) {
 						methodInfo.Invoke(this, testParams);
-						if (_cancelTest) break;
+						if (_cancelTest) {
+							break;
+						}
 					}
 					_timer.Stop();
 
@@ -252,8 +258,6 @@ namespace SpeedTests {
 		public void Dispose() {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(true);
-			// uncomment the following line if the finalizer is overridden above.
-			// GC.SuppressFinalize(this);
 		}
 
 		#endregion

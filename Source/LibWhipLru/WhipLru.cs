@@ -49,10 +49,10 @@ namespace LibWhipLru {
 		private WHIPServer _server;
 		private Task _serviceTask;
 
-		private string _address;
-		private uint _port;
-		private string _password;
-		private uint _listenBacklogLength;
+		private readonly string _address;
+		private readonly uint _port;
+		private readonly string _password;
+		private readonly uint _listenBacklogLength;
 
 		private BlockingCollection<Request> _requests;
 
@@ -234,7 +234,7 @@ namespace LibWhipLru {
 			output.Append($@"WHIP Server Status
 
 -General
-  Clients Connected: {connections.Count()}
+  Clients Connected: {connections?.Count() ?? 0}
 -Client Status
 ");
 			foreach (var clientInfo in connections) {

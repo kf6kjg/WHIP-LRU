@@ -140,7 +140,9 @@ namespace UnitTests.WHIPTests {
 			while (soFar < messageSize) {
 				//read the header and challenge phrase
 				var rcvd = conn.Receive(buffer, 1024, SocketFlags.None);
-				if (rcvd == 0) return null; // Upstream disconnected
+				if (rcvd == 0) { // Upstream disconnected
+					return null;
+				}
 
 				result.AddRange(buffer);
 

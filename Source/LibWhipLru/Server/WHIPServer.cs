@@ -46,21 +46,21 @@ namespace LibWhipLru.Server {
 		public const uint DEFAULT_BACKLOG_LENGTH = 100;
 
 		// Thread signal.
-		private ManualResetEvent _allDone = new ManualResetEvent(false);
+		private readonly ManualResetEvent _allDone = new ManualResetEvent(false);
 
 		public delegate void RequestReceivedDelegate(ClientRequestMsg request, RequestResponseDelegate responseHandler, object context);
 		public delegate void RequestResponseDelegate(ServerResponseMsg response, object context);
 
 		private bool _isRunning;
-		private IPEndPoint _localEndPoint;
-		private string _password;
-		private int _port;
-		private int _listenBacklogLength;
+		private readonly IPEndPoint _localEndPoint;
+		private readonly string _password;
+		private readonly int _port;
+		private readonly int _listenBacklogLength;
 
-		private ConcurrentDictionary<string, ClientInfo> _activeConnections = new ConcurrentDictionary<string, ClientInfo>();
+		private readonly ConcurrentDictionary<string, ClientInfo> _activeConnections = new ConcurrentDictionary<string, ClientInfo>();
 		internal IEnumerable<ClientInfo> ActiveConnections => _activeConnections.Values; // Automatic lock and snapshot each access.
 
-		private RequestReceivedDelegate _requestHandler;
+		private readonly RequestReceivedDelegate _requestHandler;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.WHIPServer"/> class.
@@ -174,13 +174,14 @@ namespace LibWhipLru.Server {
 				return;
 			}
 
+#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
 			try {
 				state.Client.RemoteEndpoint = state.WorkSocket.RemoteEndPoint.ToString();
 			}
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-			catch (Exception) {
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+			catch {
+				// Ignore
 			}
+#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
 			var response = new AuthChallengeMsg();
 			var challenge = response.GetChallenge();
@@ -273,8 +274,9 @@ namespace LibWhipLru.Server {
 								StartReceive(state, new ClientRequestMsg(), ReadCallback);
 								return;
 							}
-						} break;
-						case State.Challenged:
+						}
+						break;
+						// State.Challenged:
 						default: {
 							// Wants to know status, reply accordingly.
 							var message = state.Message as AuthResponseMsg;
@@ -305,7 +307,8 @@ namespace LibWhipLru.Server {
 								StartReceive(state, new ClientRequestMsg(), ReadCallback);
 								return;
 							}
-						} break;
+						}
+						break;
 					}
 				}
 				else {
@@ -477,12 +480,6 @@ namespace LibWhipLru.Server {
 			}
 		}
 
-		// override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-		// ~WHIPServer() {
-		//   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-		//   Dispose(false);
-		// }
-
 		/// <summary>
 		/// Releases all resource used by the <see cref="T:LibWhipLru.Server.WHIPServer"/> object.
 		/// </summary>
@@ -493,8 +490,6 @@ namespace LibWhipLru.Server {
 		public void Dispose() {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(true);
-			// uncomment the following line if the finalizer is overridden above.
-			// GC.SuppressFinalize(this);
 		}
 
 		#endregion

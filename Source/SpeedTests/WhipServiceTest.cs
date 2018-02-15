@@ -83,7 +83,9 @@ namespace SpeedTests {
 			var stopWatch = new Stopwatch();
 			var testParams = new object[] { };
 			foreach (var methodInfo in methodInfos) {
-				if (!methodInfo.Name.StartsWith("Test", StringComparison.InvariantCulture)) continue;
+				if (!methodInfo.Name.StartsWith("Test", StringComparison.InvariantCulture)) {
+					continue;
+				}
 
 				var counter = 0U;
 
@@ -96,7 +98,9 @@ namespace SpeedTests {
 					_timer.Start();
 					for (; counter < ITERATION_MAX; ++counter) {
 						methodInfo.Invoke(this, testParams);
-						if (_cancelTest) break;
+						if (_cancelTest) {
+							break;
+						}
 					}
 					_timer.Stop();
 
@@ -129,7 +133,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -141,7 +147,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -157,7 +165,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -169,7 +179,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -185,7 +197,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -208,7 +222,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -231,7 +247,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -258,7 +276,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -274,7 +294,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -290,7 +312,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -306,7 +330,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -318,7 +344,9 @@ namespace SpeedTests {
 			request.Send(_socket);
 			// Wait until response comes back.
 			while (_socket.Available <= 0) {
-				if (_cancelTest) return;
+				if (_cancelTest) {
+					return;
+				}
 			}
 #pragma warning disable RECS0026 // Possible unassigned object created by 'new'
 			new ServerResponseMsg(_socket);
@@ -351,7 +379,9 @@ namespace SpeedTests {
 			while (soFar < messageSize) {
 				//read the header and challenge phrase
 				var rcvd = conn.Receive(buffer, 1024, SocketFlags.None);
-				if (rcvd == 0) return null; // Upstream disconnected
+				if (rcvd == 0) {
+					return null; // Upstream disconnected
+				}
 
 				result.AddRange(buffer);
 
@@ -442,12 +472,14 @@ namespace SpeedTests {
 					try {
 						System.IO.File.Delete("SpeedWhipServiceTest.wcache");
 					}
-					catch (Exception) {
+					catch {
+						// Nothing to do here.
 					}
 					try {
 						System.IO.File.Delete("SpeedWhipServiceTest.pid");
 					}
-					catch (Exception) {
+					catch {
+						// Nothing to do here.
 					}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
@@ -463,19 +495,12 @@ namespace SpeedTests {
 			}
 		}
 
-		// override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-		// ~WhipServiceTest() {
-		//   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-		//   Dispose(false);
-		// }
-
 		// This code added to correctly implement the disposable pattern.
 		public void Dispose() {
 			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 			Dispose(true);
-			// uncomment the following line if the finalizer is overridden above.
-			// GC.SuppressFinalize(this);
 		}
+
 		#endregion
 	}
 }

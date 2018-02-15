@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 
 namespace WHIP_LRU {
-	class Application {
+	static class Application {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private static readonly bool ON_POSIX_COMPLAINT_OS = Type.GetType("Mono.Runtime") != null; // A potentially invalid assumption: that Mono means running on a POSIX-compliant system.
@@ -88,7 +88,7 @@ namespace WHIP_LRU {
 			// Handlers for signals.
 			UnixSignal[] signals = null;
 			if (ON_POSIX_COMPLAINT_OS) {
-				signals = new UnixSignal[]{
+				signals = new [] {
 					new UnixSignal(Signum.SIGINT),
 					new UnixSignal(Signum.SIGTERM),
 					new UnixSignal(Signum.SIGHUP),
@@ -138,10 +138,7 @@ namespace WHIP_LRU {
 
 				var localStorageConfig = configSource.Configs["LocalStorage"];
 
-				var pathToDatabaseFolder = localStorageConfig?.GetString("DatabaseFolderPath", DEFAULT_DB_FOLDER_PATH) ?? DEFAULT_DB_FOLDER_PATH;
 				var maxAssetLocalStorageDiskSpaceByteCount = (ulong?)localStorageConfig?.GetLong("MaxDiskSpace", (long)AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES) ?? AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES;
-				var pathToWriteCacheFile = localStorageConfig?.GetString("WriteCacheFilePath", DEFAULT_WRITECACHE_FILE_PATH) ?? DEFAULT_WRITECACHE_FILE_PATH;
-				var maxWriteCacheRecordCount = (uint?)localStorageConfig?.GetInt("WriteCacheMaxRecords", (int)DEFAULT_WRITECACHE_RECORD_COUNT) ?? DEFAULT_WRITECACHE_RECORD_COUNT;
 				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)localStorageConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
 
 				var readerLocalStorage = new AssetLocalStorageLmdb(chattelConfigRead, maxAssetLocalStorageDiskSpaceByteCount);
@@ -177,6 +174,9 @@ namespace WHIP_LRU {
 						case Signum.SIGKILL:
 							isRunning = false;
 							whipLru.Stop();
+						break;
+						default:
+							// Signal unknown, ignore it.
 						break;
 					}
 				}
