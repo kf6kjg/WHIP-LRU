@@ -29,7 +29,7 @@ using log4net;
 using log4net.Config;
 
 namespace RollbarCrashReporter {
-	class Application {
+	static class Application {
 		private static readonly ILog LOG = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
@@ -47,9 +47,12 @@ namespace RollbarCrashReporter {
 
 			var raw_input = new byte[char_count];
 
-			Console.OpenStandardInput().Read(raw_input, 0, char_count);
+			var bytes_read = Console.OpenStandardInput().Read(raw_input, 0, char_count);
 
-			string msg = System.Text.Encoding.UTF8.GetString(raw_input);
+			var given_input = new byte[bytes_read];
+			Buffer.BlockCopy(raw_input, 0, given_input, 0, given_input.Length);
+
+			string msg = Encoding.UTF8.GetString(given_input);
 
 			Console.WriteLine("[CRASH_REPORTER] Logging inbound message.");
 			LOG.Fatal(msg);
