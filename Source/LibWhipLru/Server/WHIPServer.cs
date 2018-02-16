@@ -136,9 +136,12 @@ namespace LibWhipLru.Server {
 			_password = password;
 			_port = (int)port;
 
-			_requestHandler = requestHandler;
+			_requestHandler = requestHandler ?? throw new ArgumentNullException(nameof(requestHandler));
 
-			if (listenBacklogLength > int.MaxValue) {
+			if (listenBacklogLength <= 0) {
+				throw new ArgumentOutOfRangeException(nameof(listenBacklogLength), $"Value less than minimum of 1");
+			}
+			else if (listenBacklogLength > int.MaxValue) {
 				throw new ArgumentOutOfRangeException(nameof(listenBacklogLength), $"Value exceeded maximum of {int.MaxValue}");
 			}
 			_listenBacklogLength = (int)listenBacklogLength;

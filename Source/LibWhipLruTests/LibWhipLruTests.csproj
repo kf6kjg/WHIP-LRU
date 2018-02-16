@@ -132,6 +132,7 @@
     <Compile Include="Server\TestAuthChallengeMsg.cs" />
     <Compile Include="Server\TestAuthStatusMsg.cs" />
     <Compile Include="TestWhipLru.cs" />
+    <Compile Include="Server\TestWHIPServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cache\" />
