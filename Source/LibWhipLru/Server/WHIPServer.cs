@@ -66,11 +66,55 @@ namespace LibWhipLru.Server {
 		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.WHIPServer"/> class.
 		/// </summary>
 		/// <param name="requestHandler">Request handler.</param>
+		public WHIPServer(
+			RequestReceivedDelegate requestHandler
+		) : this (requestHandler, DEFAULT_ADDRESS, DEFAULT_PORT, DEFAULT_PASSWORD, DEFAULT_BACKLOG_LENGTH) {
+			// All handled elsewhere.
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.WHIPServer"/> class.
+		/// </summary>
+		/// <param name="requestHandler">Request handler.</param>
+		/// <param name="listenBacklogLength">Listen backlog length.</param>
+		public WHIPServer(
+			RequestReceivedDelegate requestHandler,
+			uint listenBacklogLength
+		) : this(requestHandler, DEFAULT_ADDRESS, DEFAULT_PORT, DEFAULT_PASSWORD, listenBacklogLength) {
+			// All handled elsewhere.
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.WHIPServer"/> class.
+		/// </summary>
+		/// <param name="requestHandler">Request handler.</param>
+		/// <param name="address">Address.</param>
+		/// <param name="port">Port.</param>
+		/// <param name="password">Password.</param>
+		public WHIPServer(
+			RequestReceivedDelegate requestHandler,
+			string address,
+			uint port,
+			string password
+		) : this(requestHandler, address, port, password, DEFAULT_BACKLOG_LENGTH) {
+			// All handled elsewhere.
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Server.WHIPServer"/> class.
+		/// </summary>
+		/// <param name="requestHandler">Request handler.</param>
 		/// <param name="address">Address.</param>
 		/// <param name="port">Port.</param>
 		/// <param name="password">Password.</param>
 		/// <param name="listenBacklogLength">Listen backlog length.</param>
-		public WHIPServer(RequestReceivedDelegate requestHandler, string address = DEFAULT_ADDRESS, uint port = DEFAULT_PORT, string password = DEFAULT_PASSWORD, uint listenBacklogLength = DEFAULT_BACKLOG_LENGTH) {
+		public WHIPServer(
+			RequestReceivedDelegate requestHandler,
+			string address,
+			uint port,
+			string password,
+			uint listenBacklogLength
+		) {
 			LOG.Debug($"{address}:{port} - Initializing server.");
 
 			IPAddress addr;
