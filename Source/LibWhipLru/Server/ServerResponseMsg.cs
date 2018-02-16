@@ -64,7 +64,10 @@ namespace LibWhipLru.Server {
 		/// <param name="code">Code.</param>
 		/// <param name="assetId">Asset identifier.</param>
 		/// <param name="data">Data.</param>
-		public ServerResponseMsg(ResponseCode code, Guid assetId, byte[] data) : this(code, assetId) {
+		public ServerResponseMsg(ResponseCode code, Guid assetId, byte[] data)
+			: this(code, assetId) {
+			data = data ?? throw new ArgumentNullException(nameof(data));
+
 			if (data.Length + HEADER_SIZE <= MAX_DATA_SIZE) {
 				_data = new byte[data.Length];
 				Buffer.BlockCopy(data, 0, _data, 0, data.Length * sizeof(byte)); // Yes, sizeof(byte) is redundant, but it's also good documentation.
@@ -80,7 +83,8 @@ namespace LibWhipLru.Server {
 		/// <param name="code">Code.</param>
 		/// <param name="assetId">Asset identifier.</param>
 		/// <param name="message">Message.</param>
-		public ServerResponseMsg(ResponseCode code, Guid assetId, string message) : this(code, assetId) {
+		public ServerResponseMsg(ResponseCode code, Guid assetId, string message)
+			: this(code, assetId) {
 			var encoding = new UTF8Encoding();
 
 			if (encoding.GetByteCount(message) + HEADER_SIZE <= MAX_DATA_SIZE) {
