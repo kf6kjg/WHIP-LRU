@@ -111,23 +111,15 @@ namespace LibWhipLru.Server {
 			var output = new byte[HEADER_SIZE + (_data?.Length ?? 0)];
 			/* Structure of message:
 			 * (1 byte) ResponseCode
-			 * (32 bytes) UUID
-			 * (4 bytes) size
+			 * (32 bytes) UUID ASCII-encoded hex.
+			 * (4 bytes) size, big endian (MSB first)
 			 * data block
 			 */
 			output[0] = (byte)_code;
 
-			// Copy the asset ID, in the correct order.
-			var idBytes = _assetId.ToByteArray();
-			output[1] = idBytes[3];
-			output[2] = idBytes[2];
-			output[3] = idBytes[1];
-			output[4] = idBytes[0];
-			output[5] = idBytes[5];
-			output[6] = idBytes[4];
-			output[7] = idBytes[7];
-			output[8] = idBytes[6];
-			Buffer.BlockCopy(idBytes, 8, output, 9, 8);
+			// Copy in the asset ID, hexchar encoded.  Silly, I know.
+			var idBytes = Encoding.ASCII.GetBytes(_assetId.ToString("N"));
+			Buffer.BlockCopy(idBytes, 0, output, 1, idBytes.Length);
 
 			if (_data != null) {
 				Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(_data.Length)), 0, output, DATA_SZ_TAG_LOC, 4);
