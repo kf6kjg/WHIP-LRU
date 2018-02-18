@@ -64,7 +64,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_AddRange_Empty_ReturnsFalse() {
+		public static void TestAuthResponseMsg_AddRange_Empty_False() {
 			var msg = new AuthResponseMsg();
 			Assert.IsFalse(msg.AddRange(new byte[] { }));
 		}
@@ -78,7 +78,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_AddRange_PartialPacket_ReturnsFalse() {
+		public static void TestAuthResponseMsg_AddRange_PartialPacket_False() {
 			var msg = new AuthResponseMsg();
 			var data = new byte[MESSAGE_SIZE - 1];
 			data[0] = 0;
@@ -87,7 +87,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_AddRange_PartialPacketCompleted_ReturnsTrue() {
+		public static void TestAuthResponseMsg_AddRange_PartialPacketCompleted_True() {
 			var msg = new AuthResponseMsg();
 			var data1 = new byte[MESSAGE_SIZE - 1];
 			data1[0] = 0;
@@ -109,7 +109,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_AddRange_FullPacket_ReturnsTrue() {
+		public static void TestAuthResponseMsg_AddRange_FullPacket_True() {
 			var msg = new AuthResponseMsg();
 			var data = new byte[MESSAGE_SIZE];
 			data[0] = 0;
@@ -122,14 +122,14 @@ namespace LibWhipLruTests.Server {
 		#region ChallengeHash
 
 		[Test]
-		public static void TestAuthResponseMsg_ChallengeHash_Fresh_IsNull() {
+		public static void TestAuthResponseMsg_ChallengeHash_Fresh_Null() {
 			var msg = new AuthResponseMsg();
 
 			Assert.IsNull(msg.ChallengeHash);
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_ChallengeHash_PartialPacket_IsNull() {
+		public static void TestAuthResponseMsg_ChallengeHash_PartialPacket_Null() {
 			var msg = new AuthResponseMsg();
 			var data = new byte[MESSAGE_SIZE - 1];
 			data[0] = 0;
@@ -140,7 +140,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_ChallengeHash_PartialPacketCompleted_IsNotNull() {
+		public static void TestAuthResponseMsg_ChallengeHash_PartialPacketCompleted_NotNull() {
 			var msg = new AuthResponseMsg();
 			var data1 = new byte[MESSAGE_SIZE - 1];
 			data1[0] = 0;
@@ -155,7 +155,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_ChallengeHash_PartialPacketCompleted_HasCorrectHash() {
+		public static void TestAuthResponseMsg_ChallengeHash_PartialPacketCompleted_CorrectHash() {
 			var msg = new AuthResponseMsg();
 			var data1 = new byte[MESSAGE_SIZE - 1];
 			data1[0] = 0;
@@ -170,7 +170,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_ChallengeHash_FullPacket_IsNotNull() {
+		public static void TestAuthResponseMsg_ChallengeHash_FullPacket_NotNull() {
 			var msg = new AuthResponseMsg();
 			var data = new byte[MESSAGE_SIZE];
 			data[0] = 0;
@@ -181,7 +181,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_ChallengeHash_FullPacket_IsNotEmpty() {
+		public static void TestAuthResponseMsg_ChallengeHash_FullPacket_NotEmpty() {
 			var msg = new AuthResponseMsg();
 			var data = new byte[MESSAGE_SIZE];
 			data[0] = 0;
@@ -192,7 +192,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_ChallengeHash_FullPacket_HasCorrectHash() {
+		public static void TestAuthResponseMsg_ChallengeHash_FullPacket_CorrectHash() {
 			var msg = new AuthResponseMsg();
 			var data = new byte[MESSAGE_SIZE];
 			data[0] = 0;
@@ -207,14 +207,14 @@ namespace LibWhipLruTests.Server {
 		#region IsReady
 
 		[Test]
-		public static void TestAuthResponseMsg_IsReady_Fresh_IsFalse() {
+		public static void TestAuthResponseMsg_Ready_Fresh_False() {
 			var msg = new AuthResponseMsg();
 
 			Assert.IsFalse(msg.IsReady);
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_IsReady_PartialPacket_IsFalse() {
+		public static void TestAuthResponseMsg_Ready_PartialPacket_False() {
 			var msg = new AuthResponseMsg();
 			var data = new byte[MESSAGE_SIZE - 1];
 			data[0] = 0;
@@ -225,7 +225,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_IsReady_PartialPacketCompleted_IsTrue() {
+		public static void TestAuthResponseMsg_Ready_PartialPacketCompleted_True() {
 			var msg = new AuthResponseMsg();
 			var data1 = new byte[MESSAGE_SIZE - 1];
 			data1[0] = 0;
@@ -240,7 +240,7 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestAuthResponseMsg_IsReady_FullPacket_IsTrue() {
+		public static void TestAuthResponseMsg_Ready_FullPacket_True() {
 			var msg = new AuthResponseMsg();
 			var data = new byte[MESSAGE_SIZE];
 			data[0] = 0;
