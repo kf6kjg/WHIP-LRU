@@ -24,6 +24,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Threading.Tasks;
 using LibWhipLru.Server;
 using NUnit.Framework;
 
@@ -41,8 +42,18 @@ namespace LibWhipLruTests.Server {
 		#region Ctor1
 
 		[Test]
-		public static void TestWHIPServer_Ctor1_DoesntThrow() {
-			LOG.Info($"Executing {nameof(TestWHIPServer_Ctor1_DoesntThrow)}");
+		public static void TestWHIPServer_Ctor1Basic_DoesntThrow() {
+			LOG.Info($"Executing {nameof(TestWHIPServer_Ctor1Basic_DoesntThrow)}");
+			WHIPServer server = null;
+			Assert.DoesNotThrow(() => {
+				server = new WHIPServer((req, respHandler, context) => { });
+			});
+			server?.Dispose();
+		}
+
+		[Test]
+		public static void TestWHIPServer_Ctor1Using_DoesntThrow() {
+			LOG.Info($"Executing {nameof(TestWHIPServer_Ctor1Using_DoesntThrow)}");
 			Assert.DoesNotThrow(() => {
 				using (new WHIPServer((req, respHandler, context) => { })) {
 					// Nothing to do here.
@@ -529,5 +540,120 @@ namespace LibWhipLruTests.Server {
 
 		#endregion
 
+		#region Start
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestWHIPServer_Start_DoesntThrow() {
+			LOG.Info($"Executing {nameof(TestWHIPServer_Start_DoesntThrow)}");
+			using (var server = new WHIPServer(
+				(req, respHandler, context) => { },
+				DEFAULT_ADDRESS,
+				DEFAULT_PORT,
+				DEFAULT_PASSWORD,
+				DEFAULT_BACKLOG_LENGTH
+			))
+			using (var timeout = new System.Threading.Timer(
+				state => server.Stop(),
+				null,
+				TimeSpan.FromMilliseconds(200),
+				TimeSpan.FromMilliseconds(-1) // No repeat
+			)) { // Have to call stop on another thread as the Start method goes into a loop.
+				Assert.DoesNotThrow(server.Start);
+			}
+		}
+
+		[Test]
+		[Timeout(1200)]
+		public static void TestWHIPServer_Start_Stop_Start_DoesntThrow() {
+			LOG.Info($"Executing {nameof(TestWHIPServer_Start_Stop_Start_DoesntThrow)}");
+			using (var server = new WHIPServer(
+				(req, respHandler, context) => { },
+				DEFAULT_ADDRESS,
+				DEFAULT_PORT,
+				DEFAULT_PASSWORD,
+				DEFAULT_BACKLOG_LENGTH
+			)) {
+				using (var timeout = new System.Threading.Timer(
+					state => server.Stop(),
+					null,
+					TimeSpan.FromMilliseconds(200),
+					TimeSpan.FromMilliseconds(-1) // No repeat
+				)) {
+					server.Start();
+				}
+
+				using (var timeout = new System.Threading.Timer(
+					state => server.Stop(),
+					null,
+					TimeSpan.FromMilliseconds(200),
+					TimeSpan.FromMilliseconds(-1) // No repeat
+				)) {
+					Assert.DoesNotThrow(server.Start);
+				}
+			}
+		}
+
+		#endregion
+
+		#region Stop
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestWHIPServer_Stop_AfterStarted_DoesntThrow() {
+			LOG.Info($"Executing {nameof(TestWHIPServer_Start_DoesntThrow)}");
+			using (var server = new WHIPServer(
+				(req, respHandler, context) => { },
+				DEFAULT_ADDRESS,
+				DEFAULT_PORT,
+				DEFAULT_PASSWORD,
+				DEFAULT_BACKLOG_LENGTH
+			))
+			using (var task = new Task(server.Start)) {
+				task.Start();
+				System.Threading.Thread.Sleep(200);
+				Assert.DoesNotThrow(server.Stop);
+				System.Threading.Thread.Sleep(600);
+			}
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestWHIPServer_Stop_Fresh_DoesntThrow() {
+			LOG.Info($"Executing {nameof(TestWHIPServer_Start_DoesntThrow)}");
+			using (var server = new WHIPServer(
+				(req, respHandler, context) => { },
+				DEFAULT_ADDRESS,
+				DEFAULT_PORT,
+				DEFAULT_PASSWORD,
+				DEFAULT_BACKLOG_LENGTH
+			)) {
+				Assert.DoesNotThrow(server.Stop);
+			}
+		}
+
+		[Test]
+		[Timeout(1000)]
+		public static void TestWHIPServer_Stop_TwiceAfterStarted_DoesntThrow() {
+			LOG.Info($"Executing {nameof(TestWHIPServer_Start_DoesntThrow)}");
+			using (var server = new WHIPServer(
+				(req, respHandler, context) => { },
+				DEFAULT_ADDRESS,
+				DEFAULT_PORT,
+				DEFAULT_PASSWORD,
+				DEFAULT_BACKLOG_LENGTH
+			))
+			using (var task = new Task(server.Start)) {
+				task.Start();
+				System.Threading.Thread.Sleep(200);
+
+				server.Stop();
+				System.Threading.Thread.Sleep(600);
+
+				Assert.DoesNotThrow(server.Stop);
+			}
+		}
+
+		#endregion
 	}
 }
