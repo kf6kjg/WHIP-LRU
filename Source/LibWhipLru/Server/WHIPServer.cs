@@ -161,23 +161,26 @@ namespace LibWhipLru.Server {
 			LOG.Debug($"{_localEndPoint} - Starting server.");
 
 			// Create a TCP/IP socket.  
-			var listener = new Socket(_localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+			using (var listener = new Socket(_localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)) {
+				// Bind the socket to the local endpoint and listen for incoming connections.  
+				listener.Bind(_localEndPoint);
+				listener.Listen(_listenBacklogLength);
 
-			// Bind the socket to the local endpoint and listen for incoming connections.  
-			listener.Bind(_localEndPoint);
-			listener.Listen(_listenBacklogLength);
+				var hadConnection = true; // Lies, damnable lies!
+				_isRunning = true;
+				while (_isRunning) {
+					// Set the event to nonsignaled state.  
+					_allDone.Reset();
 
-			_isRunning = true;
-			while (_isRunning) {
-				// Set the event to nonsignaled state.  
-				_allDone.Reset();
+					if (hadConnection) {
+						// Start an asynchronous socket to listen for connections.  
+						LOG.Debug($"{_localEndPoint} - Waiting for a connection...");
+						listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
+					}
 
-				// Start an asynchronous socket to listen for connections.  
-				LOG.Debug($"{_localEndPoint} - Waiting for a connection...");
-				listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
-
-				// Wait until a connection is made before continuing.  
-				_allDone.WaitOne(500); // Have to have a timeout or you can run across a situation where this jsut hangs arund instead of dying after stop is called.
+					// Wait until a connection is made before continuing.  
+					hadConnection = _allDone.WaitOne(500); // Have to have a timeout or you can run across a situation where this jsut hangs arund instead of dying after stop is called.
+				}
 			}
 		}
 
@@ -194,6 +197,10 @@ namespace LibWhipLru.Server {
 		#region Callbacks
 
 		private void AcceptCallback(IAsyncResult ar) {
+			if (!_isRunning) {
+				return;
+			}
+
 			// Signal the main thread to continue.  
 			_allDone.Set();
 
