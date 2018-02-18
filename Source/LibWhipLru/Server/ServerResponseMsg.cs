@@ -35,15 +35,13 @@ namespace LibWhipLru.Server {
 	public class ServerResponseMsg : IByteArraySerializable {
 		private const short DATA_SZ_TAG_LOC = HEADER_SIZE - 4;
 		private const short HEADER_SIZE = 37;
-		private const short UUID_TAG_LOC = 1;
-		private const short UUID_LEN = 32;
 
 		//48 MB max data size
 		private const int MAX_DATA_SIZE = 50331648;
 
-		private Guid _assetId;
-		private ResponseCode _code;
-		private byte[] _data;
+		private readonly Guid _assetId;
+		private readonly ResponseCode _code;
+		private readonly byte[] _data;
 
 		private ServerResponseMsg() {
 		}
