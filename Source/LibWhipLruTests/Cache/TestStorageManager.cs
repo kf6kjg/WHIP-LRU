@@ -284,21 +284,22 @@ namespace LibWhipLruTests.Cache {
 			LOG.Info($"Executing {nameof(TestStorageManager_CheckAsset_SingleNoExist_CallsServerRequestAsset)}");
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
-			var reader = new ChattelReader(config, localStorage, false);
-			var writer = new ChattelWriter(config, localStorage, false);
+			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES)) {
+				var reader = new ChattelReader(config, localStorage, false);
+				var writer = new ChattelWriter(config, localStorage, false);
 
-			var assetId = Guid.NewGuid();
+				var assetId = Guid.NewGuid();
 
-			var mgr = new StorageManager(
-				localStorage,
-				TimeSpan.FromMinutes(2),
-				reader,
-				writer
-			);
-			mgr.CheckAsset(assetId, result => { });
+				var mgr = new StorageManager(
+					localStorage,
+					TimeSpan.FromMinutes(2),
+					reader,
+					writer
+				);
+				mgr.CheckAsset(assetId, result => { });
 
-			server.Received(1).RequestAssetSync(assetId);
+				server.Received(1).RequestAssetSync(assetId);
+			}
 		}
 
 		[Test]
@@ -307,22 +308,23 @@ namespace LibWhipLruTests.Cache {
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
-			var reader = new ChattelReader(config, localStorage, false);
-			var writer = new ChattelWriter(config, localStorage, false);
+			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES)) {
+				var reader = new ChattelReader(config, localStorage, false);
+				var writer = new ChattelWriter(config, localStorage, false);
 
-			var assetId = Guid.NewGuid();
+				var assetId = Guid.NewGuid();
 
-			var mgr = new StorageManager(
-				localStorage,
-				TimeSpan.FromMinutes(2),
-				reader,
-				writer
-			);
-			mgr.CheckAsset(assetId, result => { });
-			mgr.CheckAsset(assetId, result => { });
+				var mgr = new StorageManager(
+					localStorage,
+					TimeSpan.FromMinutes(2),
+					reader,
+					writer
+				);
+				mgr.CheckAsset(assetId, result => { });
+				mgr.CheckAsset(assetId, result => { });
 
-			server.Received(1).RequestAssetSync(assetId);
+				server.Received(1).RequestAssetSync(assetId);
+			}
 		}
 
 		#endregion
@@ -512,27 +514,28 @@ namespace LibWhipLruTests.Cache {
 			LOG.Info($"Executing {nameof(TestStorageManager_StoreAsset_CallsServerPutAsset)}");
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, server);
-			var readerLocalStorage = new AssetLocalStorageLmdb(config, uint.MaxValue);
-			var reader = new ChattelReader(config, readerLocalStorage);
-			var writer = new ChattelWriter(config, readerLocalStorage);
+			using (var readerLocalStorage = new AssetLocalStorageLmdb(config, uint.MaxValue)) {
+				var reader = new ChattelReader(config, readerLocalStorage);
+				var writer = new ChattelWriter(config, readerLocalStorage);
 
-			var mgr = new StorageManager(
-				readerLocalStorage,
-				TimeSpan.FromMinutes(2),
-				reader,
-				writer
-			);
+				var mgr = new StorageManager(
+					readerLocalStorage,
+					TimeSpan.FromMinutes(2),
+					reader,
+					writer
+				);
 
-			var asset = new StratusAsset {
-				Id = Guid.NewGuid(),
-			};
+				var asset = new StratusAsset {
+					Id = Guid.NewGuid(),
+				};
 
-			var wait = new AutoResetEvent(false);
+				var wait = new AutoResetEvent(false);
 
-			mgr.StoreAsset(asset, result => wait.Set());
-			wait.WaitOne();
+				mgr.StoreAsset(asset, result => wait.Set());
+				wait.WaitOne();
 
-			server.Received(1).StoreAssetSync(asset);
+				server.Received(1).StoreAssetSync(asset);
+			}
 		}
 
 		#endregion
@@ -726,21 +729,22 @@ namespace LibWhipLruTests.Cache {
 			LOG.Info($"Executing {nameof(TestStorageManager_GetAsset_SingleNoExist_CallsServerRequestAsset)}");
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
-			var reader = new ChattelReader(config, localStorage, false);
-			var writer = new ChattelWriter(config, localStorage, false);
+			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES)) {
+				var reader = new ChattelReader(config, localStorage, false);
+				var writer = new ChattelWriter(config, localStorage, false);
 
-			var assetId = Guid.NewGuid();
+				var assetId = Guid.NewGuid();
 
-			var mgr = new StorageManager(
-				localStorage,
-				TimeSpan.FromMinutes(2),
-				reader,
-				writer
-			);
-			mgr.GetAsset(assetId, result => { }, () => { });
+				var mgr = new StorageManager(
+					localStorage,
+					TimeSpan.FromMinutes(2),
+					reader,
+					writer
+				);
+				mgr.GetAsset(assetId, result => { }, () => { });
 
-			server.Received(1).RequestAssetSync(assetId);
+				server.Received(1).RequestAssetSync(assetId);
+			}
 		}
 
 		[Test]
@@ -749,22 +753,23 @@ namespace LibWhipLruTests.Cache {
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
-			var reader = new ChattelReader(config, localStorage, false);
-			var writer = new ChattelWriter(config, localStorage, false);
+			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES)) {
+				var reader = new ChattelReader(config, localStorage, false);
+				var writer = new ChattelWriter(config, localStorage, false);
 
-			var assetId = Guid.NewGuid();
+				var assetId = Guid.NewGuid();
 
-			var mgr = new StorageManager(
-				localStorage,
-				TimeSpan.FromMinutes(2),
-				reader,
-				writer
-			);
-			mgr.GetAsset(assetId, result => { }, () => { });
-			mgr.GetAsset(assetId, result => { }, () => { });
+				var mgr = new StorageManager(
+					localStorage,
+					TimeSpan.FromMinutes(2),
+					reader,
+					writer
+				);
+				mgr.GetAsset(assetId, result => { }, () => { });
+				mgr.GetAsset(assetId, result => { }, () => { });
 
-			server.Received(1).RequestAssetSync(assetId);
+				server.Received(1).RequestAssetSync(assetId);
+			}
 		}
 
 		#endregion

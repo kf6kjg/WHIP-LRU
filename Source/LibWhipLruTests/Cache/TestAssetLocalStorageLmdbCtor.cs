@@ -77,70 +77,86 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public static void TestAssetLocalStorageLmdb_Ctor_DoesntThrow() {
-			Assert.DoesNotThrow(() => new AssetLocalStorageLmdb(
-				_chattelConfigRead,
-				DATABASE_MAX_SIZE_BYTES
-			));
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					DATABASE_MAX_SIZE_BYTES
+				)) { }
+			});
 		}
 
 		[Test]
 		public static void TestAssetLocalStorageLmdb_Ctor_DBPathBlank_DoesntThrow() {
 			var chattelConfigRead = new ChattelConfiguration("", assetServer: null);
-			Assert.DoesNotThrow(() => new AssetLocalStorageLmdb(
-				chattelConfigRead,
-				DATABASE_MAX_SIZE_BYTES
-			));
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					DATABASE_MAX_SIZE_BYTES
+				)) { }
+			});
 		}
 
 		[Test]
 		public static void TestAssetLocalStorageLmdb_Ctor_DBPathNull_DoesntThrow() {
 			var chattelConfigRead = new ChattelConfiguration(null, assetServer: null);
-			Assert.DoesNotThrow(() => new AssetLocalStorageLmdb(
-				chattelConfigRead,
-				DATABASE_MAX_SIZE_BYTES
-			));
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					DATABASE_MAX_SIZE_BYTES
+				)) { }
+			});
 		}
 
 		[Test]
 		public static void TestAssetLocalStorageLmdb_Ctor_DBSize0_ArgumentOutOfRangeException() {
-			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetLocalStorageLmdb(
-				_chattelConfigRead,
-				0
-			));
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					0
+				)) { }
+			});
 		}
 
 		[Test]
 		public static void TestAssetLocalStorageLmdb_Ctor_DBSizeJustTooSmall_ArgumentOutOfRangeException() {
-			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetLocalStorageLmdb(
-				_chattelConfigRead,
-				uint.MaxValue - 1
-			));
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					uint.MaxValue - 1
+				)) { }
+			});
 		}
 
 		[Test]
 		public static void TestAssetLocalStorageLmdb_Ctor_DBSizeMinimum_DoesntThrow() {
-			Assert.DoesNotThrow(() => new AssetLocalStorageLmdb(
-				_chattelConfigRead,
-				uint.MaxValue
-			));
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					uint.MaxValue
+				)) { }
+			});
 		}
 
 		// Maxmimum value test invalid: no computer has enough memory to run it.
 
 		[Test]
 		public static void TestAssetLocalStorageLmdb_Ctor_DBSizeJustOversize_ArgumentOutOfRangeException() {
-			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetLocalStorageLmdb(
-				_chattelConfigRead,
-				long.MaxValue + 1UL
-			));
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					long.MaxValue + 1UL
+				)) { }
+			});
 		}
 
 		[Test]
 		public static void TestAssetLocalStorageLmdb_Ctor_DBSizeOversize_ArgumentOutOfRangeException() {
-			Assert.Throws<ArgumentOutOfRangeException>(() => new AssetLocalStorageLmdb(
-				_chattelConfigRead,
-				ulong.MaxValue
-			));
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					ulong.MaxValue
+				)) { }
+			});
 		}
 
 		[Test]
