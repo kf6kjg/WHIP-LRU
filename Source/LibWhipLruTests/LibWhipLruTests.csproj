@@ -135,6 +135,7 @@
     <Compile Include="Server\TestWHIPServer.cs" />
     <Compile Include="Server\TestServerResponseMsg.cs" />
     <Compile Include="Server\TestAuthResponseMsg.cs" />
+    <Compile Include="Server\TestClientRequestMsg.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cache\" />
