@@ -57,8 +57,9 @@ namespace LibWhipLru.Server {
 
 		/// <summary>
 		/// Access to the data byte array that was sent from the client as payload.
+		/// Will only contain data when the client has finished sending all the expected bytes.
 		/// </summary>
-		public byte[] Data { get => _data; }
+		public byte[] Data { get => _dataWritePointer >= _data.Length ? _data : new byte[] { }; }
 		private byte[] _data;
 		private int _dataWritePointer;
 		private readonly byte[] _dataHeader = new byte[HEADER_SIZE];
