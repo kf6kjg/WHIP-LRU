@@ -44,45 +44,42 @@ namespace LibWhipLruTests.Cache {
 
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+		private static ChattelConfiguration _chattelConfigRead;
+		private static ChattelConfiguration _chattelConfigWrite;
 		private static AssetLocalStorageLmdb _readerLocalStorage;
 		private static ChattelReader _chattelReader;
 		private static ChattelWriter _chattelWriter;
 
+		[OneTimeSetUp]
+		public static void Startup() {
+			// Folder has to be there or the config fails.
+			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
+			_chattelConfigRead = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
+			_chattelConfigWrite = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
+
+		}
 
 		[SetUp]
 		public static void BeforeEveryTest() {
 			LOG.Info($"Executing {nameof(BeforeEveryTest)}");
-#pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
-			try {
-				File.Delete(WRITE_CACHE_FILE_PATH);
-			}
-			catch {
-			}
-			try {
-				Directory.Delete(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, true);
-			}
-			catch {
-			}
-#pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
+			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
 
-			Directory.CreateDirectory(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH);
-			var chattelConfigRead = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
-			var chattelConfigWrite = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
-
-			_readerLocalStorage = new AssetLocalStorageLmdb(chattelConfigRead, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
-			_chattelReader = new ChattelReader(chattelConfigRead, _readerLocalStorage);
-			_chattelWriter = new ChattelWriter(chattelConfigWrite, _readerLocalStorage);
+			_readerLocalStorage = new AssetLocalStorageLmdb(_chattelConfigRead, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
+			_chattelReader = new ChattelReader(_chattelConfigRead, _readerLocalStorage);
+			_chattelWriter = new ChattelWriter(_chattelConfigWrite, _readerLocalStorage);
 		}
 
 		[TearDown]
 		public static void CleanupAfterEveryTest() {
 			LOG.Info($"Executing {nameof(CleanupAfterEveryTest)}");
-			IDisposable readerDispose = _readerLocalStorage;
-			_readerLocalStorage = null;
-			readerDispose.Dispose();
+			_chattelReader = null;
+			_chattelWriter = null;
 
-			File.Delete(WRITE_CACHE_FILE_PATH);
-			Directory.Delete(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, true);
+			IDisposable localStorageDisposal = _readerLocalStorage;
+			_readerLocalStorage = null;
+			localStorageDisposal.Dispose();
+
+			TestAssetLocalStorageLmdbCtor.CleanLocalStorageFolder(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
 		}
 
 		#region Ctor
