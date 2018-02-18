@@ -125,10 +125,20 @@ namespace LibWhipLruTests.Server {
 		}
 
 		[Test]
-		public static void TestClientRequestMsg_AddRange_WrongHeaderId_AssetProtocolError() {
+		public static void TestClientRequestMsg_AddRange_WrongHeaderId0_AssetProtocolError() {
 			var msg = new ClientRequestMsg();
 			var data = new byte[HEADER_SIZE];
 			data[REQUEST_TYPE_LOC] = 0; // Anything not in range of RequestType.
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+
+			Assert.Throws<InWorldz.Whip.Client.AssetProtocolError>(() => msg.AddRange(data));
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_AddRange_WrongHeaderId100_AssetProtocolError() {
+			var msg = new ClientRequestMsg();
+			var data = new byte[HEADER_SIZE];
+			data[REQUEST_TYPE_LOC] = 100; // Anything not in range of RequestType.
 			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
 
 			Assert.Throws<InWorldz.Whip.Client.AssetProtocolError>(() => msg.AddRange(data));
@@ -216,6 +226,366 @@ namespace LibWhipLruTests.Server {
 
 		#endregion
 
+		#region Type
 
+		[Test]
+		public static void TestClientRequestMsg_Type_Fresh_Zero() {
+			var msg = new ClientRequestMsg();
+
+			Assert.AreEqual(0, (int)msg.Type);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_Type_BarelyAdded_CorrectTEST() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[REQUEST_TYPE_LOC + 1];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			msg.AddRange(data);
+
+			Assert.AreEqual(RequestType.TEST, msg.Type);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_Type_BarelyAdded_CorrectSTORED_ASSET_IDS_GET() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[REQUEST_TYPE_LOC + 1];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.STORED_ASSET_IDS_GET;
+			msg.AddRange(data);
+
+			Assert.AreEqual(RequestType.STORED_ASSET_IDS_GET, msg.Type);
+		}
+
+		#endregion
+
+		#region AssetId
+
+		[Test]
+		public static void TestClientRequestMsg_AssetId_Fresh_Empty() {
+			var msg = new ClientRequestMsg();
+
+			Assert.AreEqual(Guid.Empty, msg.AssetId);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_AssetId_BarelyAdded_Correct() {
+			var msg = new ClientRequestMsg();
+
+			var assetId = Guid.NewGuid();
+
+			var data = new byte[REQUEST_TYPE_LOC + UUID_TAG_LOCATION + UUID_LEN];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(assetId.ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			msg.AddRange(data);
+
+			Assert.AreEqual(assetId, msg.AssetId);
+		}
+
+		#endregion
+
+		#region IsReady
+
+		[Test]
+		public static void TestClientRequestMsg_IsReady_Fresh_False() {
+			var msg = new ClientRequestMsg();
+
+			Assert.IsFalse(msg.IsReady);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_IsReady_TypeSent_False() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[REQUEST_TYPE_LOC + 1];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			msg.AddRange(data);
+
+			Assert.IsFalse(msg.IsReady);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_IsReady_TypeAndUUIDSent_False() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[REQUEST_TYPE_LOC + UUID_TAG_LOCATION + UUID_LEN];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			msg.AddRange(data);
+
+			Assert.IsFalse(msg.IsReady);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_IsReady_FullHeaderSentIncompleteData_False() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 123;
+			msg.AddRange(data);
+
+			Assert.IsFalse(msg.IsReady);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_IsReady_FullHeaderSentZeroData_True() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 0;
+			msg.AddRange(data);
+
+			Assert.IsTrue(msg.IsReady);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_IsReady_FullHeaderSentData123_True() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE + 123];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 123;
+			msg.AddRange(data);
+
+			Assert.IsTrue(msg.IsReady);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_IsReady_FullHeaderSentDataNegative_True() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE + 123];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0xFF;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0xFF;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0xFF;
+			data[DATA_SIZE_MARKER_LOC + 3] = 0xFF;
+			msg.AddRange(data);
+
+			Assert.IsTrue(msg.IsReady);
+		}
+
+		#endregion
+
+		#region Data
+
+		[Test]
+		public static void TestClientRequestMsg_Data_Empty_Empty() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 0;
+			msg.AddRange(data);
+
+			Assert.IsEmpty(msg.Data);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_Data_Empty_NotNull() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 0;
+			msg.AddRange(data);
+
+			Assert.IsNotNull(msg.Data);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_Data_Negative_Empty() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE + 123];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0xFF;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0xFF;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0xFF;
+			data[DATA_SIZE_MARKER_LOC + 3] = 0xFF;
+			msg.AddRange(data);
+
+			Assert.IsEmpty(msg.Data);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_Data_SentLessThanExpected_Empty() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE + 2];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 3;
+			data[HEADER_SIZE] = 250;
+			data[HEADER_SIZE + 1] = 251;
+			msg.AddRange(data);
+
+			Assert.IsEmpty(msg.Data);
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_Data_SentMoreThanExpected_OnlyExpected() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE + 123];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 3;
+			data[HEADER_SIZE] = 250;
+			data[HEADER_SIZE + 1] = 251;
+			data[HEADER_SIZE + 2] = 252;
+			data[HEADER_SIZE + 3] = 253;
+			msg.AddRange(data);
+
+			Assert.AreEqual(new byte[] { 250, 251, 252 }, msg.Data);
+		}
+
+
+		[Test]
+		public static void TestClientRequestMsg_Data_MultiAddRange_Correct() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 4;
+			msg.AddRange(data);
+
+			msg.AddRange(new byte[] { 250, 251, 252, 253 });
+
+			Assert.AreEqual(new byte[] { 250, 251, 252, 253 }, msg.Data);
+		}
+
+		#endregion
+
+		#region GetHeaderSummary
+
+		[Test]
+		public static void TestClientRequestMsg_GetHeaderSummary_TypeTEST_DoesntThrow() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[REQUEST_TYPE_LOC + 1];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			msg.AddRange(data);
+
+			Assert.DoesNotThrow(() => msg.GetHeaderSummary());
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_GetHeaderSummary_TypeTEST_ContainsTEST() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[REQUEST_TYPE_LOC + 1];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			msg.AddRange(data);
+
+			Assert.That(msg.GetHeaderSummary(), Contains.Substring("TEST"));
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_GetHeaderSummary_TypeSTORED_ASSET_IDS_GET_ContainsSTORED_ASSET_IDS_GET() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[REQUEST_TYPE_LOC + 1];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.STORED_ASSET_IDS_GET;
+			msg.AddRange(data);
+
+			Assert.That(msg.GetHeaderSummary(), Contains.Substring("STORED_ASSET_IDS_GET"));
+		}
+
+
+		[Test]
+		public static void TestClientRequestMsg_GetHeaderSummary_TypeAndUUID_DoesntThrow() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[REQUEST_TYPE_LOC + UUID_TAG_LOCATION + UUID_LEN];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			msg.AddRange(data);
+
+			Assert.DoesNotThrow(() => msg.GetHeaderSummary());
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_GetHeaderSummary_TypeAndUUID_ContainsUUID() {
+			var msg = new ClientRequestMsg();
+
+			var assetId = Guid.NewGuid();
+
+			var data = new byte[REQUEST_TYPE_LOC + UUID_TAG_LOCATION + UUID_LEN];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(assetId.ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			msg.AddRange(data);
+
+			Assert.That(msg.GetHeaderSummary(), Contains.Substring(assetId.ToString("D")));
+		}
+
+
+		[Test]
+		public static void TestClientRequestMsg_GetHeaderSummary_TypeAndUUIDAndDataLength123_DoesntThrow() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE + 123];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 123;
+			msg.AddRange(data);
+
+			Assert.DoesNotThrow(() => msg.GetHeaderSummary());
+		}
+
+		[Test]
+		public static void TestClientRequestMsg_GetHeaderSummary_TypeAndUUIDAndDataLength123_Contains123() {
+			var msg = new ClientRequestMsg();
+
+			var data = new byte[HEADER_SIZE + 123];
+			data[REQUEST_TYPE_LOC] = (byte)RequestType.TEST;
+			Buffer.BlockCopy(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString("N")), 0, data, UUID_TAG_LOCATION, UUID_LEN);
+			data[DATA_SIZE_MARKER_LOC] = 0;
+			data[DATA_SIZE_MARKER_LOC + 1] = 0;
+			data[DATA_SIZE_MARKER_LOC + 2] = 0;
+			data[DATA_SIZE_MARKER_LOC + 3] = 123;
+			msg.AddRange(data);
+
+			Assert.That(msg.GetHeaderSummary(), Contains.Substring("123"));
+		}
+
+		#endregion
 	}
 }
