@@ -22,6 +22,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
@@ -58,22 +60,24 @@ namespace LibWhipLru.Server {
 		/// <returns><c>true</c>, if range was added, <c>false</c> otherwise.</returns>
 		/// <param name="data">Data.</param>
 		public bool AddRange(byte[] data) {
-			if (!IsReady) { // Refuse to append more data once loaded.
-				_rawMessageData.AddRange(data);
+			if (IsReady) { // Refuse to append more data once loaded.
+				throw new InvalidOperationException("You cannot reuse messages!");
+			}
 
-				if (_rawMessageData.Count >= MESSAGE_SIZE) {
-					var packet = _rawMessageData.GetRange(0, MESSAGE_SIZE).ToArray();
+			_rawMessageData.AddRange(data);
 
-					if (packet[0] != PACKET_IDENTIFIER) {
-						throw new AssetProtocolError($"Wrong packet identifier for authentication response: {packet[0]}");
-					}
+			if (_rawMessageData.Count >= MESSAGE_SIZE) {
+				var packet = _rawMessageData.GetRange(0, MESSAGE_SIZE).ToArray();
 
-					var encoding = new ASCIIEncoding();
-
-					ChallengeHash = encoding.GetString(packet, CHALLENGE_HASH_LOC, CHALLENGE_HASH_LENGTH);
-
-					IsReady = true;
+				if (packet[0] != PACKET_IDENTIFIER) {
+					throw new AssetProtocolError($"Wrong packet identifier for authentication response: {packet[0]}");
 				}
+
+				var encoding = new ASCIIEncoding();
+
+				ChallengeHash = encoding.GetString(packet, CHALLENGE_HASH_LOC, CHALLENGE_HASH_LENGTH);
+
+				IsReady = true;
 			}
 
 			return IsReady;

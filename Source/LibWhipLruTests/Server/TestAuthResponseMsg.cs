@@ -117,6 +117,17 @@ namespace LibWhipLruTests.Server {
 			Assert.IsTrue(msg.AddRange(data));
 		}
 
+		[Test]
+		public static void TestAuthResponseMsg_AddRange_AfterFullPacket_InvalidOperationException() {
+			var msg = new AuthResponseMsg();
+			var data = new byte[MESSAGE_SIZE];
+			data[0] = 0;
+			Buffer.BlockCopy(System.Text.Encoding.ASCII.GetBytes(HASH_RESULT), 0, data, CHALLENGE_HASH_LOC, HASH_RESULT.Length);
+			msg.AddRange(data);
+
+			Assert.Throws<InvalidOperationException>(() => msg.AddRange(new byte[] { 0 }));
+		}
+
 		#endregion
 
 		#region ChallengeHash
