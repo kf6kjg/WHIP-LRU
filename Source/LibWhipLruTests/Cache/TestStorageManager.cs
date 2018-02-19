@@ -53,18 +53,18 @@ namespace LibWhipLruTests.Cache {
 		[OneTimeSetUp]
 		public static void Startup() {
 			// Folder has to be there or the config fails.
-			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
-			_chattelConfigRead = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
-			_chattelConfigWrite = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
+			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
+			_chattelConfigRead = new ChattelConfiguration(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
+			_chattelConfigWrite = new ChattelConfiguration(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, (IAssetServer)null);
 
 		}
 
 		[SetUp]
 		public static void BeforeEveryTest() {
 			LOG.Info($"Executing {nameof(BeforeEveryTest)}");
-			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
+			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
 
-			_readerLocalStorage = new AssetLocalStorageLmdb(_chattelConfigRead, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
+			_readerLocalStorage = new AssetLocalStorageLmdb(_chattelConfigRead, TestAssetLocalStorageLmdb_Ctor2.DATABASE_MAX_SIZE_BYTES);
 			_chattelReader = new ChattelReader(_chattelConfigRead, _readerLocalStorage);
 			_chattelWriter = new ChattelWriter(_chattelConfigWrite, _readerLocalStorage);
 		}
@@ -79,7 +79,7 @@ namespace LibWhipLruTests.Cache {
 			_readerLocalStorage = null;
 			localStorageDisposal.Dispose();
 
-			TestAssetLocalStorageLmdbCtor.CleanLocalStorageFolder(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
+			TestAssetLocalStorageLmdbCtor.CleanLocalStorageFolder(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
 		}
 
 		#region Ctor
@@ -283,8 +283,8 @@ namespace LibWhipLruTests.Cache {
 		public static void TestStorageManager_CheckAsset_SingleNoExist_CallsServerRequestAsset() {
 			LOG.Info($"Executing {nameof(TestStorageManager_CheckAsset_SingleNoExist_CallsServerRequestAsset)}");
 			var server = Substitute.For<IAssetServer>();
-			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES)) {
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb_Ctor2.DATABASE_MAX_SIZE_BYTES)) {
 				var reader = new ChattelReader(config, localStorage, false);
 				var writer = new ChattelWriter(config, localStorage, false);
 
@@ -307,8 +307,8 @@ namespace LibWhipLruTests.Cache {
 			LOG.Info($"Executing {nameof(TestStorageManager_CheckAsset_DoubleNoExist_CallsServerRequestOnlyOnce)}");
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
-			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES)) {
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb_Ctor2.DATABASE_MAX_SIZE_BYTES)) {
 				var reader = new ChattelReader(config, localStorage, false);
 				var writer = new ChattelWriter(config, localStorage, false);
 
@@ -513,7 +513,7 @@ namespace LibWhipLruTests.Cache {
 		public static void TestStorageManager_StoreAsset_CallsServerPutAsset() {
 			LOG.Info($"Executing {nameof(TestStorageManager_StoreAsset_CallsServerPutAsset)}");
 			var server = Substitute.For<IAssetServer>();
-			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, server);
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, server);
 			using (var readerLocalStorage = new AssetLocalStorageLmdb(config, uint.MaxValue)) {
 				var reader = new ChattelReader(config, readerLocalStorage);
 				var writer = new ChattelWriter(config, readerLocalStorage);
@@ -728,8 +728,8 @@ namespace LibWhipLruTests.Cache {
 		public static void TestStorageManager_GetAsset_SingleNoExist_CallsServerRequestAsset() {
 			LOG.Info($"Executing {nameof(TestStorageManager_GetAsset_SingleNoExist_CallsServerRequestAsset)}");
 			var server = Substitute.For<IAssetServer>();
-			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES)) {
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb_Ctor2.DATABASE_MAX_SIZE_BYTES)) {
 				var reader = new ChattelReader(config, localStorage, false);
 				var writer = new ChattelWriter(config, localStorage, false);
 
@@ -752,8 +752,8 @@ namespace LibWhipLruTests.Cache {
 			LOG.Info($"Executing {nameof(TestStorageManager_GetAsset_DoubleNoExist_CallsServerRequestOnlyOnce)}");
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
-			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES)) {
+			var config = new ChattelConfiguration(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
+			using (var localStorage = new AssetLocalStorageLmdb(config, TestAssetLocalStorageLmdb_Ctor2.DATABASE_MAX_SIZE_BYTES)) {
 				var reader = new ChattelReader(config, localStorage, false);
 				var writer = new ChattelWriter(config, localStorage, false);
 

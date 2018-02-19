@@ -62,7 +62,7 @@ namespace LibWhipLruTests.Cache {
 		public static void Startup() {
 			// Folder has to be there or the config fails.
 			RebuildLocalStorageFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
-			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH, assetServer: null);
+			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH);
 		}
 
 		[SetUp]
@@ -75,8 +75,10 @@ namespace LibWhipLruTests.Cache {
 			CleanLocalStorageFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
 		}
 
+		#region Ctor2
+
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Ctor_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdb_Ctor2_DoesntThrow() {
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdb(
 					_chattelConfigRead,
@@ -86,7 +88,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Ctor_DBPathBlank_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdb_Ctor2_DBPathBlank_DoesntThrow() {
 			var chattelConfigRead = new ChattelConfiguration("", assetServer: null);
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdb(
@@ -97,7 +99,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Ctor_DBPathNull_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdb_Ctor2_DBPathNull_DoesntThrow() {
 			var chattelConfigRead = new ChattelConfiguration(null, assetServer: null);
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdb(
@@ -108,7 +110,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Ctor_DBSize0_ArgumentOutOfRangeException() {
+		public static void TestAssetLocalStorageLmdb_Ctor2_DBSize0_ArgumentOutOfRangeException() {
 			Assert.Throws<ArgumentOutOfRangeException>(() => {
 				using (new AssetLocalStorageLmdb(
 					_chattelConfigRead,
@@ -118,7 +120,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Ctor_DBSizeJustTooSmall_ArgumentOutOfRangeException() {
+		public static void TestAssetLocalStorageLmdb_Ctor2_DBSizeJustTooSmall_ArgumentOutOfRangeException() {
 			Assert.Throws<ArgumentOutOfRangeException>(() => {
 				using (new AssetLocalStorageLmdb(
 					_chattelConfigRead,
@@ -128,7 +130,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Ctor_DBSizeMinimum_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdb_Ctor2_DBSizeMinimum_DoesntThrow() {
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdb(
 					_chattelConfigRead,
@@ -140,7 +142,7 @@ namespace LibWhipLruTests.Cache {
 		// Maxmimum value test invalid: no computer has enough memory to run it.
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Ctor_DBSizeJustOversize_ArgumentOutOfRangeException() {
+		public static void TestAssetLocalStorageLmdb_Ctor2_DBSizeJustOversize_ArgumentOutOfRangeException() {
 			Assert.Throws<ArgumentOutOfRangeException>(() => {
 				using (new AssetLocalStorageLmdb(
 					_chattelConfigRead,
@@ -150,7 +152,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Ctor_DBSizeOversize_ArgumentOutOfRangeException() {
+		public static void TestAssetLocalStorageLmdb_Ctor2_DBSizeOversize_ArgumentOutOfRangeException() {
 			Assert.Throws<ArgumentOutOfRangeException>(() => {
 				using (new AssetLocalStorageLmdb(
 					_chattelConfigRead,
@@ -160,7 +162,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Ctor_RestoresIndex() {
+		public static void TestAssetLocalStorageLmdb_Ctor2_RestoresIndex() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -180,5 +182,247 @@ namespace LibWhipLruTests.Cache {
 				Assert.True(localStorage.Contains(asset.Id));
 			}
 		}
+
+		#endregion
+
+		#region Ctor3, allow asset removal
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3AllowLruPurge_DoesntThrow() {
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					DATABASE_MAX_SIZE_BYTES,
+					true
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3AllowLruPurge_DBPathBlank_DoesntThrow() {
+			var chattelConfigRead = new ChattelConfiguration("", assetServer: null);
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					DATABASE_MAX_SIZE_BYTES,
+					true
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3AllowLruPurge_DBPathNull_DoesntThrow() {
+			var chattelConfigRead = new ChattelConfiguration(null, assetServer: null);
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					DATABASE_MAX_SIZE_BYTES,
+					true
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3AllowLruPurge_DBSize0_ArgumentOutOfRangeException() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					0,
+					true
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3AllowLruPurge_DBSizeJustTooSmall_ArgumentOutOfRangeException() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					uint.MaxValue - 1,
+					true
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3AllowLruPurge_DBSizeMinimum_DoesntThrow() {
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					uint.MaxValue,
+					true
+				)) { }
+			});
+		}
+
+		// Maxmimum value test invalid: no computer has enough memory to run it.
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3AllowLruPurge_DBSizeJustOversize_ArgumentOutOfRangeException() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					long.MaxValue + 1UL,
+					true
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3AllowLruPurge_DBSizeOversize_ArgumentOutOfRangeException() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					ulong.MaxValue,
+					true
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3AllowLruPurge_RestoresIndex() {
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			using (var localStorage = new AssetLocalStorageLmdb(
+				_chattelConfigRead,
+				DATABASE_MAX_SIZE_BYTES,
+					true
+			)) {
+				IChattelLocalStorage localStorageViaInterface = localStorage;
+				localStorageViaInterface.StoreAsset(asset);
+			}
+
+			using (var localStorage = new AssetLocalStorageLmdb(
+				_chattelConfigRead,
+				DATABASE_MAX_SIZE_BYTES,
+					true
+			)) {
+				Assert.True(localStorage.Contains(asset.Id));
+			}
+		}
+
+		#endregion
+
+		#region Ctor3, no asset removal
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3NoLruPurge_DoesntThrow() {
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					DATABASE_MAX_SIZE_BYTES,
+					false
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3NoLruPurge_DBPathBlank_DoesntThrow() {
+			var chattelConfigRead = new ChattelConfiguration("", assetServer: null);
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					DATABASE_MAX_SIZE_BYTES,
+					false
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3NoLruPurge_DBPathNull_DoesntThrow() {
+			var chattelConfigRead = new ChattelConfiguration(null, assetServer: null);
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					DATABASE_MAX_SIZE_BYTES,
+					false
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3NoLruPurge_DBSize0_ArgumentOutOfRangeException() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					0,
+					false
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3NoLruPurge_DBSizeJustTooSmall_ArgumentOutOfRangeException() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					uint.MaxValue - 1,
+					false
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3NoLruPurge_DBSizeMinimum_DoesntThrow() {
+			Assert.DoesNotThrow(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					uint.MaxValue,
+					false
+				)) { }
+			});
+		}
+
+		// Maxmimum value test invalid: no computer has enough memory to run it.
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3NoLruPurge_DBSizeJustOversize_ArgumentOutOfRangeException() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					long.MaxValue + 1UL,
+					false
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3NoLruPurge_DBSizeOversize_ArgumentOutOfRangeException() {
+			Assert.Throws<ArgumentOutOfRangeException>(() => {
+				using (new AssetLocalStorageLmdb(
+					_chattelConfigRead,
+					ulong.MaxValue,
+					false
+				)) { }
+			});
+		}
+
+		[Test]
+		public static void TestAssetLocalStorageLmdb_Ctor3NoLruPurge_RestoresIndex() {
+			var asset = new StratusAsset {
+				Id = Guid.NewGuid(),
+			};
+
+			using (var localStorage = new AssetLocalStorageLmdb(
+				_chattelConfigRead,
+				DATABASE_MAX_SIZE_BYTES,
+				false
+			)) {
+				IChattelLocalStorage localStorageViaInterface = localStorage;
+				localStorageViaInterface.StoreAsset(asset);
+			}
+
+			using (var localStorage = new AssetLocalStorageLmdb(
+				_chattelConfigRead,
+				DATABASE_MAX_SIZE_BYTES,
+				false
+			)) {
+				Assert.True(localStorage.Contains(asset.Id));
+			}
+		}
+
+		#endregion
 	}
 }

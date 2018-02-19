@@ -1,4 +1,4 @@
-﻿// TestAssetLocalStorageLmdb.cs
+﻿// TestAssetLocalStorageLmdb_Ctor3AllowLruPurge.cs
 //
 // Author:
 //       Ricky C <>
@@ -32,7 +32,7 @@ using NUnit.Framework;
 
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
-	public static class TestAssetLocalStorageLmdb {
+	public static class TestAssetLocalStorageLmdb_Ctor3AllowLruPurge {
 		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb";
 		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue/*Min value to get tests to run*/;
 
@@ -44,7 +44,7 @@ namespace LibWhipLruTests.Cache {
 		public static void Startup() {
 			// Folder has to be there or the config fails.
 			TestAssetLocalStorageLmdbCtor.RebuildLocalStorageFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
-			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH, assetServer: null);
+			_chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH);
 		}
 
 		[SetUp]
@@ -53,7 +53,8 @@ namespace LibWhipLruTests.Cache {
 
 			_localStorage = _localStorageLmdb = new AssetLocalStorageLmdb(
 				_chattelConfigRead,
-				DATABASE_MAX_SIZE_BYTES
+				DATABASE_MAX_SIZE_BYTES,
+				true
 			);
 		}
 
@@ -76,7 +77,7 @@ namespace LibWhipLruTests.Cache {
 		#region Store Asset
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_StoreAsset_AssetOnDiskImmediately() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_StoreAsset_AssetOnDiskImmediately() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -86,7 +87,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_StoreAsset_ContainsImmediately() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_StoreAsset_ContainsImmediately() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -96,7 +97,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_StoreAsset_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_StoreAsset_DoesntThrow() {
 			var asset = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -105,12 +106,12 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_StoreAsset_Null_ArgumentNullException() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_StoreAsset_Null_ArgumentNullException() {
 			Assert.Throws<ArgumentNullException>(() => _localStorage.StoreAsset(null));
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_StoreAsset_EmpyId_ArgumentException() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_StoreAsset_EmpyId_ArgumentException() {
 			var asset = new StratusAsset {
 				Id = Guid.Empty,
 			};
@@ -123,12 +124,12 @@ namespace LibWhipLruTests.Cache {
 		#region PurgeAll
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_Null_EmptyLocalStorage_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_Null_EmptyLocalStorage_DoesntThrow() {
 			Assert.DoesNotThrow(() => _localStorage.PurgeAll(null));
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_Null_NonEmptyLocalStorage_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_Null_NonEmptyLocalStorage_DoesntThrow() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -138,7 +139,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_Null_NonEmptyLocalStorage_RemovesDiskEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_Null_NonEmptyLocalStorage_RemovesDiskEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -149,7 +150,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_Null_NonEmptyLocalStorage_RemovesMemoryEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_Null_NonEmptyLocalStorage_RemovesMemoryEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -161,12 +162,12 @@ namespace LibWhipLruTests.Cache {
 
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_EmptyList_EmptyLocalStorage_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_EmptyList_EmptyLocalStorage_DoesntThrow() {
 			Assert.DoesNotThrow(() => _localStorage.PurgeAll(new List<AssetFilter>{ }));
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_EmptyList_NonEmptyLocalStorage_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_EmptyList_NonEmptyLocalStorage_DoesntThrow() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -176,7 +177,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_EmptyList_NonEmptyLocalStorage_RemovesDiskEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_EmptyList_NonEmptyLocalStorage_RemovesDiskEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -187,7 +188,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_EmptyList_NonEmptyLocalStorage_RemovesMemoryEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_EmptyList_NonEmptyLocalStorage_RemovesMemoryEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -199,7 +200,7 @@ namespace LibWhipLruTests.Cache {
 
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_EmptyLocalStorage_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_SingleFilter_EmptyLocalStorage_DoesntThrow() {
 			Assert.DoesNotThrow(() => _localStorage.PurgeAll(new List<AssetFilter> {
 				new AssetFilter {
 					LocalFilter = true,
@@ -208,7 +209,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Match_NonEmptyLocalStorage_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_SingleFilter_Match_NonEmptyLocalStorage_DoesntThrow() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 				Local = true,
@@ -223,7 +224,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Match_NonEmptyLocalStorage_RemovesDiskEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_SingleFilter_Match_NonEmptyLocalStorage_RemovesDiskEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 				Local = true,
@@ -240,7 +241,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Match_NonEmptyLocalStorage_RemovesMemoryEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_SingleFilter_Match_NonEmptyLocalStorage_RemovesMemoryEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 				Local = true,
@@ -257,7 +258,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Nonmatch_NonEmptyLocalStorage_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_SingleFilter_Nonmatch_NonEmptyLocalStorage_DoesntThrow() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 				Local = false,
@@ -272,7 +273,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Nonmatch_NonEmptyLocalStorage_DoesntRemoveDiskEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_SingleFilter_Nonmatch_NonEmptyLocalStorage_DoesntRemoveDiskEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 				Local = false,
@@ -289,7 +290,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_Nonmatch_NonEmptyLocalStorage_DoesntRemoveMemoryEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_SingleFilter_Nonmatch_NonEmptyLocalStorage_DoesntRemoveMemoryEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 				Local = false,
@@ -306,7 +307,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_PurgeAll_SingleFilter_OneMatch_OneNonmatch_Correct() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_PurgeAll_SingleFilter_OneMatch_OneNonmatch_Correct() {
 			var assetTest1 = new StratusAsset {
 				Id = Guid.NewGuid(),
 				Local = true,
@@ -333,17 +334,17 @@ namespace LibWhipLruTests.Cache {
 		#region Purge
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Purge_EmpyId_ArgumentException() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_Purge_EmpyId_ArgumentException() {
 			Assert.Throws<ArgumentException>(() => _localStorage.Purge(Guid.Empty));
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Purge_Unknown_AssetNotFoundException() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_Purge_Unknown_AssetNotFoundException() {
 			Assert.Throws<AssetNotFoundException>(() => _localStorage.Purge(Guid.NewGuid()));
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Purge_Known_DoesntThrow() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_Purge_Known_DoesntThrow() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -354,7 +355,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Purge_NonEmptyLocalStorage_RemovesDiskEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_Purge_NonEmptyLocalStorage_RemovesDiskEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -367,7 +368,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Purge_NonEmptyLocalStorage_RemovesMemoryEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_Purge_NonEmptyLocalStorage_RemovesMemoryEntry() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -380,7 +381,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Purge_NonEmptyLocalStorage_LeavesOtherDiskEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_Purge_NonEmptyLocalStorage_LeavesOtherDiskEntry() {
 			var assetTest1 = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -397,7 +398,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_Purge_NonEmptyLocalStorage_LeavesOtherMemoryEntry() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_Purge_NonEmptyLocalStorage_LeavesOtherMemoryEntry() {
 			var assetTest1 = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -418,23 +419,23 @@ namespace LibWhipLruTests.Cache {
 		#region TryGetAsset
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_TryGetAsset_EmpyId_ArgumentException() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_TryGetAsset_EmpyId_ArgumentException() {
 			Assert.Throws<ArgumentException>(() => _localStorage.TryGetAsset(Guid.Empty, out var assetResult));
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_TryGetAsset_Unknown_False() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_TryGetAsset_Unknown_False() {
 			Assert.False(_localStorage.TryGetAsset(Guid.NewGuid(), out var assetResult));
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_TryGetAsset_Unknown_OutNull() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_TryGetAsset_Unknown_OutNull() {
 			_localStorage.TryGetAsset(Guid.NewGuid(), out var assetResult);
 			Assert.Null(assetResult);
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_TryGetAsset_Known_True() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_TryGetAsset_Known_True() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};
@@ -445,7 +446,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestAssetLocalStorageLmdb_TryGetAsset_Known_OutEqual() {
+		public static void TestAssetLocalStorageLmdbCtor3AllowLruPurge_TryGetAsset_Known_OutEqual() {
 			var assetTest = new StratusAsset {
 				Id = Guid.NewGuid(),
 			};

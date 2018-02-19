@@ -53,15 +53,32 @@ namespace LibWhipLru.Cache {
 		private readonly OrderedGuidCache _activeIds;
 		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
 
+		private readonly bool _removeLruAssetsWhenFull;
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.AssetLocalStorageLmdb"/> class specified to be limited to the given amount of disk space.
 		/// It's highly recommended to set the disk space limit to a multiple of the block size so that you don't waste space you could be using.
+		/// Assumes you are using this storage in cache mode, so will delete least recently accessed assets when full.
 		/// </summary>
 		/// <param name="config">ChattelConfiguration object.</param>
 		/// <param name="maxAssetLocalStorageDiskSpaceByteCount">Max asset local storage disk space, in bytes.</param>
 		public AssetLocalStorageLmdb(
 			ChattelConfiguration config,
 			ulong maxAssetLocalStorageDiskSpaceByteCount
+		) : this(config, maxAssetLocalStorageDiskSpaceByteCount, true) {
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.AssetLocalStorageLmdb"/> class specified to be limited to the given amount of disk space.
+		/// It's highly recommended to set the disk space limit to a multiple of the block size so that you don't waste space you could be using.
+		/// </summary>
+		/// <param name="config">ChattelConfiguration object.</param>
+		/// <param name="maxAssetLocalStorageDiskSpaceByteCount">Max asset local storage disk space, in bytes.</param>
+		/// <param name="removeLruAssetsWhenFull">Specify if you wish this to remove least recently used assets when maxAssetLocalStorageDiskSpaceByteCount has been reached or not.</param>
+		public AssetLocalStorageLmdb(
+			ChattelConfiguration config,
+			ulong maxAssetLocalStorageDiskSpaceByteCount,
+			bool removeLruAssetsWhenFull
 		) {
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 
@@ -91,6 +108,7 @@ namespace LibWhipLru.Cache {
 			}
 
 			_activeIds = new OrderedGuidCache();
+			_removeLruAssetsWhenFull = removeLruAssetsWhenFull;
 
 			LOG.Info($"Restoring index from DB.");
 			try {

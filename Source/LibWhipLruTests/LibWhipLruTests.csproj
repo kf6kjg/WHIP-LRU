@@ -126,7 +126,7 @@
     <Compile Include="RandomUtil.cs" />
     <Compile Include="Cache\TestOrderedGuidCache.cs" />
     <Compile Include="Cache\TestStorageManager.cs" />
-    <Compile Include="Cache\TestAssetLocalStorageLmdb.cs" />
+    <Compile Include="Cache\TestAssetLocalStorageLmdb_Ctor2.cs" />
     <Compile Include="Cache\TestAssetLocalStorageLmdbCtor.cs" />
     <Compile Include="Util\TestPIDFileManager.cs" />
     <Compile Include="Server\TestAuthChallengeMsg.cs" />
@@ -136,6 +136,8 @@
     <Compile Include="Server\TestServerResponseMsg.cs" />
     <Compile Include="Server\TestAuthResponseMsg.cs" />
     <Compile Include="Server\TestClientRequestMsg.cs" />
+    <Compile Include="Cache\TestAssetLocalStorageLmdb_Ctor3AllowLruPurge.cs" />
+    <Compile Include="Cache\TestAssetLocalStorageLmdb_Ctor3NoLruPurge.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cache\" />

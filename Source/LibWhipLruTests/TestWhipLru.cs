@@ -51,17 +51,17 @@ namespace LibWhipLruTests {
 		public static void BeforeEveryTest() {
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body
 			try {
-				Directory.Delete(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, true);
+				Directory.Delete(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, true);
 			}
 			catch {
 			}
 #pragma warning restore RECS0022 // A catch clause that catches System.Exception and has an empty body
 
-			Directory.CreateDirectory(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH);
-			var chattelConfigRead = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH);
-			var chattelConfigWrite = new ChattelConfiguration(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH);
+			Directory.CreateDirectory(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH);
+			var chattelConfigRead = new ChattelConfiguration(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH);
+			var chattelConfigWrite = new ChattelConfiguration(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH);
 
-			_readerLocalStorage = new AssetLocalStorageLmdb(chattelConfigRead, TestAssetLocalStorageLmdb.DATABASE_MAX_SIZE_BYTES);
+			_readerLocalStorage = new AssetLocalStorageLmdb(chattelConfigRead, TestAssetLocalStorageLmdb_Ctor2.DATABASE_MAX_SIZE_BYTES);
 			_chattelReader = new ChattelReader(chattelConfigRead, _readerLocalStorage);
 			_chattelWriter = new ChattelWriter(chattelConfigWrite, _readerLocalStorage);
 			_storageManager = new StorageManager(
@@ -78,7 +78,7 @@ namespace LibWhipLruTests {
 			_readerLocalStorage = null;
 			readerDispose.Dispose();
 
-			Directory.Delete(TestAssetLocalStorageLmdb.DATABASE_FOLDER_PATH, true);
+			Directory.Delete(TestAssetLocalStorageLmdb_Ctor2.DATABASE_FOLDER_PATH, true);
 		}
 
 		#region Ctor
