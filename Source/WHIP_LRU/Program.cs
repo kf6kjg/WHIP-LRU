@@ -60,16 +60,18 @@ namespace WHIP_LRU {
 			var pidFileManager = new PIDFileManager(startupConfig.GetString("pidfile", string.Empty));
 
 			// Configure Log4Net
-			var logConfigFile = startupConfig.GetString("logconfig", string.Empty);
-			if (string.IsNullOrEmpty(logConfigFile)) {
-				XmlConfigurator.Configure();
-				LogBootMessage();
-				LOG.Info("Configured log4net using ./WHIP_LRU.exe.config as the default.");
-			}
-			else {
-				XmlConfigurator.Configure(new FileInfo(logConfigFile));
-				LogBootMessage();
-				LOG.Info($"Configured log4net using \"{logConfigFile}\" as configuration file.");
+			{
+				var logConfigFile = startupConfig.GetString("logconfig", string.Empty);
+				if (string.IsNullOrEmpty(logConfigFile)) {
+					XmlConfigurator.Configure();
+					LogBootMessage();
+					LOG.Info("Configured log4net using ./WHIP_LRU.exe.config as the default.");
+				}
+				else {
+					XmlConfigurator.Configure(new FileInfo(logConfigFile));
+					LogBootMessage();
+					LOG.Info($"Configured log4net using \"{logConfigFile}\" as configuration file.");
+				}
 			}
 
 			// Configure nIni aliases and locale
