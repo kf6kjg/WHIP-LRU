@@ -39,8 +39,6 @@ namespace LibWhipLru.Server {
 		private const short UUID_TAG_LOCATION = 1;
 		private const short UUID_LEN = 32;
 
-		private long _bytesRead;
-
 		/// <summary>
 		/// Gets the request type.
 		/// </summary>
@@ -90,8 +88,6 @@ namespace LibWhipLru.Server {
 			if (IsReady) { // Refuse to append more data once loaded.
 				throw new InvalidOperationException("You cannot reuse messages!");
 			}
-
-			_bytesRead += data.Length;
 
 			var headerBytesInData = 0;
 
