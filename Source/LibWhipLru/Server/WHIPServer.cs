@@ -211,6 +211,7 @@ namespace LibWhipLru.Server {
 
 			// Create the state object.
 			var state = new StateObject {
+				Buffer = new byte[StateObject.BUFFER_SIZE],
 				Client = new ClientInfo {
 					State = State.Acceptance,
 					RequestInfo = "(connecting)",
@@ -243,12 +244,12 @@ namespace LibWhipLru.Server {
 
 			state.Client.State = State.Challenged;
 			state.Client.RequestInfo = null;
-			StartReceive(state, new AuthResponseMsg(), ReadCallback);
+			StartReceive(ref state, new AuthResponseMsg(), ReadCallback);
 
 			LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sending challenge.");
 
 			try {
-				Send(state, response);
+				Send(ref state, response);
 			}
 			catch (Exception e) {
 				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding to client connection request.", e);
@@ -259,9 +260,8 @@ namespace LibWhipLru.Server {
 			_activeConnections.AddOrUpdate(state.Client.RemoteEndpoint, state.Client, (key, client) => state.Client);
 		}
 
-		private void StartReceive(StateObject state, IByteArrayAppendable message, AsyncCallback callback) {
+		private void StartReceive(ref StateObject state, IByteArrayAppendable message, AsyncCallback callback) {
 			Contract.Requires(callback != null);
-			Contract.Requires(state != null);
 			Contract.Requires(message != null);
 
 			state.Client.RequestInfo = null;
@@ -269,9 +269,8 @@ namespace LibWhipLru.Server {
 			state.WorkSocket.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(ReadCallback), state);
 		}
 
-		private void ContinueReceive(StateObject state, AsyncCallback callback) {
+		private void ContinueReceive(ref StateObject state, AsyncCallback callback) {
 			Contract.Requires(callback != null);
-			Contract.Requires(state != null);
 
 			state.WorkSocket.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(ReadCallback), state);
 		}
@@ -289,8 +288,8 @@ namespace LibWhipLru.Server {
 			}
 			catch (Exception e) {
 				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught reading data.", e);
-				Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
-				StartReceive(state, state.Client.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
+				Send(ref state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
+				StartReceive(ref state, state.Client.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
 				return;
 			}
 
@@ -303,8 +302,8 @@ namespace LibWhipLru.Server {
 				}
 				catch (Exception e) {
 					LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught while extracting data from inbound message.", e);
-					Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
-					StartReceive(state, state.Client.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
+					Send(ref state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
+					StartReceive(ref state, state.Client.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
 					return;
 				}
 
@@ -323,8 +322,8 @@ namespace LibWhipLru.Server {
 						}
 						catch (Exception e) {
 							LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught from request handler while processing message.", e);
-							Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
-							StartReceive(state, new ClientRequestMsg(), ReadCallback);
+							Send(ref state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, message.AssetId));
+							StartReceive(ref state, new ClientRequestMsg(), ReadCallback);
 							return;
 						}
 					}
@@ -345,17 +344,17 @@ namespace LibWhipLru.Server {
 
 						try {
 							if (hashCorrect) {
-								Send(state, response);
-								StartReceive(state, new ClientRequestMsg(), ReadCallback);
+								Send(ref state, response);
+								StartReceive(ref state, new ClientRequestMsg(), ReadCallback);
 							}
 							else {
-								SendAndClose(state, response);
+								SendAndClose(ref state, response);
 							}
 						}
 						catch (Exception e) {
 							LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding to client.", e);
-							Send(state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
-							StartReceive(state, new ClientRequestMsg(), ReadCallback);
+							Send(ref state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
+							StartReceive(ref state, new ClientRequestMsg(), ReadCallback);
 							return;
 						}
 					}
@@ -364,7 +363,7 @@ namespace LibWhipLru.Server {
 					// Not all data received. Get more.
 					LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Message incomplete, getting next packet.");
 
-					ContinueReceive(state, ReadCallback);
+					ContinueReceive(ref state, ReadCallback);
 				}
 			}
 			else {
@@ -380,15 +379,15 @@ namespace LibWhipLru.Server {
 			LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Replying to request message: {response.GetHeaderSummary()}.");
 
 			try {
-				Send(state, response);
-				StartReceive(state, new ClientRequestMsg(), ReadCallback);
+				Send(ref state, response);
+				StartReceive(ref state, new ClientRequestMsg(), ReadCallback);
 			}
 			catch (Exception e) {
 				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught responding to client.", e);
 			}
 		}
 
-		private void Send(StateObject state, IByteArraySerializable response) {
+		private void Send(ref StateObject state, IByteArraySerializable response) {
 			var handler = state.WorkSocket;
 
 			if (response != null) {
@@ -432,7 +431,7 @@ namespace LibWhipLru.Server {
 			}
 		}
 
-		private void SendAndClose(StateObject state, IByteArraySerializable response) {
+		private void SendAndClose(ref StateObject state, IByteArraySerializable response) {
 			var handler = state.WorkSocket;
 
 			if (response != null) {
@@ -483,7 +482,7 @@ namespace LibWhipLru.Server {
 		}
 
 		// State object for reading client data asynchronously
-		private class StateObject {
+		private struct StateObject {
 			// Size of receive buffer.
 			public const int BUFFER_SIZE = 4098;
 
@@ -491,7 +490,7 @@ namespace LibWhipLru.Server {
 			public Socket WorkSocket;
 
 			// Receive buffer.
-			public byte[] Buffer = new byte[BUFFER_SIZE];
+			public byte[] Buffer;
 
 			// Received data.
 			public IByteArrayAppendable Message;
