@@ -26,7 +26,7 @@
 using System;
 
 namespace LibWhipLru.Server {
-	internal class ClientInfo {
+	internal struct ClientInfo {
 		public string RemoteEndpoint { get; internal set; }
 
 		public State State { get; internal set; }
@@ -34,9 +34,6 @@ namespace LibWhipLru.Server {
 		public string RequestInfo { get; internal set; }
 
 		public DateTimeOffset Started { get; internal set; }
-
-		internal ClientInfo() {
-		}
 	}
 
 	internal enum State {
