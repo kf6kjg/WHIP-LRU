@@ -114,7 +114,7 @@ namespace UnitTests {
 
 			Thread.Sleep(500);
 
-			// Clear the PID file if it exists. 
+			// Clear the PID file if it exists.
 			File.Delete(Constants.PID_FILE_PATH);
 
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body

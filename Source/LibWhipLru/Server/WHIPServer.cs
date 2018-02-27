@@ -160,25 +160,25 @@ namespace LibWhipLru.Server {
 		public void Start() {
 			LOG.Debug($"{_localEndPoint} - Starting server.");
 
-			// Create a TCP/IP socket.  
+			// Create a TCP/IP socket.
 			using (var listener = new Socket(_localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)) {
-				// Bind the socket to the local endpoint and listen for incoming connections.  
+				// Bind the socket to the local endpoint and listen for incoming connections.
 				listener.Bind(_localEndPoint);
 				listener.Listen(_listenBacklogLength);
 
 				var hadConnection = true; // Lies, damnable lies!
 				_isRunning = true;
 				while (_isRunning) {
-					// Set the event to nonsignaled state.  
+					// Set the event to nonsignaled state.
 					_allDone.Reset();
 
 					if (hadConnection) {
-						// Start an asynchronous socket to listen for connections.  
+						// Start an asynchronous socket to listen for connections.
 						LOG.Debug($"{_localEndPoint} - Waiting for a connection...");
 						listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
 					}
 
-					// Wait until a connection is made before continuing.  
+					// Wait until a connection is made before continuing.
 					hadConnection = _allDone.WaitOne(500); // Have to have a timeout or you can run across a situation where this jsut hangs arund instead of dying after stop is called.
 				}
 			}
@@ -201,15 +201,15 @@ namespace LibWhipLru.Server {
 				return;
 			}
 
-			// Signal the main thread to continue.  
+			// Signal the main thread to continue.
 			_allDone.Set();
 
 			LOG.Debug($"{_localEndPoint}, unknown, Acceptance - Accepting connection.");
 
-			// Get the socket that handles the client request.  
+			// Get the socket that handles the client request.
 			var listener = (Socket)ar.AsyncState;
 
-			// Create the state object.  
+			// Create the state object.
 			var state = new StateObject {
 				Client = new ClientInfo {
 					State = State.Acceptance,
@@ -277,12 +277,12 @@ namespace LibWhipLru.Server {
 		}
 
 		private void ReadCallback(IAsyncResult ar) {
-			// Retrieve the state object and the handler socket  
-			// from the asynchronous state object.  
+			// Retrieve the state object and the handler socket
+			// from the asynchronous state object.
 			var state = (StateObject)ar.AsyncState;
 			var handler = state.WorkSocket;
 
-			// Read data from the client socket.   
+			// Read data from the client socket.
 			int bytesRead = 0;
 			try {
 				bytesRead = handler.EndReceive(ar);
@@ -361,7 +361,7 @@ namespace LibWhipLru.Server {
 					}
 				}
 				else {
-					// Not all data received. Get more.  
+					// Not all data received. Get more.
 					LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Message incomplete, getting next packet.");
 
 					ContinueReceive(state, ReadCallback);
@@ -392,10 +392,10 @@ namespace LibWhipLru.Server {
 			var handler = state.WorkSocket;
 
 			if (response != null) {
-				// Convert the string data to byte data using ASCII encoding.  
+				// Convert the string data to byte data using ASCII encoding.
 				var byteData = response.ToByteArray();
 
-				// Begin sending the data to the remote device.  
+				// Begin sending the data to the remote device.
 				if (handler.Connected) {
 					LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sending {byteData.Length} bytes.");
 					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendCallback), state);
@@ -418,12 +418,12 @@ namespace LibWhipLru.Server {
 		}
 
 		private void SendCallback(IAsyncResult ar) {
-			// Retrieve the socket from the state object.  
+			// Retrieve the socket from the state object.
 			var state = (StateObject)ar.AsyncState;
 			var handler = state.WorkSocket;
 
 			try {
-				// Complete sending the data to the remote device.  
+				// Complete sending the data to the remote device.
 				var bytesSent = handler.EndSend(ar);
 				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sent {bytesSent} bytes.");
 			}
@@ -436,10 +436,10 @@ namespace LibWhipLru.Server {
 			var handler = state.WorkSocket;
 
 			if (response != null) {
-				// Convert the string data to byte data using ASCII encoding.  
+				// Convert the string data to byte data using ASCII encoding.
 				var byteData = response.ToByteArray();
 
-				// Begin sending the data to the remote device.  
+				// Begin sending the data to the remote device.
 				if (handler.Connected) {
 					LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sending {byteData.Length} bytes and then closing connection.");
 					handler.BeginSend(byteData, 0, byteData.Length, SocketFlags.None, new AsyncCallback(SendAndCloseCallback), state);
@@ -462,12 +462,12 @@ namespace LibWhipLru.Server {
 		}
 
 		private void SendAndCloseCallback(IAsyncResult ar) {
-			// Retrieve the socket from the state object.  
+			// Retrieve the socket from the state object.
 			var state = (StateObject)ar.AsyncState;
 			var handler = state.WorkSocket;
 
 			try {
-				// Complete sending the data to the remote device.  
+				// Complete sending the data to the remote device.
 				var bytesSent = handler.EndSend(ar);
 				LOG.Debug($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Sent {bytesSent} bytes, and am closing the connection.");
 
@@ -482,18 +482,18 @@ namespace LibWhipLru.Server {
 			_activeConnections.TryRemove(state.Client.RemoteEndpoint, out var junk);
 		}
 
-		// State object for reading client data asynchronously  
+		// State object for reading client data asynchronously
 		private class StateObject {
-			// Size of receive buffer.  
+			// Size of receive buffer.
 			public const int BUFFER_SIZE = 4098;
 
-			// Client  socket.  
+			// Client  socket.
 			public Socket WorkSocket;
 
-			// Receive buffer.  
+			// Receive buffer.
 			public byte[] Buffer = new byte[BUFFER_SIZE];
 
-			// Received data.  
+			// Received data.
 			public IByteArrayAppendable Message;
 
 			// Current client state. Shared with the ActiveConnections bag.

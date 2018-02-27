@@ -146,7 +146,7 @@ namespace LibWhipLru.Cache {
 		public void CheckAsset(Guid assetId, FoundCallback foundCallback) => GetAsset(assetId, asset => foundCallback(asset != null), () => foundCallback(false));
 
 		/// <summary>
-		/// Stores the asset.  Mainly just a wrapper for the 
+		/// Stores the asset.  Mainly just a wrapper for the assetWriter PutAssetSync method.
 		/// </summary>
 		/// <param name="asset">Asset.</param>
 		/// <param name="resultCallback">Result callback.</param>
