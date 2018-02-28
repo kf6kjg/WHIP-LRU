@@ -315,8 +315,8 @@ namespace LibWhipLruTests.Cache {
 
 			var removed = cache.Remove(3, out var sizeCleared);
 
-			Assert.That(removed, Contains.Item(guidRemoved1));
-			Assert.That(removed, Contains.Item(guidRemoved2));
+			Assert.That(removed.Keys, Contains.Item(guidRemoved1));
+			Assert.That(removed.Keys, Contains.Item(guidRemoved2));
 		}
 
 		[Test]
