@@ -149,12 +149,30 @@ namespace LibWhipLru.Cache {
 		}
 
 		/// <summary>
-		/// Whether or not the asset with that ID is stored in local storage and available for reading.
+		/// Whether or not the asset with that ID was stored in local storage and therefore should be available for reading.
+		/// This is a quick memory-based check, not an actual disk hit.
 		/// </summary>
-		/// <returns>If the asset ID is known and available.</returns>
+		/// <returns>If the asset ID is known and probably available.</returns>
+		/// <param name="assetId">Asset identifier.</param>
+		public bool AssetWasWrittenToDisk(Guid assetId) {
+			return _activeIds.AssetSize(assetId) > 0;
+		}
+
+		/// <summary>
+		/// Whether or not the asset with that ID is actually located in local storage byt directly querying the storage.
+		/// </summary>
+		/// <returns>If the asset ID is known and on disk.</returns>
 		/// <param name="assetId">Asset identifier.</param>
 		public bool AssetOnDisk(Guid assetId) {
-			return _activeIds.AssetSize(assetId) > 0;
+			try {
+				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
+				using (var db = tx.OpenDatabase("assetstore")) {
+					return tx.ContainsKey(db, assetId.ToByteArray());
+				}
+			}
+			catch (LightningException e) {
+				throw new LocalStorageException($"Attempting to read locally stored asset with ID {assetId} threw an exception!", e);
+			}
 		}
 
 		#region IChattelLocalStorage

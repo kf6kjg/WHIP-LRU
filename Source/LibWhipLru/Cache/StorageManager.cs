@@ -113,9 +113,9 @@ namespace LibWhipLru.Cache {
 			}
 
 			// Solves GET in middle of PUT situation.
-			if (_localStorage.Contains(assetId) && !_localStorage.AssetOnDisk(assetId)) {
+			if (_localStorage.Contains(assetId) && !_localStorage.AssetWasWrittenToDisk(assetId)) {
 				// Asset exists, just might not be on disk yet. Wait here until the asset makes it to disk.
-				SpinWait.SpinUntil(() => _localStorage.AssetOnDisk(assetId));
+				SpinWait.SpinUntil(() => _localStorage.AssetWasWrittenToDisk(assetId));
 			}
 
 			_assetReader.GetAssetAsync(assetId, asset => {
