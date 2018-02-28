@@ -40,7 +40,7 @@ namespace LibWhipLru.Cache {
 	/// </summary>
 	public class AssetLocalStorageLmdb : IChattelLocalStorage, IDisposable {
 		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = uint.MaxValue/*4TB, maximum size of single asset*/;
-		private static readonly string DB_NAME = "assetstore";
+		private static readonly string DB_NAME = null;
 
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
