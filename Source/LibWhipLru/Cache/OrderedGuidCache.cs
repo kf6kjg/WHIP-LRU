@@ -57,6 +57,20 @@ namespace LibWhipLru.Cache {
 		public bool TryAdd(Guid uuid, ulong size) => _cache.TryAdd(uuid, new MetaAsset{ Id = uuid, LastAccessed = DateTimeOffset.UtcNow, Size = size, });
 
 		/// <summary>
+		/// Tries to add a previously removed entry to the cache. Does nothing to disk.
+		/// </summary>
+		/// <returns><c>true</c>, if add was successful, <c>false</c> otherwise.</returns>
+		/// <param name="removedObject">Meta asset as returned from the <see cref="Remove"/> method .</param>
+		public bool TryAdd(object removedObject) {
+			var meta = removedObject as MetaAsset;
+			if (meta == null) {
+				throw new ArgumentOutOfRangeException(nameof(removedObject), "Null or invalid object type.");
+			}
+
+			return _cache.TryAdd(meta.Id, meta);
+		}
+
+		/// <summary>
 		/// Empties the memory cache. Does nothing to disk.
 		/// </summary>
 		public void Clear() => _cache.Clear();
@@ -133,10 +147,10 @@ namespace LibWhipLru.Cache {
 		/// This is an expensive and slow operation.
 		/// </summary>
 		/// <param name="size">Size</param>
-		public IEnumerable<Guid> Remove(ulong size, out ulong sizeCleared) {
+		public IDictionary<Guid, object> Remove(ulong size, out ulong sizeCleared) {
 			var sorted = _cache.Values.OrderBy(ma => ma.LastAccessed);
 
-			var removed = new List<Guid>();
+			var removed = new Dictionary<Guid, object>();
 			sizeCleared = 0;
 
 			foreach (var ma in sorted) {
@@ -145,7 +159,7 @@ namespace LibWhipLru.Cache {
 				}
 
 				if (ma.Size > 0 && TryRemove(ma.Id)) {
-					removed.Add(ma.Id);
+					removed.Add(ma.Id, ma);
 					sizeCleared += ma.Size;
 				}
 			}

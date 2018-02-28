@@ -421,17 +421,27 @@ namespace LibWhipLru.Cache {
 
 								var removedAssetIds = _activeIds.Remove(spaceNeeded * 2, out ulong bytesRemoved);
 
+								var assetsWereRemoved = false;
+
 								try {
 									using (var tx = _dbenv.BeginTransaction())
 									using (var db = tx.OpenDatabase(DB_NAME)) {
-										foreach (var assetId in removedAssetIds) {
+										foreach (var assetId in removedAssetIds.Keys) {
 											tx.Delete(db, assetId.ToByteArray());
 										}
 										tx.Commit();
+										assetsWereRemoved = true;
 									}
 								}
 								catch (LightningException e) {
 									LOG.Warn($"{asset.Id} had an exception while attempting to clear some space in the local asset store.", e);
+								}
+
+								if (!assetsWereRemoved) {
+									// The removals failed to commit, add them back to the memory cache.
+									foreach (var metaObject in removedAssetIds.Values) {
+										_activeIds.TryAdd(metaObject);
+									}
 								}
 							}
 							// else skip as another thread is already clearing some space.
