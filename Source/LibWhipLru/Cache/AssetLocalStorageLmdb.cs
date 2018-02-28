@@ -40,6 +40,7 @@ namespace LibWhipLru.Cache {
 	/// </summary>
 	public class AssetLocalStorageLmdb : IChattelLocalStorage, IDisposable {
 		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = uint.MaxValue/*4TB, maximum size of single asset*/;
+		private static readonly string DB_NAME = "assetstore";
 
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -113,7 +114,7 @@ namespace LibWhipLru.Cache {
 			LOG.Info($"Restoring index from DB.");
 			try {
 				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.None))
-				using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+				using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
 					// Probably not the most effecient way to do this.
 					var assetData = tx.CreateCursor(db)
 						.Select(kvp => {
@@ -166,7 +167,7 @@ namespace LibWhipLru.Cache {
 		public bool AssetOnDisk(Guid assetId) {
 			try {
 				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
-				using (var db = tx.OpenDatabase("assetstore")) {
+				using (var db = tx.OpenDatabase(DB_NAME)) {
 					return tx.ContainsKey(db, assetId.ToByteArray());
 				}
 			}
@@ -221,7 +222,7 @@ namespace LibWhipLru.Cache {
 						_activeIds.Clear();
 
 						using (var tx = _dbenv.BeginTransaction())
-						using (var db = tx.OpenDatabase("assetstore")) {
+						using (var db = tx.OpenDatabase(DB_NAME)) {
 							tx.TruncateDatabase(db);
 							tx.Commit();
 						}
@@ -246,7 +247,7 @@ namespace LibWhipLru.Cache {
 
 			try {
 				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
-				using (var db = tx.OpenDatabase("assetstore")) {
+				using (var db = tx.OpenDatabase(DB_NAME)) {
 					// Probably not the most effecient way to do this.
 					var cursor = tx
 						.CreateCursor(db)
@@ -315,7 +316,7 @@ namespace LibWhipLru.Cache {
 				try {
 					LOG.Info($"Purging {assetId}.");
 					using (var tx = _dbenv.BeginTransaction())
-					using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.None })) {
+					using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.None })) {
 						tx.Delete(db, assetId.ToByteArray());
 						tx.Commit();
 					}
@@ -386,7 +387,7 @@ namespace LibWhipLru.Cache {
 				LightningException lightningException = null;
 				try {
 					using (var tx = _dbenv.BeginTransaction())
-					using (var db = tx.OpenDatabase("assetstore", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+					using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
 						tx.Put(db, asset.Id.ToByteArray(), buffer);
 						tx.Commit();
 					}
@@ -422,7 +423,7 @@ namespace LibWhipLru.Cache {
 
 								try {
 									using (var tx = _dbenv.BeginTransaction())
-									using (var db = tx.OpenDatabase("assetstore")) {
+									using (var db = tx.OpenDatabase(DB_NAME)) {
 										foreach (var assetId in removedAssetIds) {
 											tx.Delete(db, asset.Id.ToByteArray());
 										}
@@ -455,7 +456,7 @@ namespace LibWhipLru.Cache {
 		private StratusAsset ReadAssetFromDisk(Guid assetId) {
 			try {
 				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
-				using (var db = tx.OpenDatabase("assetstore")) {
+				using (var db = tx.OpenDatabase(DB_NAME)) {
 					if (tx.TryGet(db, assetId.ToByteArray(), out byte[] buffer)) {
 						using (var stream = new MemoryStream(buffer)) {
 							return ProtoBuf.Serializer.Deserialize<StratusAsset>(stream);
