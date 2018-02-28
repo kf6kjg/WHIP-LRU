@@ -34,7 +34,7 @@ namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	public static class TestAssetLocalStorageLmdb_Ctor3NoLruPurge {
 		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb";
-		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue/*Min value to get tests to run*/;
+		public const ulong DATABASE_MAX_SIZE_BYTES = 4UL * 1024 * 1024/*Min value to get tests to run*/;
 
 		private static ChattelConfiguration _chattelConfigRead;
 		private static AssetLocalStorageLmdb _localStorageLmdb;
@@ -117,6 +117,106 @@ namespace LibWhipLruTests.Cache {
 			};
 
 			Assert.Throws<ArgumentException>(() => _localStorage.StoreAsset(asset));
+		}
+
+		[Test]
+		[Timeout(2000)]
+		public static void TestAssetLocalStorageLmdbCtor3NoLruPurge_StoreAsset_Full_FailsLast_Asset() {
+			var assetId1 = Guid.NewGuid();
+			var assetId2 = Guid.NewGuid();
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId1,
+				Data = new byte[DATABASE_MAX_SIZE_BYTES / 4],
+			});
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = Guid.NewGuid(),
+				Data = new byte[DATABASE_MAX_SIZE_BYTES / 4],
+			});
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = Guid.NewGuid(),
+				Data = new byte[DATABASE_MAX_SIZE_BYTES / 4],
+			});
+
+			Assert.Throws<WriteCacheFullException>(() => _localStorage.StoreAsset(new StratusAsset {
+				Id = assetId2,
+				Data = new byte[DATABASE_MAX_SIZE_BYTES / 3],
+			}));
+		}
+
+		[Test]
+		[Timeout(2000)]
+		public static void TestAssetLocalStorageLmdbCtor3NoLruPurge_StoreAsset_Full_AllExpectedAssetsExist() {
+			var assetId1 = Guid.NewGuid();
+			var assetId2 = Guid.NewGuid();
+			var assetId3 = Guid.NewGuid();
+			var assetId4 = Guid.NewGuid();
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId1,
+				Data = new byte[DATABASE_MAX_SIZE_BYTES / 4],
+			});
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId2,
+				Data = new byte[DATABASE_MAX_SIZE_BYTES / 3],
+			});
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId3,
+				Data = new byte[DATABASE_MAX_SIZE_BYTES / 3],
+			});
+
+			try {
+				_localStorage.StoreAsset(new StratusAsset {
+					Id = assetId4,
+					Data = new byte[DATABASE_MAX_SIZE_BYTES / 8],
+				});
+			}
+			catch (WriteCacheFullException) {
+				// Skip it if it happens, which it very much should in this case.
+			}
+
+			var errors = new List<string>();
+
+			if (_localStorageLmdb.AssetOnDisk(assetId1)) {
+				errors.Add("Missing Asset 1");
+			}
+
+			if (_localStorageLmdb.AssetOnDisk(assetId2)) {
+				errors.Add("Missing Asset 2");
+			}
+
+			if (_localStorageLmdb.AssetOnDisk(assetId3)) {
+				errors.Add("Missing Asset 3");
+			}
+
+			if (!_localStorageLmdb.AssetOnDisk(assetId4)) {
+				errors.Add("Asset 4 should have been deleted");
+			}
+
+			if (errors.Count > 0) {
+				Assert.Fail(string.Join(", ", errors));
+			}
+		}
+
+		[Test]
+		[Timeout(40000)]
+		public static void TestAssetLocalStorageLmdbCtor3NoLruPurge_StoreAsset_Purge_Cycle() {
+			Assert.DoesNotThrow(() => {
+				for (var i = 0; i < 1000; ++i) {
+					var assetId = Guid.NewGuid();
+
+					_localStorage.StoreAsset(new StratusAsset {
+						Id = assetId,
+						Data = new byte[RandomUtil.NextUInt() % (DATABASE_MAX_SIZE_BYTES / 8 - 4096) + 4096],
+					});
+
+					_localStorage.Purge(assetId);
+				}
+			});
 		}
 
 		#endregion

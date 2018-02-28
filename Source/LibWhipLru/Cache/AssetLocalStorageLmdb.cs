@@ -83,9 +83,9 @@ namespace LibWhipLru.Cache {
 		) {
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 
-			if (maxAssetLocalStorageDiskSpaceByteCount < uint.MaxValue) {
-				throw new ArgumentOutOfRangeException(nameof(maxAssetLocalStorageDiskSpaceByteCount), $"Asset local storage disk space should be able to fit at least one maximum-sized asset, and thus should be at least {uint.MaxValue} bytes.");
-			}
+			//if (maxAssetLocalStorageDiskSpaceByteCount < uint.MaxValue) {
+			//	throw new ArgumentOutOfRangeException(nameof(maxAssetLocalStorageDiskSpaceByteCount), $"Asset local storage disk space should be able to fit at least one maximum-sized asset, and thus should be at least {uint.MaxValue} bytes.");
+			//}
 
 			if (maxAssetLocalStorageDiskSpaceByteCount > long.MaxValue) {
 				throw new ArgumentOutOfRangeException(nameof(maxAssetLocalStorageDiskSpaceByteCount), $"Asset local storage underlying system doesn't support sizes larger than {long.MaxValue} bytes.");
@@ -383,7 +383,13 @@ namespace LibWhipLru.Cache {
 				var buffer = new byte[spaceNeeded];
 
 				Buffer.BlockCopy(memStream.GetBuffer(), 0, buffer, 0, (int)spaceNeeded);
+
+				var retries = 0;
 			retryStorageLabel:
+				if (retries++ > 5) {
+					throw new WriteCacheFullException("Not enough space");
+				}
+
 				LightningException lightningException = null;
 				try {
 					using (var tx = _dbenv.BeginTransaction())
@@ -414,6 +420,10 @@ namespace LibWhipLru.Cache {
 						throw new AssetExistsException(asset.Id);
 					case LightningDB.Native.Lmdb.MDB_DBS_FULL:
 					case LightningDB.Native.Lmdb.MDB_MAP_FULL:
+						if (!_removeLruAssetsWhenFull) {
+							throw new WriteCacheFullException("Not enough space in permanent local storage to place asset!");
+						}
+
 						var lockTaken = Monitor.TryEnter(_dbenv_lock);
 						try {
 							if (lockTaken) {
