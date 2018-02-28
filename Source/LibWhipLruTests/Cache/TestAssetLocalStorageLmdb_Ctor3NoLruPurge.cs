@@ -63,7 +63,7 @@ namespace LibWhipLruTests.Cache {
 			_localStorage = null;
 			IDisposable localStorageDisposal = _localStorageLmdb;
 			_localStorageLmdb = null;
-			localStorageDisposal.Dispose();
+			localStorageDisposal?.Dispose();
 
 			TestAssetLocalStorageLmdbCtor.CleanLocalStorageFolder(DATABASE_FOLDER_PATH, TestStorageManager.WRITE_CACHE_FILE_PATH);
 		}
