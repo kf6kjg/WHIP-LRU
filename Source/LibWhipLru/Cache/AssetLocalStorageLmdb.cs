@@ -425,7 +425,7 @@ namespace LibWhipLru.Cache {
 									using (var tx = _dbenv.BeginTransaction())
 									using (var db = tx.OpenDatabase(DB_NAME)) {
 										foreach (var assetId in removedAssetIds) {
-											tx.Delete(db, asset.Id.ToByteArray());
+											tx.Delete(db, assetId.ToByteArray());
 										}
 										tx.Commit();
 									}
