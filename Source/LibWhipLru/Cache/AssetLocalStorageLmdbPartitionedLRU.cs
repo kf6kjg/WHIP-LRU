@@ -51,7 +51,7 @@ namespace LibWhipLru.Cache {
 		private LightningEnvironment _dbenv;
 		private readonly object _dbenv_lock = new object();
 
-		private readonly OrderedGuidCache _activeIds;
+		private readonly PartitionedTemporalGuidCache _activeIds;
 		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
 
 		private readonly bool _removeLruAssetsWhenFull;
@@ -108,7 +108,7 @@ namespace LibWhipLru.Cache {
 				throw new LocalStorageException($"Given path invalid: '{_config.LocalStorageFolder.FullName}'", e);
 			}
 
-			_activeIds = new OrderedGuidCache();
+			_activeIds = new PartitionedTemporalGuidCache();
 			_removeLruAssetsWhenFull = removeLruAssetsWhenFull;
 
 			LOG.Info($"Restoring index from DB.");
