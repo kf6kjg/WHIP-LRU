@@ -277,7 +277,17 @@ namespace LibWhipLru.Cache {
 				if (deleteSucceeded) {
 					byteCountCleared += partitionDiskSize;
 					// Add the removed items to the output list.
-					partition.ActiveEntries.ToList().ForEach(kvp => itemsRemoved.Add(kvp.Key, kvp.Value));
+					foreach (var assetId in partition.ActiveEntries.Keys) {
+						_cache.TryRemove(assetId, out var meta);
+						try {
+							itemsRemoved.Add(assetId, meta);
+						}
+						catch (ArgumentException) {
+							// Skip, it's already there.  Technically this means there's a bug as an asset should only ever be active in a single partition.
+							// If you see this bug, check for all locations where an item is updated in _cache but the handling of the asset's old partition doesn't get a good clean remove.
+							LOG.Debug($"BUG: somehow asset {assetId} was active in multiple partitions!");
+						}
+					}
 				}
 			}
 
