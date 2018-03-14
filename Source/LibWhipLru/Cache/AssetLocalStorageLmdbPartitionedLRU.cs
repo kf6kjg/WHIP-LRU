@@ -42,7 +42,7 @@ namespace LibWhipLru.Cache {
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = uint.MaxValue/*4TB, maximum size of single asset*/;
-		private static readonly string DB_NAME = null;
+		private static readonly string DB_NAME; // null to use default DB.
 
 		private readonly ChattelConfiguration _config;
 
@@ -143,11 +143,16 @@ namespace LibWhipLru.Cache {
 				return foundAssets;
 			}
 
-			void HandleDeleteEnvironment(string path) { // TODO: logging
+			void HandleDeleteEnvironment(string path) {
+				LOG.Debug($"Got request to delete DB environment at '{path}'");
 				if (_dbEnvironments.TryRemove(path, out var dbEnv)) {
 					dbEnv.Dispose();
 
 					Directory.Delete(path, true);
+					LOG.Debug($"Deleted DB environment at '{path}'");
+				}
+				else {
+					LOG.Warn($"Unable to delete unknown DB environment at '{path}'");
 				}
 			}
 
