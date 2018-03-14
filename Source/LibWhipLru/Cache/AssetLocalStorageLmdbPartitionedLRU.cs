@@ -39,47 +39,29 @@ namespace LibWhipLru.Cache {
 	/// Note that an LMDB file only ever grows in size, even across purges - just space internally is opened up. Please read about LMDB to learn why.
 	/// </summary>
 	public class AssetLocalStorageLmdbPartitionedLRU : IChattelLocalStorage, IDisposable {
+		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
 		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = uint.MaxValue/*4TB, maximum size of single asset*/;
 		private static readonly string DB_NAME = null;
-
-		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly ChattelConfiguration _config;
 
 		private readonly ConcurrentDictionary<Guid, StratusAsset> _assetsBeingWritten = new ConcurrentDictionary<Guid, StratusAsset>();
 
-		private LightningEnvironment _dbenv;
-		private readonly object _dbenv_lock = new object();
+		private readonly ConcurrentDictionary<string, LightningEnvironment> _dbEnvironments = new ConcurrentDictionary<string, LightningEnvironment>();
 
 		private readonly PartitionedTemporalGuidCache _activeIds;
 		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
 
-		private readonly bool _removeLruAssetsWhenFull;
-
 		/// <summary>
 		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.AssetLocalStorageLmdbPartitioned"/> class specified to be limited to the given amount of disk space.
 		/// It's highly recommended to set the disk space limit to a multiple of the block size so that you don't waste space you could be using.
-		/// Assumes you are using this storage in cache mode, so will delete least recently accessed assets when full.
 		/// </summary>
 		/// <param name="config">ChattelConfiguration object.</param>
 		/// <param name="maxAssetLocalStorageDiskSpaceByteCount">Max asset local storage disk space, in bytes.</param>
 		public AssetLocalStorageLmdbPartitionedLRU(
 			ChattelConfiguration config,
 			ulong maxAssetLocalStorageDiskSpaceByteCount
-		) : this(config, maxAssetLocalStorageDiskSpaceByteCount, true) {
-		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.AssetLocalStorageLmdbPartitioned"/> class specified to be limited to the given amount of disk space.
-		/// It's highly recommended to set the disk space limit to a multiple of the block size so that you don't waste space you could be using.
-		/// </summary>
-		/// <param name="config">ChattelConfiguration object.</param>
-		/// <param name="maxAssetLocalStorageDiskSpaceByteCount">Max asset local storage disk space, in bytes.</param>
-		/// <param name="removeLruAssetsWhenFull">Specify if you wish this to remove least recently used assets when maxAssetLocalStorageDiskSpaceByteCount has been reached or not.</param>
-		public AssetLocalStorageLmdbPartitionedLRU(
-			ChattelConfiguration config,
-			ulong maxAssetLocalStorageDiskSpaceByteCount,
-			bool removeLruAssetsWhenFull
 		) {
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 
@@ -96,48 +78,84 @@ namespace LibWhipLru.Cache {
 				return;
 			}
 
-			try {
-				_dbenv = new LightningEnvironment(_config.LocalStorageFolder.FullName) {
-					MapSize = (long)maxAssetLocalStorageDiskSpaceByteCount,
-					MaxDatabases = 1,
-				};
+			_activeIds = new PartitionedTemporalGuidCache(
+				_config.LocalStorageFolder.FullName,
+				TimeSpan.FromSeconds(1),
+				HandleOpenOrCreateEnvironment,
+				HandleDeleteEnvironment,
+				HandleCopyAsset,
+				HandleDbFound
+			);
 
-				_dbenv.Open(EnvironmentOpenFlags.None, UnixAccessMode.OwnerRead | UnixAccessMode.OwnerWrite);
-			}
-			catch (LightningException e) {
-				throw new LocalStorageException($"Given path invalid: '{_config.LocalStorageFolder.FullName}'", e);
-			}
+			#region Ctor private functions
 
-			_activeIds = new PartitionedTemporalGuidCache();
-			_removeLruAssetsWhenFull = removeLruAssetsWhenFull;
+			void HandleOpenOrCreateEnvironment(string path) {
+				try {
+					var env = new LightningEnvironment(path) {
+						MapSize = (long)maxAssetLocalStorageDiskSpaceByteCount,
+						MaxDatabases = 1,
+					};
 
-			LOG.Info($"Restoring index from DB.");
-			try {
-				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.None))
-				using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
-					// Probably not the most effecient way to do this.
-					var assetData = tx.CreateCursor(db)
-						.Select(kvp => {
-							try {
-								var assetId = new Guid(kvp.Key);
-								return new Tuple<Guid, uint>(assetId, (uint)kvp.Value.Length);
-							}
-							catch (ArgumentException) {
-								return null;
-							}
-						})
-						.Where(assetId => assetId != null)
-					;
+					env.Open(EnvironmentOpenFlags.None, UnixAccessMode.OwnerRead | UnixAccessMode.OwnerWrite);
 
-					foreach (var assetDatum in assetData) {
-						_activeIds.TryAdd(assetDatum.Item1, assetDatum.Item2);
-					}
+					_dbEnvironments.TryAdd(path, env);
+				}
+				catch (LightningException e) {
+					throw new LocalStorageException($"Given path invalid: '{_config.LocalStorageFolder.FullName}'", e);
 				}
 			}
-			catch (Exception e) {
-				throw new LocalStorageException($"Attempting to restore index from db threw an exception!", e);
+
+			Dictionary<Guid, uint> HandleDbFound(string dbPath) {
+				LOG.Info($"Restoring index from DB at '{dbPath}'.");
+				if (!_dbEnvironments.TryGetValue(dbPath, out var dbEnv)) {
+					throw new InvalidOperationException($"Failure to prepare environment before loading DB at '{dbPath}'!");
+				}
+
+				var foundAssets = new Dictionary<Guid, uint>();
+
+				try {
+					using (var tx = dbEnv.BeginTransaction(TransactionBeginFlags.None))
+					using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+						// Probably not the most effecient way to do this.
+						var assetData = tx.CreateCursor(db)
+							.Select(kvp => {
+								try {
+									var assetId = new Guid(kvp.Key);
+									return new Tuple<Guid, uint>(assetId, (uint)kvp.Value.Length);
+								}
+								catch (ArgumentException) {
+									return null;
+								}
+							})
+							.Where(assetId => assetId != null)
+						;
+
+						foreach (var assetDatum in assetData) {
+							foundAssets.Add(assetDatum.Item1, assetDatum.Item2);
+						}
+					}
+				}
+				catch (Exception e) {
+					throw new LocalStorageException($"Attempting to restore index from db threw an exception!", e);
+				}
+				LOG.Debug($"Restoring index complete.");
+
+				return foundAssets;
 			}
-			LOG.Debug($"Restoring index complete.");
+
+			void HandleDeleteEnvironment(string path) { // TODO: logging
+				if (_dbEnvironments.TryRemove(path, out var dbEnv)) {
+					dbEnv.Dispose();
+
+					Directory.Delete(path, true);
+				}
+			}
+
+			void HandleCopyAsset(Guid assetId, string sourcePath, string destPath) {
+				// TODO: copy asset
+			}
+
+			#endregion
 		}
 
 		/// <summary>
@@ -160,20 +178,26 @@ namespace LibWhipLru.Cache {
 		}
 
 		/// <summary>
-		/// Whether or not the asset with that ID is actually located in local storage byt directly querying the storage.
+		/// Whether or not the asset with that ID is actually located in local storage by directly querying the storage.
 		/// </summary>
 		/// <returns>If the asset ID is known and on disk.</returns>
 		/// <param name="assetId">Asset identifier.</param>
 		public bool AssetOnDisk(Guid assetId) {
-			try {
-				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
-				using (var db = tx.OpenDatabase(DB_NAME)) {
-					return tx.ContainsKey(db, assetId.ToByteArray());
+			if (_activeIds.TryGetAssetPartition(assetId, out var dbPath)) {
+				if (_dbEnvironments.TryGetValue(dbPath, out var dbEnv)) {
+					try {
+						using (var tx = dbEnv.BeginTransaction(TransactionBeginFlags.ReadOnly))
+						using (var db = tx.OpenDatabase(DB_NAME)) {
+							return tx.ContainsKey(db, assetId.ToByteArray());
+						}
+					}
+					catch (LightningException e) {
+						throw new LocalStorageException($"Attempting to read locally stored asset with ID {assetId} threw an exception!", e);
+					}
 				}
 			}
-			catch (LightningException e) {
-				throw new LocalStorageException($"Attempting to read locally stored asset with ID {assetId} threw an exception!", e);
-			}
+
+			return false;
 		}
 
 		#region IChattelLocalStorage
@@ -218,21 +242,7 @@ namespace LibWhipLru.Cache {
 			if (assetFilter == null || !assetFilter.Any()) {
 				if (_activeIds.Count > 0) {
 					LOG.Warn("Unfiltered purge of all assets called. Proceeding with purge of all locally stored assets!");
-					try {
-						_activeIds.Clear();
-
-						using (var tx = _dbenv.BeginTransaction())
-						using (var db = tx.OpenDatabase(DB_NAME)) {
-							tx.TruncateDatabase(db);
-							tx.Commit();
-						}
-					}
-					catch (LightningException e) {
-						if (e.StatusCode != LightningDB.Native.Lmdb.MDB_NOTFOUND) {
-							throw;
-						}
-						// DB must be empty.
-					}
+					_activeIds.Clear(); // Will call delete on each path.  See HandleDeleteEnvironment.
 				}
 				else {
 					LOG.Info("Unfiltered purge of all assets called, but the DB was already empty.");
@@ -242,65 +252,9 @@ namespace LibWhipLru.Cache {
 			}
 
 			LOG.Info($"Starting to purge assets that match any one of {assetFilter.Count()} filters...");
+			// TODO: Ricky: you need to prepartition on accepted filters, add filter info to the metadata(!memory explosion!) or abandon this.  There's no way to do per-asset purge in this partitioning scheme with LMDB.
 
-			var assetIdsToPurge = new List<Guid>();
-
-			try {
-				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
-				using (var db = tx.OpenDatabase(DB_NAME)) {
-					// Probably not the most effecient way to do this.
-					var cursor = tx
-						.CreateCursor(db)
-						;
-
-					cursor.MoveToFirst();
-
-					do { // Tried to use LINQ but it just kept throwing errors, so I went with the LMDB way.
-						var kvp = cursor.GetCurrent();
-
-						Guid assetId;
-
-						try {
-							assetId = new Guid(kvp.Key);
-						}
-						catch (ArgumentException) {
-							continue;
-						}
-
-						StratusAsset asset;
-						try {
-							using (var stream = new MemoryStream(kvp.Value)) {
-								asset = ProtoBuf.Serializer.Deserialize<StratusAsset>(stream);
-							}
-						}
-						catch {
-							continue;
-						}
-
-						foreach (var filter in assetFilter) {
-							if (filter.MatchAsset(asset)) {
-								assetIdsToPurge.Add(assetId);
-								break; // Only needs to match one of the filters.
-							}
-						}
-					} while (cursor.MoveNext());
-				}
-			}
-			catch (LightningException) {
-				// Most likely the DB doesn't exist or has nothing in it.
-				return;
-			}
-
-			LOG.Info($"Purging {assetIdsToPurge.Count()} assets that matched any one of {assetFilter.Count()} filters.");
-
-			foreach (var assetId in assetIdsToPurge) {
-				try {
-					((IChattelLocalStorage)this).Purge(assetId);
-				}
-				catch (AssetNotFoundException e) {
-					LOG.Info($"Was unable to purge asset {assetId}, even though it was a match to the filter. Reason noted below.", e);
-				}
-			}
+			throw new NotImplementedException("Purging on type not yet supported...");
 		}
 
 		/// <summary>
@@ -313,19 +267,7 @@ namespace LibWhipLru.Cache {
 			}
 
 			if (_activeIds.TryRemove(assetId)) {
-				try {
-					LOG.Info($"Purging {assetId}.");
-					using (var tx = _dbenv.BeginTransaction())
-					using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.None })) {
-						tx.Delete(db, assetId.ToByteArray());
-						tx.Commit();
-					}
-				}
-				catch (LightningException e) {
-					if (e.StatusCode == LightningDB.Native.Lmdb.MDB_NOTFOUND) {
-						throw new AssetNotFoundException(assetId, e);
-					}
-				}
+				// Do nothing to disk: it will fall off the LRU eventually.
 			}
 			else {
 				throw new AssetNotFoundException(assetId);
@@ -373,7 +315,7 @@ namespace LibWhipLru.Cache {
 		private void WriteAssetToDisk(StratusAsset asset) {
 			ulong spaceNeeded;
 
-			_activeIds.TryAdd(asset.Id, 0); // Register the asset as existing, but not yet on disk; size of 0. Failure simply indicates that the asset ID already exists.
+			_activeIds.TryAdd(asset.Id, 0, out var dbPath); // Register the asset as existing, but not yet on disk; size of 0. Failure simply indicates that the asset ID already exists.
 
 			using (var memStream = new MemoryStream()) {
 				ProtoBuf.Serializer.Serialize(memStream, asset); // This can throw, but only if something is VERY and irrecoverably wrong.
@@ -383,105 +325,67 @@ namespace LibWhipLru.Cache {
 				var buffer = new byte[spaceNeeded];
 
 				Buffer.BlockCopy(memStream.GetBuffer(), 0, buffer, 0, (int)spaceNeeded);
-			retryStorageLabel:
+
 				LightningException lightningException = null;
-				try {
-					using (var tx = _dbenv.BeginTransaction())
-					using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
-						tx.Put(db, asset.Id.ToByteArray(), buffer);
-						tx.Commit();
+
+				if (_dbEnvironments.TryGetValue(dbPath, out var dbEnv)) {
+					try {
+						using (var tx = dbEnv.BeginTransaction())
+						using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+							tx.Put(db, asset.Id.ToByteArray(), buffer);
+							tx.Commit();
+						}
+
+						_activeIds.AssetSize(asset.Id, spaceNeeded); // Set the size now that it's on disk.
+
+						return;
 					}
-
-					_activeIds.AssetSize(asset.Id, spaceNeeded); // Set the size now that it's on disk.
-
-					return;
-				}
-				catch (LightningException e) {
-					lightningException = e;
+					catch (LightningException e) {
+						lightningException = e;
+					}
 				}
 
 				switch (lightningException.StatusCode) {
 					case -30799:
 						//LightningDB.Native.Lmdb.MDB_KEYEXIST: Not available in lib ATM...
 						// Ignorable.
-						LOG.Warn($"{asset.Id} already exists according to local storage. Adding to memory list - please report this as it should not be able to happen.", lightningException);
+						LOG.Warn($"{asset.Id} already exists according to local storage. Adding to memory list.", lightningException);
 						lightningException = null;
 
-						if (!_activeIds.TryAdd(asset.Id, spaceNeeded)) {
+						if (!_activeIds.TryAdd(asset.Id, spaceNeeded, out var dbPathx)) {
 							_activeIds.AssetSize(asset.Id, spaceNeeded);
 						}
 
 						throw new AssetExistsException(asset.Id);
-					case LightningDB.Native.Lmdb.MDB_DBS_FULL:
-					case LightningDB.Native.Lmdb.MDB_MAP_FULL:
-						var lockTaken = Monitor.TryEnter(_dbenv_lock);
-						try {
-							if (lockTaken) {
-								LOG.Warn($"{asset.Id} got storage space full during local storage, clearing some room...", lightningException);
-
-								var removedAssetIds = _activeIds.Remove(spaceNeeded * 2, out ulong bytesRemoved);
-
-								var assetsWereRemoved = false;
-
-								try {
-									using (var tx = _dbenv.BeginTransaction())
-									using (var db = tx.OpenDatabase(DB_NAME)) {
-										foreach (var assetId in removedAssetIds.Keys) {
-											tx.Delete(db, assetId.ToByteArray());
-										}
-										tx.Commit();
-										assetsWereRemoved = true;
-									}
-								}
-								catch (LightningException e) {
-									LOG.Warn($"{asset.Id} had an exception while attempting to clear some space in the local asset store.", e);
-								}
-
-								if (!assetsWereRemoved) {
-									// The removals failed to commit, add them back to the memory cache.
-									foreach (var metaObject in removedAssetIds.Values) {
-										_activeIds.TryAdd(metaObject);
-									}
-								}
-							}
-							// else skip as another thread is already clearing some space.
-						}
-						finally {
-							if (lockTaken) {
-								Monitor.Exit(_dbenv_lock);
-							}
-						}
-
-						// Retry the asset storage now that we've got some space.
-						goto retryStorageLabel;
 					default:
-						LOG.Warn($"{asset.Id} got an unexpected exception during local storage.", lightningException);
-
-						Thread.Sleep(200); // Give it some time. The time is a hipshot, not some magic numebr.
-						goto retryStorageLabel;
+						throw new AssetWriteException(asset.Id, lightningException);
 				}
 			}
 		}
 
 		private StratusAsset ReadAssetFromDisk(Guid assetId) {
-			try {
-				using (var tx = _dbenv.BeginTransaction(TransactionBeginFlags.ReadOnly))
-				using (var db = tx.OpenDatabase(DB_NAME)) {
-					if (tx.TryGet(db, assetId.ToByteArray(), out byte[] buffer)) {
-						using (var stream = new MemoryStream(buffer)) {
-							return ProtoBuf.Serializer.Deserialize<StratusAsset>(stream);
+			if (_activeIds.TryGetAssetPartition(assetId, out var dbPath)) {
+				if (_dbEnvironments.TryGetValue(dbPath, out var dbEnv)) {
+					try {
+						using (var tx = dbEnv.BeginTransaction(TransactionBeginFlags.ReadOnly))
+						using (var db = tx.OpenDatabase(DB_NAME)) {
+							if (tx.TryGet(db, assetId.ToByteArray(), out byte[] buffer)) {
+								using (var stream = new MemoryStream(buffer)) {
+									return ProtoBuf.Serializer.Deserialize<StratusAsset>(stream);
+								}
+							}
 						}
 					}
-
-					throw new LocalStorageException($"Asset with ID {assetId} not found in local storage!");
+					catch (LightningException e) {
+						throw new LocalStorageException($"Attempting to read locally stored asset with ID {assetId} threw an exception!", e);
+					}
+					catch (ProtoBuf.ProtoException e) {
+						throw new LocalStorageException($"Attempting to deserialize locally stored asset with ID {assetId} threw an exception!", e);
+					}
 				}
 			}
-			catch (LightningException e) {
-				throw new LocalStorageException($"Attempting to read locally stored asset with ID {assetId} threw an exception!", e);
-			}
-			catch (ProtoBuf.ProtoException e) {
-				throw new LocalStorageException($"Attempting to deserialize locally stored asset with ID {assetId} threw an exception!", e);
-			}
+
+			throw new LocalStorageException($"Asset with ID {assetId} not found in local storage!");
 		}
 
 		#endregion
@@ -493,8 +397,11 @@ namespace LibWhipLru.Cache {
 		protected virtual void Dispose(bool disposing) {
 			if (!disposedValue) {
 				// Free unmanaged resources (unmanaged objects) and override a finalizer below.
-				_dbenv?.Dispose();
-				_dbenv = null;
+
+				foreach (var dbPath in _dbEnvironments.Keys) {
+					_dbEnvironments.TryRemove(dbPath, out var dbEnv);
+					dbEnv.Dispose();
+				}
 
 				disposedValue = true;
 			}
