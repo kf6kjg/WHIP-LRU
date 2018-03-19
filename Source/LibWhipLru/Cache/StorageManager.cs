@@ -195,8 +195,6 @@ namespace LibWhipLru.Cache {
 		public void PurgeAllLocalAssets() {
 			IChattelLocalStorage chattelStorage = _localStorage;
 
-			// TODO: optimize this by having an index of all local=true assets and then just iterating that calling the per-item purge.
-
 			chattelStorage.PurgeAll(new List<AssetFilter> {
 				new AssetFilter {
 					LocalFilter = true,

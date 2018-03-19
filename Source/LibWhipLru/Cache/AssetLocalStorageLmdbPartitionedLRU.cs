@@ -257,9 +257,8 @@ namespace LibWhipLru.Cache {
 			}
 
 			LOG.Info($"Starting to purge assets that match any one of {assetFilter.Count()} filters...");
-			// TODO: Ricky: you need to prepartition on accepted filters, add filter info to the metadata(!memory explosion!) or abandon this.  There's no way to do per-asset purge in this partitioning scheme with LMDB.
 
-			throw new NotImplementedException("Purging on type not yet supported...");
+			throw new InvalidOperationException("Purging on type not supported.");
 		}
 
 		/// <summary>
