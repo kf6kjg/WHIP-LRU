@@ -90,7 +90,34 @@ namespace LibWhipLru.Cache {
 			_cache = new ConcurrentDictionary<Guid, MetaAsset>();
 			_partitions = new ConcurrentQueue<TemporalPartition>();
 
-			// TODO: scan disk for partitions and call the partitionFoundCallback on each path. This returns the ID and size of the assets in that partition.
+			// Restore from disk, if there's something to restore from.
+			foreach (var dbPath in Directory.EnumerateFileSystemEntries(partitionBasePath, "*", SearchOption.TopDirectoryOnly)) {
+				var assetsFound = partitionFoundCallback(dbPath);
+
+				if ((assetsFound?.Count ?? 0) > 0) {
+					var partition = new TemporalPartition(dbPath);
+					_partitions.Enqueue(partition);
+
+					// Will wind up restoring assets that were previously "purged" as the per-item purge operation only removes the ID from active memory.
+					// Currently this is acceptible behavior as the per-item purge is only expectd to be used to clean up inconsistencies by purging the ID then adding a fresh copy.
+					// Everything else will just eventually fall out the LRU process.
+					foreach (var asset in assetsFound) {
+						_cache.AddOrUpdate(
+							asset.Key,
+							assetId => new MetaAsset { // add
+							Id = assetId,
+								Partition = partition,
+								Size = asset.Value
+							},
+							(assetId, oldMeta) => { // update
+								oldMeta.Partition = partition;
+								oldMeta.Size = asset.Value;
+								return oldMeta;
+							}
+						);
+					}
+				}
+			}
 
 			UpdateActivePartition();
 		}
@@ -343,6 +370,15 @@ namespace LibWhipLru.Cache {
 				DiskPath = Path.Combine(basePath, Created.ToString("s"));
 
 				partitionCreationCallback(DiskPath);
+			}
+
+			public TemporalPartition(string diskPath) {
+				if (string.IsNullOrWhiteSpace(diskPath)) {
+					throw new ArgumentNullException(nameof(diskPath), "Cannot be null, empty, or whitespace");
+				}
+
+				Created = new DirectoryInfo(diskPath).CreationTimeUtc;
+				DiskPath = diskPath;
 			}
 
 			public ulong GetDiskSize() {

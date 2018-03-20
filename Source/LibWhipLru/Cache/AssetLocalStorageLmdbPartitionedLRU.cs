@@ -112,7 +112,12 @@ namespace LibWhipLru.Cache {
 			Dictionary<Guid, uint> HandleDbFound(string dbPath) {
 				LOG.Info($"Restoring index from DB at '{dbPath}'.");
 				if (!_dbEnvironments.TryGetValue(dbPath, out var dbEnv)) {
-					throw new InvalidOperationException($"Failure to prepare environment before loading DB at '{dbPath}'!");
+					HandleOpenOrCreateEnvironment(dbPath);
+					if (!_dbEnvironments.TryGetValue(dbPath, out var dbEnvRetry)) {
+						throw new InvalidOperationException($"Failure to prepare environment before loading DB at '{dbPath}'!");
+					}
+
+					dbEnv = dbEnvRetry;
 				}
 
 				var foundAssets = new Dictionary<Guid, uint>();
