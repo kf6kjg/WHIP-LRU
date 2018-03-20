@@ -250,7 +250,7 @@ namespace LibWhipLru.Cache {
 
 		/// <summary>
 		/// Removes enough of the oldest entries to clear out at least the specified size, returning the UUIDs that were removed and an opaque pointer to internal-use objects that can be used to re-enter the removed asset.
-		/// This is an expensive and slow operation.
+		/// This is an expensive and slow operation.  Every returned item has already been wiped from the memory cache.
 		/// </summary>
 		/// <param name="minByteCountToClear">Byte count to at minimum clear out.</param>
 		/// <param name="byteCountCleared">Byte count that was actually removed.</param>

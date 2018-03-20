@@ -41,7 +41,7 @@ namespace LibWhipLru.Cache {
 	public class AssetLocalStorageLmdbPartitionedLRU : IChattelLocalStorage, IDisposable {
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-		public static readonly ulong DEFAULT_DB_MAX_DISK_BYTES = uint.MaxValue/*4TB, maximum size of single asset*/;
+		public static readonly ulong DB_MAX_DISK_BYTES_MIN_RECOMMENDED = uint.MaxValue/*4TB, maximum size of single asset*/;
 		private static readonly string DB_NAME; // null to use default DB.
 
 		private readonly ChattelConfiguration _config;
@@ -52,6 +52,8 @@ namespace LibWhipLru.Cache {
 
 		private readonly PartitionedTemporalGuidCache _activeIds;
 		public IEnumerable<Guid> ActiveIds(string prefix) => _activeIds?.ItemsWithPrefix(prefix);
+
+		private readonly ulong _dbMaxDiskBytes;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="T:LibWhipLru.Cache.AssetLocalStorageLmdbPartitioned"/> class specified to be limited to the given amount of disk space.
@@ -65,13 +67,15 @@ namespace LibWhipLru.Cache {
 		) {
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 
-			if (maxAssetLocalStorageDiskSpaceByteCount < uint.MaxValue) {
-				throw new ArgumentOutOfRangeException(nameof(maxAssetLocalStorageDiskSpaceByteCount), $"Asset local storage disk space should be able to fit at least one maximum-sized asset, and thus should be at least {uint.MaxValue} bytes.");
+			if (maxAssetLocalStorageDiskSpaceByteCount < DB_MAX_DISK_BYTES_MIN_RECOMMENDED) {
+				LOG.Warn($"Asset local storage disk space should be able to fit at least one maximum-sized asset, and thus should be at least {uint.MaxValue} bytes.");
 			}
 
 			if (maxAssetLocalStorageDiskSpaceByteCount > long.MaxValue) {
 				throw new ArgumentOutOfRangeException(nameof(maxAssetLocalStorageDiskSpaceByteCount), $"Asset local storage underlying system doesn't support sizes larger than {long.MaxValue} bytes.");
 			}
+
+			_dbMaxDiskBytes = maxAssetLocalStorageDiskSpaceByteCount;
 
 			if (!_config.LocalStorageEnabled) {
 				// No local storage? Don't do squat.
@@ -157,7 +161,54 @@ namespace LibWhipLru.Cache {
 			}
 
 			void HandleCopyAsset(Guid assetId, string sourcePath, string destPath) {
-				// TODO: copy asset
+				LOG.Debug($"Got request to copy asset {assetId} from DB environment at '{sourcePath}' to '{destPath}'");
+				if (_dbEnvironments.TryRemove(sourcePath, out var dbEnvSource)) {
+					if (_dbEnvironments.TryRemove(destPath, out var dbEnvDest)) {
+						try {
+							var assetIdBytes = assetId.ToByteArray();
+
+							using (var txS = dbEnvSource.BeginTransaction(TransactionBeginFlags.ReadOnly))
+							using (var dbS = txS.OpenDatabase(DB_NAME))
+							using (var txD = dbEnvDest.BeginTransaction())
+							using (var dbD = txD.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+								if (txS.TryGet(dbS, assetIdBytes, out byte[] buffer)) {
+									txD.Put(dbD, assetIdBytes, buffer);
+								}
+							}
+						}
+						catch (LightningException e) {
+							throw new LocalStorageException($"Attempting to read locally stored asset with ID {assetId} threw an exception!", e);
+						}
+						catch (ProtoBuf.ProtoException e) {
+							throw new LocalStorageException($"Attempting to deserialize locally stored asset with ID {assetId} threw an exception!", e);
+						}
+
+						// Cleaning up after the copy means I allow the disk usage to bounce past the limit,
+						// but cleaning up before means that I might wipe the source location before I can read it, as the asset might be in the old location.
+
+						// Find out how much disk space is being used.
+						LOG.Info($"Checking to see if near disk limit...");
+						var diskSpaceUsed = 0UL;
+						foreach (var dbPath in _activeIds.PartitionPaths) {
+							// I'd be happier I think with the byte count of the blocks consumed.
+							diskSpaceUsed += (ulong)Directory.EnumerateFiles(dbPath).Select(file => new FileInfo(file).Length).Aggregate((prev, cur) => prev + cur);
+						}
+
+						// If at least 98% (hipshot) full, call remove to get down to at least 90% (another hipshot).
+						if ((float)diskSpaceUsed / _dbMaxDiskBytes > 0.98f) {
+							LOG.Info($"Disk limit exceeded or near exceeding: using {diskSpaceUsed} of {_dbMaxDiskBytes} bytes.");
+							var diskSpaceNeeded = diskSpaceUsed - (ulong)(_dbMaxDiskBytes * 0.90f);
+							var removedIds = _activeIds.Remove(diskSpaceNeeded, out var byteCountCleared);
+							LOG.Debug($"Removed {removedIds.Count} active IDs, and {byteCountCleared} bytes of disk space.");
+						}
+					}
+					else {
+						LOG.Warn($"Unable to find destination DB environment '{destPath}' during copy of asset {assetId}");
+					}
+				}
+				else {
+					LOG.Warn($"Unable to find source DB environment '{sourcePath}' during copy of asset {assetId}");
+				}
 			}
 
 			#endregion
