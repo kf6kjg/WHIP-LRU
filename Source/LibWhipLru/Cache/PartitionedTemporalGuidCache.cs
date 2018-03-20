@@ -337,7 +337,7 @@ namespace LibWhipLru.Cache {
 
 		private void UpdateActivePartition() {
 			lock (_activePartitionUpdateLock) {
-				if (DateTimeOffset.UtcNow - _activePartition.Created >= _partitionInterval) {
+				if (_activePartition == null || DateTimeOffset.UtcNow - _activePartition.Created >= _partitionInterval) {
 					// Update the active partition.
 					_activePartition = new TemporalPartition(_partitionBasePath, _partitionOpenOrCreateCallback);
 					_partitions.Enqueue(_activePartition);
