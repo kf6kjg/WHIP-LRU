@@ -52,7 +52,7 @@ namespace LibWhipLru.Cache {
 
 		public uint PartitionCount {
 			get {
-				return (uint?)_partitions?.Count ?? 0;
+				return (uint)(_partitions?.Count ?? 0);
 			}
 		}
 
