@@ -87,6 +87,10 @@ namespace LibWhipLru.Cache {
 			_partitionDeletionCallback = partitionDeletionCallback ?? throw new ArgumentNullException(nameof(partitionDeletionCallback));
 			_partitionTransferAssetCallback = partitionTransferAssetCallback ?? throw new ArgumentNullException(nameof(partitionTransferAssetCallback));
 
+			if (partitionFoundCallback == null) {
+				throw new ArgumentNullException(nameof(partitionFoundCallback));
+			}
+
 			_cache = new ConcurrentDictionary<Guid, MetaAsset>();
 			_partitions = new ConcurrentQueue<TemporalPartition>();
 
@@ -382,8 +386,14 @@ namespace LibWhipLru.Cache {
 			}
 
 			public ulong GetDiskSize() {
-				// I'd be happier I think with the byte count of the blocks consumed.
-				return (ulong)Directory.EnumerateFiles(DiskPath).Select(file => new FileInfo(file).Length).Aggregate((prev, cur) => prev + cur);
+				var dir = Directory.EnumerateFiles(DiskPath);
+
+				if (dir.Any()) {
+					// I'd be happier I think with the byte count of the blocks consumed.
+					return (ulong)dir.Select(file => new FileInfo(file).Length).Aggregate((prev, cur) => prev + cur);
+				}
+
+				return 0UL;
 			}
 		}
 	}
