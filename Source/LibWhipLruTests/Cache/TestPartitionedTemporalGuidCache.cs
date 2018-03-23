@@ -227,6 +227,8 @@ namespace LibWhipLruTests.Cache {
 				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
 				null // partition found. Load it and return the asset IDs and sizes contained.
 			));
+
+			// todo: make this test do somehting
 		}
 
 		#endregion
@@ -262,6 +264,37 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryAdd_MultipleFast_SamePartition() {
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromDays(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			cache.TryAdd(Guid.NewGuid(), 1, out var dbPath1);
+			cache.TryAdd(Guid.NewGuid(), 2, out var dbPath2);
+			Assert.AreEqual(dbPath1, dbPath2);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryAdd_MultipleSlow_DifferentPartition() {
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			cache.TryAdd(Guid.NewGuid(), 1, out var dbPath1);
+			Thread.Sleep(1100);
+			cache.TryAdd(Guid.NewGuid(), 2, out var dbPath2);
+			Assert.AreNotEqual(dbPath1, dbPath2);
+		}
+
+		[Test]
 		public static void TestPartitionedTemporalGuidCache_TryAdd_Duplicate_ReturnsFalse() {
 			var cache = new PartitionedTemporalGuidCache(
 				DATABASE_FOLDER_PATH,
@@ -275,6 +308,18 @@ namespace LibWhipLruTests.Cache {
 			cache.TryAdd(guid, 1, out var dbPath1);
 			Assert.False(cache.TryAdd(guid, 2, out var dbPath2));
 		}
+
+		#endregion
+
+		#region TryAdd returning old asset
+
+		// TODO: write thse tests.
+
+		#endregion
+
+		#region TryGetAssetPartition
+
+		// TODO: write these tests.
 
 		#endregion
 
@@ -327,6 +372,10 @@ namespace LibWhipLruTests.Cache {
 			cache.Clear();
 			Assert.AreEqual(0, cache.Count);
 		}
+
+		// TODO: test for calls to delete partitions.
+
+		// TODO: test to see if a new partition is created.
 
 		#endregion
 
@@ -381,6 +430,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.False(cache.Contains(guid));
 		}
 
+		// TODO: test to see if the asset copy callback happens
+
 		#endregion
 
 		#region AssetSize Get
@@ -417,6 +468,8 @@ namespace LibWhipLruTests.Cache {
 			cache.TryAdd(Guid.NewGuid(), 3, out var dbPath3);
 			Assert.IsNull(cache.AssetSize(guid));
 		}
+
+		// TODO: test to see if the asset copy callback happens
 
 		#endregion
 
@@ -463,6 +516,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.AreEqual(1, cache.AssetSize(guid1));
 			Assert.AreEqual(3, cache.AssetSize(guid3));
 		}
+
+		// TODO: test to see if the asset copy callback happens
 
 		#endregion
 
@@ -527,6 +582,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.That(result, Contains.Item(guid2));
 		}
 
+		// TODO: test to see if the asset copy callback happens
+
 		#endregion
 
 		#region TryRemove
@@ -585,7 +642,7 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestPartitionedTemporalGuidCache_Remove_RemovesItems() {
+		public static void TestPartitionedTemporalGuidCache_Remove_RemovesItemsFromCache() {
 			var cache = new PartitionedTemporalGuidCache(
 				DATABASE_FOLDER_PATH,
 				TimeSpan.FromDays(1),
@@ -604,18 +661,69 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestPartitionedTemporalGuidCache_Remove_ReportsCorrectSizeCleared() {
+		public static void TestPartitionedTemporalGuidCache_Remove_CallsDeleteCallback() {
+			var callbackCalled = false;
 			var cache = new PartitionedTemporalGuidCache(
 				DATABASE_FOLDER_PATH,
 				TimeSpan.FromDays(1),
 				partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
-				Directory.Delete, // delete partition
+				partPath => { callbackCalled = true; Directory.Delete(partPath); }, // delete partition
 				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
 				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
 			);
 			cache.TryAdd(Guid.NewGuid(), 2, out var dbPath2);
 			cache.TryAdd(Guid.NewGuid(), 4, out var dbPath4);
 			cache.TryAdd(Guid.NewGuid(), 8, out var dbPath8);
+
+			cache.Remove(5, out var sizeCleared);
+
+			Assert.True(callbackCalled);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_Remove_OnlyDeletesExpectedPartition() {
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
+				partPath => { Directory.Delete(partPath, true); }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			cache.TryAdd(Guid.NewGuid(), 2, out var dbPath2);
+			cache.TryAdd(Guid.NewGuid(), 4, out var dbPath4);
+			File.AppendAllText(Path.Combine(dbPath2, "t1"), "123456");
+			Thread.Sleep(1100);
+			cache.TryAdd(Guid.NewGuid(), 8, out var dbPath8);
+			File.AppendAllText(Path.Combine(dbPath8, "t2"), "12345678");
+
+			cache.Remove(5, out var sizeCleared);
+
+			DirectoryAssert.DoesNotExist(dbPath2);
+			DirectoryAssert.Exists(dbPath8);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_Remove_ReportsCorrectSizeCleared() {
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { Directory.CreateDirectory(partPath);}, // Open or create partition
+				partPath => { Directory.Delete(partPath, true); }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			var guidRemoved1 = Guid.NewGuid();
+			var guidRemoved2 = Guid.NewGuid();
+			var guidStays1 = Guid.NewGuid();
+
+			cache.TryAdd(guidRemoved1, 2, out var dbPathR1);
+			cache.TryAdd(guidRemoved2, 4, out var dbPathR2);
+			File.AppendAllText(Path.Combine(dbPathR1, "t1"), "123456");
+			Thread.Sleep(1100);
+			cache.TryAdd(guidStays1, 8, out var dbPathS1);
+			File.AppendAllText(Path.Combine(dbPathS1, "t2"), "12345678");
 
 			cache.Remove(5, out var sizeCleared);
 
@@ -626,9 +734,9 @@ namespace LibWhipLruTests.Cache {
 		public static void TestPartitionedTemporalGuidCache_Remove_ReturnsLeastRecentlyAccessedItems() {
 			var cache = new PartitionedTemporalGuidCache(
 				DATABASE_FOLDER_PATH,
-				TimeSpan.FromDays(1),
+				TimeSpan.FromSeconds(1),
 				partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
-				Directory.Delete, // delete partition
+				partPath => { Directory.Delete(partPath, true); }, // delete partition
 				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
 				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
 			);
@@ -640,23 +748,17 @@ namespace LibWhipLruTests.Cache {
 			var guidStays3 = Guid.NewGuid();
 
 			cache.TryAdd(guidStays1, 2, out var dbPathS1);
-			Thread.Sleep(100);
 			cache.TryAdd(guidStays2, 2, out var dbPathS2);
-			Thread.Sleep(100);
 			cache.TryAdd(guidRemoved1, 2, out var dbPathR1);
-			Thread.Sleep(100);
 			cache.TryAdd(guidRemoved2, 2, out var dbPathR2);
-			Thread.Sleep(100);
+			File.AppendAllText(Path.Combine(dbPathS1, "t1"), "12345678");
+			Thread.Sleep(1100);
 			cache.TryAdd(guidStays3, 2, out var dbPathS3);
-			Thread.Sleep(100);
 
 			// Touch the timestamps
 			cache.Contains(guidStays1);
-			Thread.Sleep(100);
-			cache.Contains(guidStays3);
-			Thread.Sleep(100);
 			cache.ItemsWithPrefix(guidStays2.ToString("N").Substring(0, 3));
-			Thread.Sleep(100);
+			File.AppendAllText(Path.Combine(dbPathS3, "t2"), "123456");
 
 			var removed = cache.Remove(3, out var sizeCleared);
 
@@ -668,9 +770,9 @@ namespace LibWhipLruTests.Cache {
 		public static void TestPartitionedTemporalGuidCache_Remove_CacheDoesntContainRemovedItems() {
 			var cache = new PartitionedTemporalGuidCache(
 				DATABASE_FOLDER_PATH,
-				TimeSpan.FromDays(1),
+				TimeSpan.FromSeconds(1),
 				partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
-				Directory.Delete, // delete partition
+				partPath => { Directory.Delete(partPath, true); }, // delete partition
 				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
 				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
 			);
@@ -682,23 +784,17 @@ namespace LibWhipLruTests.Cache {
 			var guidStays3 = Guid.NewGuid();
 
 			cache.TryAdd(guidStays1, 2, out var dbPathS1);
-			Thread.Sleep(100);
 			cache.TryAdd(guidStays2, 2, out var dbPathS2);
-			Thread.Sleep(100);
 			cache.TryAdd(guidRemoved1, 2, out var dbPathR1);
-			Thread.Sleep(100);
 			cache.TryAdd(guidRemoved2, 2, out var dbPathR2);
-			Thread.Sleep(100);
+			File.AppendAllText(Path.Combine(dbPathS1, "t1"), "12345678");
+			Thread.Sleep(1100);
 			cache.TryAdd(guidStays3, 2, out var dbPathS3);
-			Thread.Sleep(100);
 
 			// Touch the timestamps
 			cache.Contains(guidStays1);
-			Thread.Sleep(100);
-			cache.Contains(guidStays3);
-			Thread.Sleep(100);
 			cache.ItemsWithPrefix(guidStays2.ToString("N").Substring(0, 3));
-			Thread.Sleep(100);
+			File.AppendAllText(Path.Combine(dbPathS3, "t2"), "123456");
 
 			cache.Remove(3, out var sizeCleared);
 
@@ -708,15 +804,13 @@ namespace LibWhipLruTests.Cache {
 
 		[Test]
 		public static void TestPartitionedTemporalGuidCache_Remove_LeavesMostRecentlyAccessedItems() {
-			var fakeDb = new Dictionary<string, Dictionary<Guid, uint>>();
-
 			var cache = new PartitionedTemporalGuidCache(
 				DATABASE_FOLDER_PATH,
 				TimeSpan.FromSeconds(1),
-				partPath => { Directory.CreateDirectory(partPath); fakeDb.Add(partPath, new Dictionary<Guid, uint>()); }, // Open or create partition
-				partPath => { Directory.Delete(partPath); fakeDb.Remove(partPath);}, // delete partition
-				(assetId, partPathSource, partPathDest) => { fakeDb[partPathDest].Add(assetId, fakeDb[partPathSource][assetId]); }, // copy asset between partitions
-				partPath => { return fakeDb[partPath]; } // partition found. Load it and return the asset IDs and sizes contained.
+				partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
+				partPath => { Directory.Delete(partPath, true); }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
 			);
 
 			var guidRemoved1 = Guid.NewGuid();
@@ -726,20 +820,17 @@ namespace LibWhipLruTests.Cache {
 			var guidStays3 = Guid.NewGuid();
 
 			cache.TryAdd(guidStays1, 2, out var dbPathS1);
-			fakeDb[dbPathS1].Add(guidStays1, 2);
 			cache.TryAdd(guidStays2, 2, out var dbPathS2);
-			fakeDb[dbPathS2].Add(guidStays2, 2);
 			cache.TryAdd(guidRemoved1, 2, out var dbPathR1);
-			fakeDb[dbPathR1].Add(guidRemoved1, 2);
 			cache.TryAdd(guidRemoved2, 2, out var dbPathR2);
-			fakeDb[dbPathR2].Add(guidRemoved2, 2);
+			File.AppendAllText(Path.Combine(dbPathS1, "t1"), "12345678");
 			Thread.Sleep(1100);
 			cache.TryAdd(guidStays3, 2, out var dbPathS3);
-			fakeDb[dbPathS3].Add(guidStays3, 2);
 
 			// Touch the timestamps
 			cache.Contains(guidStays1);
 			cache.ItemsWithPrefix(guidStays2.ToString("N").Substring(0, 3));
+			File.AppendAllText(Path.Combine(dbPathS3, "t2"), "123456");
 
 			cache.Remove(3, out var sizeCleared);
 
