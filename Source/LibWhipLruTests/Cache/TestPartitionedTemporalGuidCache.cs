@@ -672,7 +672,47 @@ namespace LibWhipLruTests.Cache {
 			Assert.False(cache.Contains(guid));
 		}
 
-		// TODO: test to see if the asset copy callback happens
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_Contains_Delayed_CallsCopyCallback() {
+			var callbackCalled = false;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { callbackCalled = true; }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			var guid = Guid.NewGuid();
+			cache.TryAdd(guid, 2, out var dbPath2);
+
+			Thread.Sleep(1100);
+
+			cache.Contains(guid);
+
+			Assert.True(callbackCalled);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_Contains_Immediate_NoCopyCallback() {
+			var callbackCalled = false;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { callbackCalled = true; }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			var guid = Guid.NewGuid();
+			cache.TryAdd(guid, 2, out var dbPath2);
+
+			cache.Contains(guid);
+
+			Assert.False(callbackCalled);
+		}
 
 		#endregion
 
@@ -696,6 +736,45 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
+		public static void TestPartitionedTemporalGuidCache_AssetSizeGet_KnownDelayed_CallsCopyCallback() {
+			var callbackCalled = false;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { callbackCalled = true; }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			var guid = Guid.NewGuid();
+			cache.TryAdd(guid, 2, out var dbPath2);
+			Thread.Sleep(1100);
+			cache.AssetSize(guid);
+
+			Assert.True(callbackCalled);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_AssetSizeGet_KnownImmediate_NoCopyCallback() {
+			var callbackCalled = false;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { callbackCalled = true; }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			var guid = Guid.NewGuid();
+			cache.TryAdd(guid, 2, out var dbPath2);
+			cache.AssetSize(guid);
+
+			Assert.False(callbackCalled);
+		}
+
+		[Test]
 		public static void TestPartitionedTemporalGuidCache_AssetSizeGet_Unknown_Null() {
 			var cache = new PartitionedTemporalGuidCache(
 				DATABASE_FOLDER_PATH,
@@ -710,8 +789,6 @@ namespace LibWhipLruTests.Cache {
 			cache.TryAdd(Guid.NewGuid(), 3, out var dbPath3);
 			Assert.IsNull(cache.AssetSize(guid));
 		}
-
-		// TODO: test to see if the asset copy callback happens
 
 		#endregion
 
@@ -738,6 +815,50 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
+		public static void TestPartitionedTemporalGuidCache_AssetSizeSet_KnownDelayed_CallsCopyCallback() {
+			var callbackCalled = false;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { callbackCalled = true; }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			var guid = Guid.NewGuid();
+			cache.TryAdd(guid, 2, out var dbPath2);
+
+			Thread.Sleep(1100);
+
+			cache.AssetSize(guid, 10);
+
+			Assert.True(callbackCalled);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_AssetSizeSet_KnownImmediate_NoCopyCallback() {
+			var callbackCalled = false;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { callbackCalled = true; }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			var guid = Guid.NewGuid();
+			cache.TryAdd(Guid.NewGuid(), 1, out var dbPath1);
+			cache.TryAdd(guid, 2, out var dbPath2);
+			cache.TryAdd(Guid.NewGuid(), 3, out var dbPath3);
+
+			cache.AssetSize(guid, 10);
+
+			Assert.False(callbackCalled);
+		}
+
+		[Test]
 		public static void TestPartitionedTemporalGuidCache_AssetSizeSet_Unknown_NoChange() {
 			var cache = new PartitionedTemporalGuidCache(
 				DATABASE_FOLDER_PATH,
@@ -758,8 +879,6 @@ namespace LibWhipLruTests.Cache {
 			Assert.AreEqual(1, cache.AssetSize(guid1));
 			Assert.AreEqual(3, cache.AssetSize(guid3));
 		}
-
-		// TODO: test to see if the asset copy callback happens
 
 		#endregion
 
@@ -824,7 +943,47 @@ namespace LibWhipLruTests.Cache {
 			Assert.That(result, Contains.Item(guid2));
 		}
 
-		// TODO: test to see if the asset copy callback happens
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_ItemsWithPrefix_Delayed_CallsCopyCallback() {
+			var callbackCalled = false;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { callbackCalled = true; }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			var guid = Guid.Parse("fcf84364-5fbd-4866-b8a7-35b93a20dbc6");
+			cache.TryAdd(guid, 1, out var dbPath1);
+
+			Thread.Sleep(1100);
+
+			cache.ItemsWithPrefix(guid.ToString("N").Substring(0, 3));
+
+			Assert.True(callbackCalled);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_ItemsWithPrefix_Immediate_NoCopyCallback() {
+			var callbackCalled = false;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { callbackCalled = true; }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			var guid = Guid.Parse("fcf84364-5fbd-4866-b8a7-35b93a20dbc6");
+			cache.TryAdd(guid, 1, out var dbPath1);
+
+			cache.ItemsWithPrefix(guid.ToString("N").Substring(0, 3));
+
+			Assert.False(callbackCalled);
+		}
 
 		#endregion
 
