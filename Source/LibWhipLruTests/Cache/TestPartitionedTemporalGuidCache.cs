@@ -311,15 +311,257 @@ namespace LibWhipLruTests.Cache {
 
 		#endregion
 
-		#region TryAdd returning old asset
+		#region TryAdd restoring old asset
 
-		// TODO: write thse tests.
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryAddRestore_FirstTime_ReturnsTrue() {
+			var assetId1 = Guid.NewGuid();
+			IDictionary<Guid, object> assetsRemoved;
+			{
+				var oldCache = new PartitionedTemporalGuidCache(
+					DATABASE_FOLDER_PATH,
+					TimeSpan.FromSeconds(1),
+					partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
+					partPath => { Directory.Delete(partPath, true); }, // delete partition
+					(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+					partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+				);
+
+				oldCache.TryAdd(assetId1, 2, out var dbPath);
+				File.AppendAllText(Path.Combine(dbPath, "t1"), "12");
+
+				assetsRemoved = oldCache.Remove(2, out var cleared);
+			}
+
+			var newCache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetIdToCopy, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			Assert.True(newCache.TryAdd(assetsRemoved[assetId1], out var newDbPath));
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryAddRestore_Multiple_ReturnsTrue() {
+			var assetId1 = Guid.NewGuid();
+			var assetId2 = Guid.NewGuid();
+			var assetId3 = Guid.NewGuid();
+
+			IDictionary<Guid, object> assetsRemoved;
+			{
+				var oldCache = new PartitionedTemporalGuidCache(
+					DATABASE_FOLDER_PATH,
+					TimeSpan.FromSeconds(1),
+					partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
+					partPath => { Directory.Delete(partPath, true); }, // delete partition
+					(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+					partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+				);
+
+				oldCache.TryAdd(assetId1, 2, out var dbPath);
+				oldCache.TryAdd(assetId2, 2, out var dbPath1);
+				oldCache.TryAdd(assetId3, 2, out var dbPath2);
+				File.AppendAllText(Path.Combine(dbPath, "t1"), "123456");
+
+				assetsRemoved = oldCache.Remove(6, out var cleared);
+			}
+
+			var newCache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetIdToCopy, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			Assert.True(newCache.TryAdd(assetsRemoved[assetId1], out var newDbPath1));
+			Assert.True(newCache.TryAdd(assetsRemoved[assetId2], out var newDbPath2));
+			Assert.True(newCache.TryAdd(assetsRemoved[assetId3], out var newDbPath3));
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryAddRestore_MultipleFast_SamePartition() {
+			var assetId1 = Guid.NewGuid();
+			var assetId2 = Guid.NewGuid();
+
+			IDictionary<Guid, object> assetsRemoved;
+			{
+				var oldCache = new PartitionedTemporalGuidCache(
+					DATABASE_FOLDER_PATH,
+					TimeSpan.FromSeconds(1),
+					partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
+					partPath => { Directory.Delete(partPath, true); }, // delete partition
+					(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+					partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+				);
+
+				oldCache.TryAdd(assetId1, 2, out var dbPath);
+				oldCache.TryAdd(assetId2, 2, out var dbPath1);
+				File.AppendAllText(Path.Combine(dbPath, "t1"), "1234");
+
+				assetsRemoved = oldCache.Remove(4, out var cleared);
+			}
+
+			var newCache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetIdToCopy, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			newCache.TryAdd(assetsRemoved[assetId1], out var newDbPath1);
+			newCache.TryAdd(assetsRemoved[assetId2], out var newDbPath2);
+			Assert.AreEqual(newDbPath1, newDbPath2);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryAddRestore_MultipleSlow_DifferentPartition() {
+			var assetId1 = Guid.NewGuid();
+			var assetId2 = Guid.NewGuid();
+
+			IDictionary<Guid, object> assetsRemoved;
+			{
+				var oldCache = new PartitionedTemporalGuidCache(
+					DATABASE_FOLDER_PATH,
+					TimeSpan.FromSeconds(1),
+					partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
+					partPath => { Directory.Delete(partPath, true); }, // delete partition
+					(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+					partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+				);
+
+				oldCache.TryAdd(assetId1, 2, out var dbPath);
+				oldCache.TryAdd(assetId2, 2, out var dbPath1);
+				File.AppendAllText(Path.Combine(dbPath, "t1"), "1234");
+
+				assetsRemoved = oldCache.Remove(4, out var cleared);
+			}
+
+			var newCache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetIdToCopy, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			newCache.TryAdd(assetsRemoved[assetId1], out var newDbPath1);
+			Thread.Sleep(1100);
+			newCache.TryAdd(assetsRemoved[assetId2], out var newDbPath2);
+			Assert.AreNotEqual(newDbPath1, newDbPath2);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryAddRestore_Duplicate_ReturnsFalse() {
+			var assetId1 = Guid.NewGuid();
+
+			IDictionary<Guid, object> assetsRemoved;
+			{
+				var oldCache = new PartitionedTemporalGuidCache(
+					DATABASE_FOLDER_PATH,
+					TimeSpan.FromSeconds(1),
+					partPath => { Directory.CreateDirectory(partPath); }, // Open or create partition
+					partPath => { Directory.Delete(partPath, true); }, // delete partition
+					(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+					partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+				);
+
+				oldCache.TryAdd(assetId1, 2, out var dbPath);
+				File.AppendAllText(Path.Combine(dbPath, "t1"), "12");
+
+				assetsRemoved = oldCache.Remove(4, out var cleared);
+			}
+
+			var newCache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetIdToCopy, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			newCache.TryAdd(assetsRemoved[assetId1], out var newDbPath1);
+			Assert.False(newCache.TryAdd(assetsRemoved[assetId1], out var newDbPath2));
+		}
 
 		#endregion
 
 		#region TryGetAssetPartition
 
-		// TODO: write these tests.
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryGetAssetPartition_GoodAsset_ReturnsTrue() {
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromDays(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			var assetId1 = Guid.NewGuid();
+
+			cache.TryAdd(assetId1, 2, out var dbPath);
+
+			Assert.True(cache.TryGetAssetPartition(assetId1, out var dbPath2));
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryGetAssetPartition_GoodAsset_SamePartition() {
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromDays(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			var assetId1 = Guid.NewGuid();
+
+			cache.TryAdd(assetId1, 2, out var dbPath);
+
+			cache.TryGetAssetPartition(assetId1, out var dbPath2);
+
+			Assert.AreEqual(dbPath, dbPath2);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryGetAssetPartition_MissingAsset_ReturnsFalse() {
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromDays(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			Assert.False(cache.TryGetAssetPartition(Guid.NewGuid(), out var dbPath));
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_TryGetAssetPartition_ZeroAsset_ReturnsFalse() {
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromDays(1),
+				partPath => { }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			Assert.False(cache.TryGetAssetPartition(Guid.Empty, out var dbPath));
+		}
 
 		#endregion
 
