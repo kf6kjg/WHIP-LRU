@@ -615,9 +615,82 @@ namespace LibWhipLruTests.Cache {
 			Assert.AreEqual(0, cache.Count);
 		}
 
-		// TODO: test for calls to delete partitions.
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_Clear_OnePartition_CallsDeleteCallback() {
+			var handlerCalled = false;
 
-		// TODO: test to see if a new partition is created.
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromDays(1),
+				partPath => { }, // Open or create partition
+				partPath => { handlerCalled = true; }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			cache.TryAdd(Guid.NewGuid(), 0, out var dbPath);
+			cache.Clear();
+			Assert.True(handlerCalled);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_Clear_TwoPartitions_CallsDeleteCallback() {
+			var handlerCalled = 0;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { handlerCalled++; }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			cache.TryAdd(Guid.NewGuid(), 0, out var dbPath);
+			Thread.Sleep(1100);
+			cache.TryAdd(Guid.NewGuid(), 0, out var dbPath2);
+
+			cache.Clear();
+			Assert.AreEqual(2, handlerCalled);
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_Clear_TwoPartitions_CorrectPaths() {
+			var pathsCalled = new List<string>();
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromSeconds(1),
+				partPath => { }, // Open or create partition
+				partPath => { pathsCalled.Add(partPath); }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+
+			cache.TryAdd(Guid.NewGuid(), 0, out var dbPath);
+			Thread.Sleep(1100);
+			cache.TryAdd(Guid.NewGuid(), 0, out var dbPath2);
+
+			cache.Clear();
+			Assert.That(pathsCalled, Contains.Item(dbPath));
+			Assert.That(pathsCalled, Contains.Item(dbPath2));
+		}
+
+		[Test]
+		public static void TestPartitionedTemporalGuidCache_Clear_CallsCreateCallback() {
+			var handlerCalled = false;
+
+			var cache = new PartitionedTemporalGuidCache(
+				DATABASE_FOLDER_PATH,
+				TimeSpan.FromDays(1),
+				partPath => { handlerCalled = true; }, // Open or create partition
+				partPath => { }, // delete partition
+				(assetId, partPathSource, partPathDest) => { }, // copy asset between partitions
+				partPath => { return null; } // partition found. Load it and return the asset IDs and sizes contained.
+			);
+			cache.TryAdd(Guid.NewGuid(), 0, out var dbPath);
+			cache.Clear();
+			Assert.True(handlerCalled);
+		}
 
 		#endregion
 
