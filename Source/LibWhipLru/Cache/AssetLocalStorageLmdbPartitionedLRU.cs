@@ -41,6 +41,9 @@ namespace LibWhipLru.Cache {
 	public class AssetLocalStorageLmdbPartitionedLRU : IChattelLocalStorage, IDisposable {
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+		/// <summary>
+		/// The mininum recommended setting for the database maximum disk storage.  Any smaller than this and you might have trouble with a single asset.
+		/// </summary>
 		public static readonly ulong DB_MAX_DISK_BYTES_MIN_RECOMMENDED = uint.MaxValue/*4TB, maximum size of single asset*/;
 		private static readonly string DB_NAME; // null to use default DB.
 
