@@ -139,6 +139,7 @@
     <Compile Include="Cache\TestAssetLocalStorageLmdb_Ctor3NoLruPurge.cs" />
     <Compile Include="Cache\TestPartitionedTemporalGuidCache.cs" />
     <Compile Include="Cache\TestAssetLocalStorageLmdbPartitionedCtor.cs" />
+    <Compile Include="Cache\TestAssetLocalStorageLmdbPartitioned.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Cache\" />
