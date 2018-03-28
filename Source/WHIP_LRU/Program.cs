@@ -143,7 +143,7 @@ namespace WHIP_LRU {
 				var maxAssetLocalStorageDiskSpaceByteCount = (ulong?)localStorageConfig?.GetLong("MaxDiskSpace", (long)AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES) ?? AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES;
 				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)localStorageConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
 
-				var readerLocalStorage = new AssetLocalStorageLmdb(chattelConfigRead, maxAssetLocalStorageDiskSpaceByteCount);
+				var readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(chattelConfigRead, maxAssetLocalStorageDiskSpaceByteCount);
 				var chattelReader = new ChattelReader(chattelConfigRead, readerLocalStorage); // TODO: add purge flag to CLI
 				var chattelWriter = new ChattelWriter(chattelConfigWrite, readerLocalStorage); // add purge flag to CLI
 

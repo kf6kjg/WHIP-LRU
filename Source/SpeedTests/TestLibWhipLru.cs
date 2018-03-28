@@ -35,7 +35,7 @@ namespace SpeedTests {
 		protected const string SERVICE_PASSWORD = "widjadidja";
 
 		private readonly LibWhipLru.Cache.StorageManager _libWhipLruStorageManager;
-		private readonly LibWhipLru.Cache.AssetLocalStorageLmdb _libWhipLruLocalStorage;
+		private readonly LibWhipLru.Cache.AssetLocalStorageLmdbPartitionedLRU _libWhipLruLocalStorage;
 		private readonly LibWhipLru.WhipLru _libWhipLru;
 
 		public TestLibWhipLru() : base(SERVICE_ADDRESS, SERVICE_PORT, SERVICE_PASSWORD) {
@@ -66,7 +66,7 @@ namespace SpeedTests {
 				(Chattel.IAssetServer) null
 			);
 
-			_libWhipLruLocalStorage = new LibWhipLru.Cache.AssetLocalStorageLmdb(
+			_libWhipLruLocalStorage = new LibWhipLru.Cache.AssetLocalStorageLmdbPartitionedLRU(
 				config,
 				uint.MaxValue
 			);
