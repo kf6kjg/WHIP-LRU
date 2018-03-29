@@ -1,9 +1,9 @@
-﻿// TestAssetLocalStorageLmdbPartitionedLRU_.cs
+﻿// TestAssetLocalStorageLmdbPartitionedLRU.cs
 //
 // Author:
-//       Ricky C <>
+//       Ricky Curtice <ricky@rwcproductions.com>
 //
-// Copyright (c) 2018 
+// Copyright (c) 2018 Ricky Curtice
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Chattel;
 using InWorldz.Data.Assets.Stratus;
 using LibWhipLru.Cache;
@@ -34,7 +35,7 @@ namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	public static class TestAssetLocalStorageLmdbPartitionedLRU {
 		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb_partitioned";
-		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue;
+		public const ulong DATABASE_MAX_SIZE_BYTES = 4UL * 1024 * 1024;//uint.MaxValue;
 
 		private static ChattelConfiguration _chattelConfigRead;
 		private static AssetLocalStorageLmdbPartitionedLRU _localStorageLmdb;
@@ -80,7 +81,26 @@ namespace LibWhipLruTests.Cache {
 			Assert.False(_localStorageLmdb.AssetOnDisk(Guid.NewGuid()));
 		}
 
-		// Positive tests would be identical to Store Asset tests...
+		// Most simple positive tests would be identical to Store Asset tests...
+
+		[Test]
+		public static void TestAssetLocalStorageLmdbPartitionedLRU_AssetOnDisk_KnownTwoPartitions_True() {
+			var assetId1 = Guid.NewGuid();
+			var assetId2 = Guid.NewGuid();
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId1,
+			});
+
+			Thread.Sleep(1100);
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId2,
+			});
+
+			Assert.True(_localStorageLmdb.AssetOnDisk(assetId1));
+			Assert.True(_localStorageLmdb.AssetOnDisk(assetId2));
+		}
 
 		#endregion
 
@@ -127,6 +147,117 @@ namespace LibWhipLruTests.Cache {
 			};
 
 			Assert.Throws<ArgumentException>(() => _localStorage.StoreAsset(asset));
+		}
+
+
+		[Test]
+		[Timeout(2000)]
+		public static void TestAssetLocalStorageLmdbPartitionedLRU_StoreAsset_Full_DoesntThrow() {
+			var assetId1 = Guid.NewGuid();
+			var assetId2 = Guid.NewGuid();
+
+			var assetData = new byte[(ulong)(DATABASE_MAX_SIZE_BYTES / 3.5)]; // Sized so that the DB is just barely too full before the last call.
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId1,
+				Data = assetData,
+			});
+
+			Thread.Sleep(1100);
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = Guid.NewGuid(),
+				Data = assetData,
+			});
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = Guid.NewGuid(),
+				Data = assetData,
+			});
+
+			Assert.DoesNotThrow(() => _localStorage.StoreAsset(new StratusAsset {
+				Id = assetId2,
+				Data = assetData,
+			}));
+		}
+
+		[Test]
+		[Timeout(2000)]
+		public static void TestAssetLocalStorageLmdbPartitionedLRU_StoreAsset_Full_AllExpectedAssetsExist() {
+			var assetId1 = Guid.NewGuid();
+			var assetId2 = Guid.NewGuid();
+			var assetId3 = Guid.NewGuid();
+			var assetId4 = Guid.NewGuid();
+
+			var assetData = new byte[(ulong)(DATABASE_MAX_SIZE_BYTES / 3.5)]; // Sized so that the DB is just barely too full before the last call.
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId1,
+				Data = assetData,
+			});
+
+			Thread.Sleep(1100);
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId2,
+				Data = assetData,
+			});
+
+			_localStorage.StoreAsset(new StratusAsset {
+				Id = assetId3,
+				Data = assetData,
+			});
+
+			try {
+				_localStorage.StoreAsset(new StratusAsset {
+					Id = assetId4,
+					Data = assetData,
+				});
+			}
+			catch (WriteCacheFullException) {
+				// Skip it if it happens, which it should not in this case.
+			}
+
+			var errors = new List<string>();
+
+			if (_localStorageLmdb.AssetOnDisk(assetId1)) {
+				errors.Add("Asset 1 should have been deleted");
+			}
+
+			if (!_localStorageLmdb.AssetOnDisk(assetId2)) {
+				errors.Add("Missing Asset 2");
+			}
+
+			if (!_localStorageLmdb.AssetOnDisk(assetId3)) {
+				errors.Add("Missing Asset 3");
+			}
+
+			if (!_localStorageLmdb.AssetOnDisk(assetId4)) {
+				errors.Add("Missing Asset 4");
+			}
+
+			if (errors.Count > 0) {
+				Assert.Fail(string.Join(", ", errors));
+			}
+		}
+
+		[Test] 
+		[Timeout(60000)]
+		public static void TestAssetLocalStorageLmdbPartitionedLRU_StoreAsset_Purge_Cycle() {
+			Assert.DoesNotThrow(() => {
+				for (var i = 0; i < 100; ++i) {
+					var assetId = Guid.NewGuid();
+
+					_localStorage.StoreAsset(new StratusAsset {
+						Id = assetId,
+						Data = new byte[RandomUtil.NextUInt() % (DATABASE_MAX_SIZE_BYTES / 8 - 4096) + 4096],
+					});
+
+					Thread.Sleep(1000 / 8);
+
+					_localStorage.Purge(assetId);
+				}
+			});
 		}
 
 		#endregion
