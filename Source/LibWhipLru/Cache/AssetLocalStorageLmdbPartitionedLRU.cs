@@ -170,8 +170,8 @@ namespace LibWhipLru.Cache {
 
 			void HandleCopyAsset(Guid assetId, string sourcePath, string destPath) {
 				LOG.Debug($"Got request to copy asset {assetId} from DB environment at '{sourcePath}' to '{destPath}'");
-				if (_dbEnvironments.TryRemove(sourcePath, out var dbEnvSource)) {
-					if (_dbEnvironments.TryRemove(destPath, out var dbEnvDest)) {
+				if (_dbEnvironments.TryGetValue(sourcePath, out var dbEnvSource)) {
+					if (_dbEnvironments.TryGetValue(destPath, out var dbEnvDest)) {
 						try {
 							var assetIdBytes = assetId.ToByteArray();
 
@@ -194,21 +194,7 @@ namespace LibWhipLru.Cache {
 						// Cleaning up after the copy means I allow the disk usage to bounce past the limit,
 						// but cleaning up before means that I might wipe the source location before I can read it, as the asset might be in the old location.
 
-						// Find out how much disk space is being used.
-						LOG.Info($"Checking to see if near disk limit...");
-						var diskSpaceUsed = 0UL;
-						foreach (var dbPath in _activeIds.PartitionPaths) {
-							// I'd be happier I think with the byte count of the blocks consumed.
-							diskSpaceUsed += (ulong)Directory.EnumerateFiles(dbPath).Select(file => new FileInfo(file).Length).Aggregate((prev, cur) => prev + cur);
-						}
-
-						// If at least 98% (hipshot) full, call remove to get down to at least 90% (another hipshot).
-						if ((float)diskSpaceUsed / _dbMaxDiskBytes > 0.98f) {
-							LOG.Info($"Disk limit exceeded or near exceeding: using {diskSpaceUsed} of {_dbMaxDiskBytes} bytes.");
-							var diskSpaceNeeded = diskSpaceUsed - (ulong)(_dbMaxDiskBytes * 0.90f);
-							var removedIds = _activeIds.Remove(diskSpaceNeeded, out var byteCountCleared);
-							LOG.Debug($"Removed {removedIds.Count} active IDs, and {byteCountCleared} bytes of disk space.");
-						}
+						CheckDiskAndCleanup();
 					}
 					else {
 						LOG.Warn($"Unable to find destination DB environment '{destPath}' during copy of asset {assetId}");
@@ -330,7 +316,7 @@ namespace LibWhipLru.Cache {
 			}
 
 			if (_activeIds.TryRemove(assetId)) {
-				// Do nothing to disk: it will fall off the LRU eventually.
+				// Do nothing to disk: it will fall off the LRU eventually.  Unless the server is restarted, then it'll be restored to fall off later.
 			}
 			else {
 				throw new AssetNotFoundException(assetId);
@@ -385,6 +371,13 @@ namespace LibWhipLru.Cache {
 				spaceNeeded = (ulong)memStream.Length;
 				memStream.Position = 0;
 
+				try {
+					CheckDiskAndCleanup(spaceNeeded);
+				}
+				catch (Exception e) {
+					LOG.Warn($"Got an exceptions while attempting to clear some space just before writing to disk.", e);
+				}
+
 				var buffer = new byte[spaceNeeded];
 
 				Buffer.BlockCopy(memStream.GetBuffer(), 0, buffer, 0, (int)spaceNeeded);
@@ -408,20 +401,22 @@ namespace LibWhipLru.Cache {
 					}
 				}
 
-				switch (lightningException.StatusCode) {
-					case -30799:
-						//LightningDB.Native.Lmdb.MDB_KEYEXIST: Not available in lib ATM...
-						// Ignorable.
-						LOG.Warn($"{asset.Id} already exists according to local storage. Adding to memory list.", lightningException);
-						lightningException = null;
+				if (lightningException != null) {
+					switch (lightningException.StatusCode) {
+						case -30799:
+							//LightningDB.Native.Lmdb.MDB_KEYEXIST: Not available in lib ATM...
+							// Ignorable.
+							LOG.Warn($"{asset.Id} already exists according to local storage. Adding to memory list.", lightningException);
+							lightningException = null;
 
-						if (!_activeIds.TryAdd(asset.Id, spaceNeeded, out var dbPathx)) {
-							_activeIds.AssetSize(asset.Id, spaceNeeded);
-						}
+							if (!_activeIds.TryAdd(asset.Id, spaceNeeded, out var dbPathx)) {
+								_activeIds.AssetSize(asset.Id, spaceNeeded);
+							}
 
-						throw new AssetExistsException(asset.Id);
-					default:
-						throw new AssetWriteException(asset.Id, lightningException);
+							throw new AssetExistsException(asset.Id);
+						default:
+							throw new AssetWriteException(asset.Id, lightningException);
+					}
 				}
 			}
 		}
@@ -449,6 +444,28 @@ namespace LibWhipLru.Cache {
 			}
 
 			throw new LocalStorageException($"Asset with ID {assetId} not found in local storage!");
+		}
+
+		private void CheckDiskAndCleanup() {
+			CheckDiskAndCleanup(0);
+		}
+
+		private void CheckDiskAndCleanup(ulong padding) {
+			// Find out how much disk space is being used.
+			LOG.Info($"Checking to see if near disk limit...");
+			var diskSpaceUsed = padding;
+			foreach (var dbPath in _activeIds.PartitionPaths) {
+				// I'd be happier I think with the byte count of the blocks consumed.
+				diskSpaceUsed += (ulong)Directory.EnumerateFiles(dbPath).Select(file => new FileInfo(file).Length).Aggregate((prev, cur) => prev + cur);
+			}
+
+			// If at least 98% (hipshot) full, call remove to get down to at least 90% (another hipshot).
+			if ((float)diskSpaceUsed / _dbMaxDiskBytes > 0.98f) {
+				LOG.Info($"Disk limit exceeded or near exceeding: using {diskSpaceUsed} of {_dbMaxDiskBytes} bytes.");
+				var diskSpaceNeeded = diskSpaceUsed - (ulong)(_dbMaxDiskBytes * 0.90f);
+				var removedIds = _activeIds.Remove(diskSpaceNeeded, out var byteCountCleared);
+				LOG.Debug($"Removed {removedIds.Count} active IDs, and {byteCountCleared} bytes of disk space.");
+			}
 		}
 
 		#endregion
@@ -479,7 +496,7 @@ namespace LibWhipLru.Cache {
 		/// <summary>
 		/// Releases all resource used by this object.
 		/// </summary>
-		/// <remarks>Call <see cref="IDisposable.Dispose()"/> when you are finished using the objec. The
+		/// <remarks>Call <see cref="IDisposable.Dispose()"/> when you are finished using the object. The
 		/// <see cref="IDisposable.Dispose()"/> method leaves the object in an unusable state. After
 		/// calling <see cref="IDisposable.Dispose()"/>, you must release all references to the object
 		/// so the garbage collector can reclaim the memory that the object was occupying.</remarks>
