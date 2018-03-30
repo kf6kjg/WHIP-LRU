@@ -217,7 +217,7 @@ namespace LibWhipLru.Cache {
 		/// <returns>If the asset ID is known.</returns>
 		/// <param name="assetId">Asset identifier.</param>
 		public bool Contains(Guid assetId) {
-			return _activeIds.Contains(assetId);
+			return _activeIds?.Contains(assetId) ?? false;
 		}
 
 		/// <summary>
@@ -227,7 +227,7 @@ namespace LibWhipLru.Cache {
 		/// <returns>If the asset ID is known and probably available.</returns>
 		/// <param name="assetId">Asset identifier.</param>
 		public bool AssetWasWrittenToDisk(Guid assetId) {
-			return _activeIds.AssetSize(assetId) > 0;
+			return _activeIds?.AssetSize(assetId) > 0;
 		}
 
 		/// <summary>
@@ -236,6 +236,10 @@ namespace LibWhipLru.Cache {
 		/// <returns>If the asset ID is known and on disk.</returns>
 		/// <param name="assetId">Asset identifier.</param>
 		public bool AssetOnDisk(Guid assetId) {
+			if (!_config.LocalStorageEnabled) {
+				return false;
+			}
+
 			if (_activeIds.TryGetAssetPartition(assetId, out var dbPath)) {
 				if (_dbEnvironments.TryGetValue(dbPath, out var dbEnv)) {
 					try {
@@ -292,6 +296,10 @@ namespace LibWhipLru.Cache {
 		/// A null or blank list results in all assets being purged.
 		/// </summary>
 		void IChattelLocalStorage.PurgeAll(IEnumerable<AssetFilter> assetFilter) {
+			if (!_config.LocalStorageEnabled) {
+				return;
+			}
+
 			if (assetFilter == null || !assetFilter.Any()) {
 				if (_activeIds.Count > 0) {
 					LOG.Warn("Unfiltered purge of all assets called. Proceeding with purge of all locally stored assets!");
@@ -316,6 +324,10 @@ namespace LibWhipLru.Cache {
 		void IChattelLocalStorage.Purge(Guid assetId) {
 			if (assetId == Guid.Empty) {
 				throw new ArgumentException("Asset Id should not be empty.", nameof(assetId));
+			}
+
+			if (!_config.LocalStorageEnabled) {
+				return;
 			}
 
 			if (_activeIds.TryRemove(assetId)) {
