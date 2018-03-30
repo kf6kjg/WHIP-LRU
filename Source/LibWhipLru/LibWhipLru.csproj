@@ -92,6 +92,8 @@
     <Compile Include="Server\ClientInfo.cs" />
     <Compile Include="Cache\OrderedGuidCache.cs" />
     <Compile Include="Cache\AssetLocalStorageLmdb.cs" />
+    <Compile Include="Cache\AssetLocalStorageLmdbPartitionedLRU.cs" />
+    <Compile Include="Cache\PartitionedTemporalGuidCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Server\" />

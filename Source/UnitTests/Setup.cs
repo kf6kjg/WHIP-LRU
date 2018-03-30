@@ -86,7 +86,7 @@ namespace UnitTests {
 			var chattelConfigRead = new ChattelConfiguration(DATABASE_FOLDER_PATH);
 			var chattelConfigWrite = new ChattelConfiguration(DATABASE_FOLDER_PATH);
 
-			var readerLocalStorage = new LibWhipLru.Cache.AssetLocalStorageLmdb(chattelConfigRead, DATABASE_MAX_SIZE_BYTES);
+			var readerLocalStorage = new LibWhipLru.Cache.AssetLocalStorageLmdbPartitionedLRU(chattelConfigRead, DATABASE_MAX_SIZE_BYTES);
 			var chattelReader = new ChattelReader(chattelConfigRead, readerLocalStorage);
 			var chattelWriter = new ChattelWriter(chattelConfigWrite, readerLocalStorage);
 

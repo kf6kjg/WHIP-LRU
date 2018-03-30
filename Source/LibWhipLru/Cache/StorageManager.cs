@@ -45,7 +45,7 @@ namespace LibWhipLru.Cache {
 		public delegate void StorageResultCallback(PutResult result);
 		public delegate void PurgeResultCallback(PurgeResult result);
 
-		private readonly AssetLocalStorageLmdb _localStorage;
+		private readonly AssetLocalStorageLmdbPartitionedLRU _localStorage;
 		private readonly ChattelReader _assetReader;
 		private readonly ChattelWriter _assetWriter;
 
@@ -65,7 +65,7 @@ namespace LibWhipLru.Cache {
 		/// <param name="reader">Reader.</param>
 		/// <param name="writer">Writer.</param>
 		public StorageManager(
-			AssetLocalStorageLmdb localStorage,
+			AssetLocalStorageLmdbPartitionedLRU localStorage,
 			TimeSpan negativeCacheItemLifetime,
 			ChattelReader reader,
 			ChattelWriter writer
@@ -194,8 +194,6 @@ namespace LibWhipLru.Cache {
 		/// </summary>
 		public void PurgeAllLocalAssets() {
 			IChattelLocalStorage chattelStorage = _localStorage;
-
-			// TODO: optimize this by having an index of all local=true assets and then just iterating that calling the per-item purge.
 
 			chattelStorage.PurgeAll(new List<AssetFilter> {
 				new AssetFilter {
