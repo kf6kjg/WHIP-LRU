@@ -54,7 +54,8 @@ namespace LibWhipLruTests.Cache {
 
 			_localStorage = _localStorageLmdb = new AssetLocalStorageLmdbPartitionedLRU(
 				_chattelConfigRead,
-				DATABASE_MAX_SIZE_BYTES
+				DATABASE_MAX_SIZE_BYTES,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_PARTITION_INTERVAL
 			);
 		}
 

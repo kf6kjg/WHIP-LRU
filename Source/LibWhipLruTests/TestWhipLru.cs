@@ -61,7 +61,11 @@ namespace LibWhipLruTests {
 			var chattelConfigRead = new ChattelConfiguration(TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_FOLDER_PATH);
 			var chattelConfigWrite = new ChattelConfiguration(TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_FOLDER_PATH);
 
-			_readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(chattelConfigRead, TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES);
+			_readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(
+				chattelConfigRead,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_PARTITION_INTERVAL
+			);
 			_chattelReader = new ChattelReader(chattelConfigRead, _readerLocalStorage);
 			_chattelWriter = new ChattelWriter(chattelConfigWrite, _readerLocalStorage);
 			_storageManager = new StorageManager(

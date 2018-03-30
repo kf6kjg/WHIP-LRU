@@ -34,6 +34,8 @@ namespace WHIP_LRU {
 
 		private static readonly uint DEFAULT_WRITECACHE_RECORD_COUNT = 1024U * 1024U * 1024U/*1GB*/ / 17 /*WriteCacheNode.BYTE_SIZE*/;
 
+		private static readonly uint DEFAULT_DB_PARTITION_INTERVAL_MINUTES = 60 * 24/*1day*/;
+
 		private static readonly Dictionary<string, IAssetServer> _assetServersByName = new Dictionary<string, IAssetServer>();
 
 		public static int Main(string[] args) {
@@ -140,10 +142,15 @@ namespace WHIP_LRU {
 
 				var localStorageConfig = configSource.Configs["LocalStorage"];
 
-				var maxAssetLocalStorageDiskSpaceByteCount = (ulong?)localStorageConfig?.GetLong("MaxDiskSpace", (long)AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES) ?? AssetLocalStorageLmdb.DEFAULT_DB_MAX_DISK_BYTES;
+				var maxAssetLocalStorageDiskSpaceByteCount = (ulong?)localStorageConfig?.GetLong("MaxDiskSpace", (long)AssetLocalStorageLmdbPartitionedLRU.DB_MAX_DISK_BYTES_MIN_RECOMMENDED) ?? AssetLocalStorageLmdbPartitionedLRU.DB_MAX_DISK_BYTES_MIN_RECOMMENDED;
 				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)localStorageConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
+				var partitionInterval = TimeSpan.FromMinutes((uint?)localStorageConfig?.GetInt("MinutesBetweenDatabasePartitions", (int)DEFAULT_DB_PARTITION_INTERVAL_MINUTES) ?? DEFAULT_DB_PARTITION_INTERVAL_MINUTES);
 
-				var readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(chattelConfigRead, maxAssetLocalStorageDiskSpaceByteCount);
+				var readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(
+					chattelConfigRead,
+					maxAssetLocalStorageDiskSpaceByteCount,
+					partitionInterval
+				);
 				var chattelReader = new ChattelReader(chattelConfigRead, readerLocalStorage); // TODO: add purge flag to CLI
 				var chattelWriter = new ChattelWriter(chattelConfigWrite, readerLocalStorage); // add purge flag to CLI
 

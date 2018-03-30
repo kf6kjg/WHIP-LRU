@@ -1,7 +1,7 @@
 ﻿// AssetLocalStorageLmdbPartitionedLRU.cs
 //
 // Author:
-//       Ricky C <>
+//       Ricky Curtice <ricky@rwcproductions.com>
 //
 // Copyright (c) 2018
 //
@@ -66,7 +66,8 @@ namespace LibWhipLru.Cache {
 		/// <param name="maxAssetLocalStorageDiskSpaceByteCount">Max asset local storage disk space, in bytes.</param>
 		public AssetLocalStorageLmdbPartitionedLRU(
 			ChattelConfiguration config,
-			ulong maxAssetLocalStorageDiskSpaceByteCount
+			ulong maxAssetLocalStorageDiskSpaceByteCount,
+			TimeSpan partitioningInterval
 		) {
 			_config = config ?? throw new ArgumentNullException(nameof(config));
 
@@ -87,7 +88,7 @@ namespace LibWhipLru.Cache {
 
 			_activeIds = new PartitionedTemporalGuidCache(
 				_config.LocalStorageFolder.FullName,
-				TimeSpan.FromSeconds(1),
+				partitioningInterval,
 				HandleOpenOrCreateEnvironment,
 				HandleDeleteEnvironment,
 				HandleCopyAsset,

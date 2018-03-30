@@ -68,7 +68,8 @@ namespace SpeedTests {
 
 			_libWhipLruLocalStorage = new LibWhipLru.Cache.AssetLocalStorageLmdbPartitionedLRU(
 				config,
-				uint.MaxValue
+				uint.MaxValue,
+				TestLibWhipLruLocalStorage.DATABASE_PARTITION_INTERVAL
 			);
 
 			_libWhipLruStorageManager = new LibWhipLru.Cache.StorageManager(

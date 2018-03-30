@@ -64,7 +64,11 @@ namespace LibWhipLruTests.Cache {
 			LOG.Info($"Executing {nameof(BeforeEveryTest)}");
 			TestAssetLocalStorageLmdbPartitionedLRUCtor.RebuildLocalStorageFolder(TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH);
 
-			_readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(_chattelConfigRead, TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES);
+			_readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(
+				_chattelConfigRead,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_PARTITION_INTERVAL
+			);
 			_chattelReader = new ChattelReader(_chattelConfigRead, _readerLocalStorage);
 			_chattelWriter = new ChattelWriter(_chattelConfigWrite, _readerLocalStorage);
 		}
@@ -284,7 +288,11 @@ namespace LibWhipLruTests.Cache {
 			LOG.Info($"Executing {nameof(TestStorageManager_CheckAsset_SingleNoExist_CallsServerRequestAsset)}");
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(config, TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES)) {
+			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(
+				config,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_PARTITION_INTERVAL
+			)) {
 				var reader = new ChattelReader(config, localStorage, false);
 				var writer = new ChattelWriter(config, localStorage, false);
 
@@ -308,7 +316,11 @@ namespace LibWhipLruTests.Cache {
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(config, TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES)) {
+			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(
+				config,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_PARTITION_INTERVAL
+			)) {
 				var reader = new ChattelReader(config, localStorage, false);
 				var writer = new ChattelWriter(config, localStorage, false);
 
@@ -514,7 +526,11 @@ namespace LibWhipLruTests.Cache {
 			LOG.Info($"Executing {nameof(TestStorageManager_StoreAsset_CallsServerPutAsset)}");
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_FOLDER_PATH, server);
-			using (var readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(config, uint.MaxValue)) {
+			using (var readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(
+				config,
+				uint.MaxValue,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_PARTITION_INTERVAL
+			)) {
 				var reader = new ChattelReader(config, readerLocalStorage);
 				var writer = new ChattelWriter(config, readerLocalStorage);
 
@@ -729,7 +745,11 @@ namespace LibWhipLruTests.Cache {
 			LOG.Info($"Executing {nameof(TestStorageManager_GetAsset_SingleNoExist_CallsServerRequestAsset)}");
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(config, TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES)) {
+			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(
+				config,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_PARTITION_INTERVAL
+			)) {
 				var reader = new ChattelReader(config, localStorage, false);
 				var writer = new ChattelWriter(config, localStorage, false);
 
@@ -753,7 +773,11 @@ namespace LibWhipLruTests.Cache {
 			// Tests the existence of a negative cache.
 			var server = Substitute.For<IAssetServer>();
 			var config = new ChattelConfiguration(TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_FOLDER_PATH, WRITE_CACHE_FILE_PATH, WRITE_CACHE_MAX_RECORD_COUNT, server);
-			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(config, TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES)) {
+			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(
+				config,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_MAX_SIZE_BYTES,
+				TestAssetLocalStorageLmdbPartitionedLRUCtor.DATABASE_PARTITION_INTERVAL
+			)) {
 				var reader = new ChattelReader(config, localStorage, false);
 				var writer = new ChattelWriter(config, localStorage, false);
 

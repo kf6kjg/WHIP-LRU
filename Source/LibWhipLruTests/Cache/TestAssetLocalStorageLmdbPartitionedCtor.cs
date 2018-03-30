@@ -35,6 +35,7 @@ namespace LibWhipLruTests.Cache {
 	public static class TestAssetLocalStorageLmdbPartitionedLRUCtor {
 		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb";
 		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue/*Min value to get tests to run*/;
+		public static readonly TimeSpan DATABASE_PARTITION_INTERVAL = TimeSpan.FromSeconds(1);
 
 		private static ChattelConfiguration _chattelConfigRead;
 
@@ -82,7 +83,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdbPartitionedLRU(
 					_chattelConfigRead,
-					DATABASE_MAX_SIZE_BYTES
+					DATABASE_MAX_SIZE_BYTES,
+					DATABASE_PARTITION_INTERVAL
 				)) { }
 			});
 		}
@@ -93,7 +95,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdbPartitionedLRU(
 					_chattelConfigRead,
-					DATABASE_MAX_SIZE_BYTES
+					DATABASE_MAX_SIZE_BYTES,
+					DATABASE_PARTITION_INTERVAL
 				)) { }
 			});
 		}
@@ -104,7 +107,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdbPartitionedLRU(
 					_chattelConfigRead,
-					DATABASE_MAX_SIZE_BYTES
+					DATABASE_MAX_SIZE_BYTES,
+					DATABASE_PARTITION_INTERVAL
 				)) { }
 			});
 		}
@@ -114,7 +118,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdbPartitionedLRU(
 					_chattelConfigRead,
-					0
+					0,
+					DATABASE_PARTITION_INTERVAL
 				)) { }
 			});
 		}
@@ -124,7 +129,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdbPartitionedLRU(
 					_chattelConfigRead,
-					1
+					1,
+					DATABASE_PARTITION_INTERVAL
 				)) { }
 			});
 		}
@@ -134,7 +140,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.DoesNotThrow(() => {
 				using (new AssetLocalStorageLmdbPartitionedLRU(
 					_chattelConfigRead,
-					uint.MaxValue
+					uint.MaxValue,
+					DATABASE_PARTITION_INTERVAL
 				)) { }
 			});
 		}
@@ -144,7 +151,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.Throws<ArgumentOutOfRangeException>(() => {
 				using (new AssetLocalStorageLmdbPartitionedLRU(
 					_chattelConfigRead,
-					long.MaxValue + 1UL
+					long.MaxValue + 1UL,
+					DATABASE_PARTITION_INTERVAL
 				)) { }
 			});
 		}
@@ -154,7 +162,8 @@ namespace LibWhipLruTests.Cache {
 			Assert.Throws<ArgumentOutOfRangeException>(() => {
 				using (new AssetLocalStorageLmdbPartitionedLRU(
 					_chattelConfigRead,
-					ulong.MaxValue
+					ulong.MaxValue,
+					DATABASE_PARTITION_INTERVAL
 				)) { }
 			});
 		}
@@ -167,7 +176,8 @@ namespace LibWhipLruTests.Cache {
 
 			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(
 				_chattelConfigRead,
-				DATABASE_MAX_SIZE_BYTES
+				DATABASE_MAX_SIZE_BYTES,
+					DATABASE_PARTITION_INTERVAL
 			)) {
 				IChattelLocalStorage localStorageViaInterface = localStorage;
 				localStorageViaInterface.StoreAsset(asset);
@@ -175,7 +185,8 @@ namespace LibWhipLruTests.Cache {
 
 			using (var localStorage = new AssetLocalStorageLmdbPartitionedLRU(
 				_chattelConfigRead,
-				DATABASE_MAX_SIZE_BYTES
+				DATABASE_MAX_SIZE_BYTES,
+					DATABASE_PARTITION_INTERVAL
 			)) {
 				Assert.True(localStorage.Contains(asset.Id));
 			}

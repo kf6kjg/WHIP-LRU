@@ -33,6 +33,7 @@ namespace SpeedTests {
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private const uint ITERATION_MAX = 1000;
 		private static readonly TimeSpan TEST_MAX_TIME = TimeSpan.FromSeconds(60);
+		public static readonly TimeSpan DATABASE_PARTITION_INTERVAL = TimeSpan.FromSeconds(20);
 
 		private readonly LibWhipLru.Cache.StorageManager _libWhipLruStorageManager;
 		private readonly LibWhipLru.Cache.AssetLocalStorageLmdbPartitionedLRU _libWhipLruLocalStorage;
@@ -80,7 +81,8 @@ namespace SpeedTests {
 
 			_libWhipLruLocalStorage = new LibWhipLru.Cache.AssetLocalStorageLmdbPartitionedLRU(
 				config,
-				uint.MaxValue
+				uint.MaxValue,
+				DATABASE_PARTITION_INTERVAL
 			);
 
 			_libWhipLruStorageManager = new LibWhipLru.Cache.StorageManager(
