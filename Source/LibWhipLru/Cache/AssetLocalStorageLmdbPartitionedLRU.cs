@@ -105,7 +105,10 @@ namespace LibWhipLru.Cache {
 
 					env.Open(EnvironmentOpenFlags.None, UnixAccessMode.OwnerRead | UnixAccessMode.OwnerWrite);
 
-					_dbEnvironments.TryAdd(path, env);
+					if (!_dbEnvironments.TryAdd(path, env)) {
+						env.Dispose();
+						LOG.Warn($"Attempted to initialize/open an environment at an already known path: {path}");
+					}
 				}
 				catch (LightningException e) {
 					throw new LocalStorageException($"Given path invalid: '{_config.LocalStorageFolder.FullName}'", e);
@@ -472,25 +475,13 @@ namespace LibWhipLru.Cache {
 
 		#region IDisposable Support
 
-		private bool disposedValue; // To detect redundant calls
-
 		protected virtual void Dispose(bool disposing) {
-			if (!disposedValue) {
-				// Free unmanaged resources (unmanaged objects) and override a finalizer below.
+			// Clear out managed objects
 
-				foreach (var dbPath in _dbEnvironments.Keys) {
-					_dbEnvironments.TryRemove(dbPath, out var dbEnv);
-					dbEnv.Dispose();
-				}
-
-				disposedValue = true;
+			foreach (var dbPath in _dbEnvironments.Keys) {
+				_dbEnvironments.TryRemove(dbPath, out var dbEnv);
+				dbEnv.Dispose();
 			}
-		}
-
-		// Override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-		~AssetLocalStorageLmdbPartitionedLRU() {
-			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-			Dispose(false);
 		}
 
 		/// <summary>
