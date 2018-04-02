@@ -56,6 +56,7 @@ namespace WHIP_LRU {
 			configSource.AddSwitch("Startup", "inifile");
 			configSource.AddSwitch("Startup", "logconfig");
 			configSource.AddSwitch("Startup", "pidfile");
+			configSource.AddSwitch("Startup", "purge");
 
 			var startupConfig = configSource.Configs["Startup"];
 
@@ -146,13 +147,18 @@ namespace WHIP_LRU {
 				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)localStorageConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
 				var partitionInterval = TimeSpan.FromMinutes((uint?)localStorageConfig?.GetInt("MinutesBetweenDatabasePartitions", (int)DEFAULT_DB_PARTITION_INTERVAL_MINUTES) ?? DEFAULT_DB_PARTITION_INTERVAL_MINUTES);
 
+				var purgeAll = startupConfig.GetString("purge", string.Empty) == "all";
+				if (purgeAll) {
+					LOG.Info("CLI request to purge all assets on startup specified.");
+				}
+
 				var readerLocalStorage = new AssetLocalStorageLmdbPartitionedLRU(
 					chattelConfigRead,
 					maxAssetLocalStorageDiskSpaceByteCount,
 					partitionInterval
 				);
-				var chattelReader = new ChattelReader(chattelConfigRead, readerLocalStorage); // TODO: add purge flag to CLI
-				var chattelWriter = new ChattelWriter(chattelConfigWrite, readerLocalStorage); // add purge flag to CLI
+				var chattelReader = new ChattelReader(chattelConfigRead, readerLocalStorage, purgeAll);
+				var chattelWriter = new ChattelWriter(chattelConfigWrite, readerLocalStorage, purgeAll);
 
 				var storageManager = new StorageManager(
 					readerLocalStorage,
