@@ -87,14 +87,14 @@
     <Reference Include="LibreMetaverse">
       <HintPath>..\..\packages\LibreMetaverse.1.2.5.188\lib\net461\LibreMetaverse.dll</HintPath>
     </Reference>
-    <Reference Include="Chattel">
-      <HintPath>..\..\packages\Chattel.2.1.0.101\lib\net461\Chattel.dll</HintPath>
-    </Reference>
     <Reference Include="System.Security.Cryptography.Algorithms">
       <HintPath>..\..\packages\System.Security.Cryptography.Algorithms.4.3.1\lib\net461\System.Security.Cryptography.Algorithms.dll</HintPath>
     </Reference>
     <Reference Include="System.Security.Cryptography.X509Certificates">
       <HintPath>..\..\packages\System.Security.Cryptography.X509Certificates.4.3.2\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
+    </Reference>
+    <Reference Include="Chattel">
+      <HintPath>..\..\packages\Chattel.2.1.1.104\lib\net461\Chattel.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
