@@ -606,19 +606,6 @@ namespace LibWhipLruTests.Cache {
 		}
 
 		[Test]
-		public static void TestStorageManager_GetAsset_Unknown_IsNull() {
-			LOG.Info($"Executing {nameof(TestStorageManager_GetAsset_Unknown_IsNull)}");
-			var mgr = new StorageManager(
-				_readerLocalStorage,
-				TimeSpan.FromMinutes(2),
-				_chattelReader,
-				_chattelWriter
-			);
-
-			mgr.GetAsset(Guid.NewGuid(), Assert.IsNull, Assert.Fail);
-		}
-
-		[Test]
 		public static void TestStorageManager_GetAsset_Known_DoesntThrow() {
 			LOG.Info($"Executing {nameof(TestStorageManager_GetAsset_Known_DoesntThrow)}");
 			var mgr = new StorageManager(
