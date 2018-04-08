@@ -4,7 +4,9 @@ init:
 - ps: Write-Host "Setting version to '$env:TAG_VERSION'"
 - ps: Update-AppveyorBuild -Version "$env:TAG_VERSION"
 
-image: Visual Studio 2017
+image:
+- Visual Studio 2017
+- Ubuntu
 
 configuration: Release
 
@@ -31,8 +33,16 @@ assembly_info:
   assembly_informational_version: '{version}'
 
 before_build:
-- ps: (Get-Content Source\WHIP_LRU\Program.cs) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2017"' | Set-Content Source\WHIP_LRU\Program.cs
-- ps: (Get-Content Source\RollbarCrashReporter\CrashReporter.cs) -replace 'COMPILED_BY = "?mono?"', 'COMPILED_BY = "VS2017"' | Set-Content Source\RollbarCrashReporter\CrashReporter.cs
+- ps: |
+    if ($isLinux) {
+      $env:COMPILED_BY = "Mono"
+      $env:EDITION = "mono"
+    } else {
+      $env:COMPILED_BY = "VS2017"
+      $env:EDITION = "dotnet"
+    }
+- ps: (Get-Content Source\WHIP_LRU\Program.cs) -replace 'COMPILED_BY = "?mono?"', `"COMPILED_BY = "$env:COMPILED_BY`"" | Set-Content Source\WHIP_LRU\Program.cs
+- ps: (Get-Content Source\RollbarCrashReporter\CrashReporter.cs) -replace 'COMPILED_BY = "?mono?"', "COMPILED_BY = `"$env:COMPILED_BY`"" | Set-Content Source\RollbarCrashReporter\CrashReporter.cs
 - nuget restore WHIP_LRU.sln
 
 build:
@@ -55,7 +65,7 @@ after_build:
       (Get-Content bin\WHIP_LRU.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\WHIP_LRU.exe.config
       (Get-Content bin\RollbarCrashReporter.exe.config) -replace 'param name="Environment" value="development"', 'param name="Environment" value="test"' | Set-Content bin\RollbarCrashReporter.exe.config
     }
-- rename bin WHIP-LRU
+- ps: Rename-Item -Path bin -NewName WHIP-LRU
 
 test: off
 #  assemblies:
@@ -64,7 +74,7 @@ test: off
 
 artifacts:
 - path: WHIP-LRU
-  name: WHIP-LRU-dotnet
+  name: WHIP-LRU-$(EDITION)
   type: zip
 
 deploy:
