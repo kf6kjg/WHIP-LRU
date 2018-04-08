@@ -28,9 +28,9 @@ namespace WHIP_LRU {
 
 		private static readonly string COMPILED_BY = "?mono?"; // Replaced during automatic packaging.
 
-		private static readonly string DEFAULT_DB_FOLDER_PATH = "localStorage";
+		private static readonly string DEFAULT_DB_FOLDER_PATH = "";
 
-		private static readonly string DEFAULT_WRITECACHE_FILE_PATH = "whiplru.wcache";
+		private static readonly string DEFAULT_WRITECACHE_FILE_PATH = "";
 
 		private static readonly uint DEFAULT_WRITECACHE_RECORD_COUNT = 1024U * 1024U * 1024U/*1GB*/ / 17 /*WriteCacheNode.BYTE_SIZE*/;
 
