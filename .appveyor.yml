@@ -41,7 +41,7 @@ before_build:
       $env:COMPILED_BY = "VS2017"
       $env:EDITION = "dotnet"
     }
-- ps: (Get-Content Source\WHIP_LRU\Program.cs) -replace 'COMPILED_BY = "?mono?"', `"COMPILED_BY = "$env:COMPILED_BY`"" | Set-Content Source\WHIP_LRU\Program.cs
+- ps: (Get-Content Source\WHIP_LRU\Program.cs) -replace 'COMPILED_BY = "?mono?"', "COMPILED_BY = `"$env:COMPILED_BY`"" | Set-Content Source\WHIP_LRU\Program.cs
 - ps: (Get-Content Source\RollbarCrashReporter\CrashReporter.cs) -replace 'COMPILED_BY = "?mono?"', "COMPILED_BY = `"$env:COMPILED_BY`"" | Set-Content Source\RollbarCrashReporter\CrashReporter.cs
 - nuget restore WHIP_LRU.sln
 
