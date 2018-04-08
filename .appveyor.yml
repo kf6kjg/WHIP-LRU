@@ -42,6 +42,9 @@ build:
   publish_nuget: false
   publish_nuget_symbols: false
 
+platform:
+  - x64
+
 after_build:
 - ps: >-
     if ($env:APPVEYOR_REPO_TAG -eq "true") {
