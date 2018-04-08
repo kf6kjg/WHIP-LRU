@@ -128,8 +128,10 @@ namespace WHIP_LRU {
 				var serversRead = GetServers(configSource, configRead, _assetServersByName);
 				var serversWrite = GetServers(configSource, configWrite, _assetServersByName);
 
-				var chattelConfigRead = GetConfig(configRead, serversRead);
-				var chattelConfigWrite = GetConfig(configWrite, serversWrite);
+				var localStorageConfig = configSource.Configs["LocalStorage"];
+
+				var chattelConfigRead = GetConfig(localStorageConfig, serversRead);
+				var chattelConfigWrite = GetConfig(localStorageConfig, serversWrite);
 
 				var serverConfig = configSource.Configs["Server"];
 
@@ -140,8 +142,6 @@ namespace WHIP_LRU {
 					password = WHIPServer.DEFAULT_PASSWORD;
 				}
 				var listenBacklogLength = (uint?)serverConfig?.GetInt("ConnectionQueueLength", (int)WHIPServer.DEFAULT_BACKLOG_LENGTH) ?? WHIPServer.DEFAULT_BACKLOG_LENGTH;
-
-				var localStorageConfig = configSource.Configs["LocalStorage"];
 
 				var maxAssetLocalStorageDiskSpaceByteCount = (ulong?)localStorageConfig?.GetLong("MaxDiskSpace", (long)AssetLocalStorageLmdbPartitionedLRU.DB_MAX_DISK_BYTES_MIN_RECOMMENDED) ?? AssetLocalStorageLmdbPartitionedLRU.DB_MAX_DISK_BYTES_MIN_RECOMMENDED;
 				var negativeCacheItemLifetime = TimeSpan.FromSeconds((uint?)localStorageConfig?.GetInt("NegativeCacheItemLifetimeSeconds", (int)StorageManager.DEFAULT_NC_LIFETIME_SECONDS) ?? StorageManager.DEFAULT_NC_LIFETIME_SECONDS);
@@ -327,9 +327,9 @@ namespace WHIP_LRU {
 			return serialParallelAssetServers;
 		}
 
-		private static ChattelConfiguration GetConfig(IConfig assetConfig, IEnumerable<IEnumerable<IAssetServer>> serialParallelAssetServers) {
+		private static ChattelConfiguration GetConfig(IConfig localStorageConfig, IEnumerable<IEnumerable<IAssetServer>> serialParallelAssetServers) {
 			// Set up local storage
-			var localStoragePathRead = assetConfig?.GetString("DatabaseFolderPath", DEFAULT_DB_FOLDER_PATH) ?? DEFAULT_DB_FOLDER_PATH;
+			var localStoragePathRead = localStorageConfig?.GetString("DatabaseFolderPath", DEFAULT_DB_FOLDER_PATH) ?? DEFAULT_DB_FOLDER_PATH;
 
 			DirectoryInfo localStorageFolder = null;
 
@@ -345,8 +345,8 @@ namespace WHIP_LRU {
 			}
 
 			// Set up write cache
-			var writeCachePath = assetConfig?.GetString("WriteCacheFilePath", DEFAULT_WRITECACHE_FILE_PATH) ?? DEFAULT_WRITECACHE_FILE_PATH;
-			var writeCacheRecordCount = (uint)Math.Max(0, assetConfig?.GetLong("WriteCacheRecordCount", DEFAULT_WRITECACHE_RECORD_COUNT) ?? DEFAULT_WRITECACHE_RECORD_COUNT);
+			var writeCachePath = localStorageConfig?.GetString("WriteCacheFilePath", DEFAULT_WRITECACHE_FILE_PATH) ?? DEFAULT_WRITECACHE_FILE_PATH;
+			var writeCacheRecordCount = (uint)Math.Max(0, localStorageConfig?.GetLong("WriteCacheRecordCount", DEFAULT_WRITECACHE_RECORD_COUNT) ?? DEFAULT_WRITECACHE_RECORD_COUNT);
 
 			if (string.IsNullOrWhiteSpace(writeCachePath) || writeCacheRecordCount <= 0 || localStorageFolder == null) {
 				LOG.Warn($"WriteCacheFilePath is empty, WriteCacheRecordCount is zero, or caching is disabled. Crash recovery will be compromised.");
