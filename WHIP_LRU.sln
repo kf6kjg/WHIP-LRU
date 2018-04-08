@@ -28,8 +28,8 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|x64.Build.0 = Debug|Any CPU
+		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|x64.ActiveCfg = Debug|x64
+		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|x64.Build.0 = Debug|x64
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Debug|x86.Build.0 = Debug|Any CPU
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -40,8 +40,8 @@ Global
 		{089E059C-C6DE-4755-AF29-9797880A22E4}.Release|x86.Build.0 = Release|Any CPU
 		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|x64.Build.0 = Debug|Any CPU
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|x64.ActiveCfg = Debug|x64
+		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|x64.Build.0 = Debug|x64
 		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Debug|x86.Build.0 = Debug|Any CPU
 		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -52,8 +52,8 @@ Global
 		{E083B367-9134-4CF5-9F9B-69E5EAF202FB}.Release|x86.Build.0 = Release|Any CPU
 		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|x64.Build.0 = Debug|Any CPU
+		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|x64.ActiveCfg = Debug|x64
+		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|x64.Build.0 = Debug|x64
 		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Debug|x86.Build.0 = Debug|Any CPU
 		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -64,8 +64,8 @@ Global
 		{4FB44EC3-04FE-4B41-8EB3-5C136C5713E1}.Release|x86.Build.0 = Release|Any CPU
 		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|x64.Build.0 = Debug|Any CPU
+		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|x64.ActiveCfg = Debug|x64
+		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|x64.Build.0 = Debug|x64
 		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Debug|x86.Build.0 = Debug|Any CPU
 		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -76,8 +76,8 @@ Global
 		{CB2BC7C3-389A-4B41-B82E-6CC8508F1D9E}.Release|x86.Build.0 = Release|Any CPU
 		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Debug|x64.Build.0 = Debug|Any CPU
+		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Debug|x64.ActiveCfg = Debug|x64
+		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Debug|x64.Build.0 = Debug|x64
 		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Debug|x86.Build.0 = Debug|Any CPU
 		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -88,8 +88,8 @@ Global
 		{C8143368-E4E5-430E-8E21-EE78A923F4DF}.Release|x86.Build.0 = Release|Any CPU
 		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Debug|x64.Build.0 = Debug|Any CPU
+		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Debug|x64.ActiveCfg = Debug|x64
+		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Debug|x64.Build.0 = Debug|x64
 		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Debug|x86.Build.0 = Debug|Any CPU
 		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -100,8 +100,8 @@ Global
 		{A488BD7A-3684-4C9D-AB74-4D668F54830E}.Release|x86.Build.0 = Release|Any CPU
 		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x64.Build.0 = Debug|Any CPU
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x64.ActiveCfg = Debug|x64
+		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x64.Build.0 = Debug|x64
 		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Debug|x86.Build.0 = Debug|Any CPU
 		{819A83D1-B0E8-4464-9E93-C7C77DBF8DA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -114,11 +114,14 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {35DB155C-6BB5-49C2-9FEE-12D388E48D48}
+	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
 		$0.DotNetNamingPolicy = $1
 		$1.DirectoryNamespaceAssociation = PrefixedFlat
-		$0.TextStylePolicy = $2
+		$0.TextStylePolicy = $13
 		$2.FileWidth = 120
 		$2.inheritsSet = null
 		$2.inheritsScope = text/plain
@@ -154,10 +157,8 @@ Global
 		$0.VersionControlPolicy = $10
 		$0.XmlFormattingPolicy = $11
 		$11.scope = application/xml
-		$0.TextStylePolicy = $12
 		$12.inheritsSet = null
 		$12.scope = text/x-csharp
-		$0.TextStylePolicy = $13
 		$13.FileWidth = 80
 		$13.TabWidth = 2
 		$13.IndentWidth = 2
