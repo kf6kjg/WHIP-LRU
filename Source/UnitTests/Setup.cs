@@ -35,9 +35,9 @@ using NUnit.Framework;
 namespace UnitTests {
 	[SetUpFixture]
 	public sealed class Setup {
-		private readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test";
+		private readonly string DATABASE_FOLDER_PATH = Path.Combine(TestContext.CurrentContext.TestDirectory, "test");
 		private const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue;
-		private readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.whipwcache";
+		private readonly string WRITE_CACHE_FILE_PATH = Path.Combine(TestContext.CurrentContext.TestDirectory, "test.whipwcache");
 		private const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 
 		private WhipLru _service;

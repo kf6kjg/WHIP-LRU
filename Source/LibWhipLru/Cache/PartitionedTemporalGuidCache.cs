@@ -371,7 +371,7 @@ namespace LibWhipLru.Cache {
 				}
 
 				Created = DateTimeOffset.UtcNow;
-				DiskPath = Path.Combine(basePath, Created.ToString("s"));
+				DiskPath = Path.Combine(basePath, Created.ToString("s").Replace(":", ""));
 
 				partitionCreationCallback(DiskPath);
 			}

@@ -33,7 +33,7 @@ using NUnit.Framework;
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	public static class TestAssetLocalStorageLmdb_Ctor3NoLruPurge {
-		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb";
+		public static readonly string DATABASE_FOLDER_PATH = System.IO.Path.Combine(TestContext.CurrentContext.TestDirectory, "test_ac_lmdb");
 		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue/*Min value to get tests to run*/;
 
 		private static ChattelConfiguration _chattelConfigRead;

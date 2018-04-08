@@ -33,7 +33,7 @@ using NUnit.Framework;
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	public static class TestPartitionedTemporalGuidCache {
-		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb";
+		public static readonly string DATABASE_FOLDER_PATH = Path.Combine(TestContext.CurrentContext.TestDirectory, "test_ac_lmdb");
 
 		public static void CleanLocalStorageFolder(string dbFolderPath, string writeCacheFilePath) {
 #pragma warning disable RECS0022 // A catch clause that catches System.Exception and has an empty body

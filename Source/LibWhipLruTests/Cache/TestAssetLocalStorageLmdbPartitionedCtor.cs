@@ -33,7 +33,7 @@ using NUnit.Framework;
 namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	public static class TestAssetLocalStorageLmdbPartitionedLRUCtor {
-		public static readonly string DATABASE_FOLDER_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_ac_lmdb";
+		public static readonly string DATABASE_FOLDER_PATH = Path.Combine(TestContext.CurrentContext.TestDirectory, "test_ac_lmdb");
 		public const ulong DATABASE_MAX_SIZE_BYTES = uint.MaxValue/*Min value to get tests to run*/;
 		public static readonly TimeSpan DATABASE_PARTITION_INTERVAL = TimeSpan.FromSeconds(1);
 

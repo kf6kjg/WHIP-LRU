@@ -39,7 +39,7 @@ namespace LibWhipLruTests.Cache {
 	[TestFixture]
 	[NonParallelizable]
 	public static class TestStorageManager {
-		public static readonly string WRITE_CACHE_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test_sm.whipwcache";
+		public static readonly string WRITE_CACHE_FILE_PATH = Path.Combine(TestContext.CurrentContext.TestDirectory, "test_sm.whipwcache");
 		public const uint WRITE_CACHE_MAX_RECORD_COUNT = 8;
 
 		private static readonly log4net.ILog LOG = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);

@@ -35,7 +35,7 @@ namespace LibWhipLruTests.Util {
 	[TestFixture]
 	[NonParallelizable]
 	public static class TestPIDFileManager {
-		public static readonly string PID_FILE_PATH = $"{TestContext.CurrentContext.TestDirectory}/test.pid";
+		public static readonly string PID_FILE_PATH = Path.Combine(TestContext.CurrentContext.TestDirectory, "test.pid");
 		public static readonly string PID_FILE_PATH_AUTO = $"{Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName)}.pid";
 
 		/// <summary>
