@@ -81,7 +81,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: "tZGZ+LdhQz6wpgiCc15gbkDyu7l2Y3VzKPAzu9vhCiMdfuppmZwGYo/3luQSWBtq"
-  artifact: WHIP-LRU-dotnet
+  artifact: WHIP-LRU-$(EDITION)
   draft: true
   prerelease: false
   on:
