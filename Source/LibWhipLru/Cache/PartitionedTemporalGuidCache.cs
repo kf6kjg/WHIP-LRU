@@ -170,6 +170,9 @@ namespace LibWhipLru.Cache {
 				return true;
 			}
 
+			// Failure to add means that it's already known and this should be treated as a refresh of expiry.
+			RefreshAssetExpiry(meta.Id);
+
 			partitionPath = null;
 			return false;
 		}
