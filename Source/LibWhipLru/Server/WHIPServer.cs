@@ -266,13 +266,28 @@ namespace LibWhipLru.Server {
 
 			state.Client.RequestInfo = null;
 			state.Message = message;
-			state.WorkSocket.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(ReadCallback), state);
+			try {
+				state.WorkSocket.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(ReadCallback), state);
+			}
+			catch (Exception e) {
+				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught while attempting to start getting data.", e);
+				Send(ref state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
+				return;
+			}
 		}
 
 		private void ContinueReceive(ref StateObject state, AsyncCallback callback) {
 			Contract.Requires(callback != null);
 
-			state.WorkSocket.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(ReadCallback), state);
+			try {
+				state.WorkSocket.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, SocketFlags.None, new AsyncCallback(ReadCallback), state);
+			}
+			catch (Exception e) {
+				LOG.Warn($"{_localEndPoint}, {state.Client.RemoteEndpoint}, {state.Client.State} - Exception caught while attempting to continue getting data.", e);
+				Send(ref state, new ServerResponseMsg(ServerResponseMsg.ResponseCode.RC_ERROR, Guid.Empty));
+				StartReceive(ref state, state.Client.State == State.Challenged ? (IByteArrayAppendable)new AuthResponseMsg() : new ClientRequestMsg(), ReadCallback);
+				return;
+			}
 		}
 
 		private void ReadCallback(IAsyncResult ar) {
