@@ -43,7 +43,7 @@ namespace LibWhipLru.Server {
 		public const string DEFAULT_ADDRESS = "*";
 		public const string DEFAULT_PASSWORD = null;
 		public const uint DEFAULT_PORT = 32700;
-		public const uint DEFAULT_BACKLOG_LENGTH = 100;
+		public const uint DEFAULT_BACKLOG_LENGTH = 10000;
 
 		// Thread signal.
 		private readonly ManualResetEvent _allDone = new ManualResetEvent(false);
