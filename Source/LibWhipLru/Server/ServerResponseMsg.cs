@@ -119,7 +119,7 @@ namespace LibWhipLru.Server {
 			var idBytes = Encoding.ASCII.GetBytes(_assetId.ToString("N"));
 			Buffer.BlockCopy(idBytes, 0, output, 1, idBytes.Length);
 
-			Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(dataSize)), 0, output, DATA_SZ_TAG_LOC, 4);
+			Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(_data.Length)), 0, output, DATA_SZ_TAG_LOC, 4);
 
 			if (_data != null) {
 				Buffer.BlockCopy(_data, 0, output, HEADER_SIZE, _data.Length * sizeof(byte)); // Yes, sizeof(byte) is redundant, but it's also good documentation.
