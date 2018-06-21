@@ -380,58 +380,59 @@ namespace LibWhipLru.Cache {
 		private void WriteAssetToDisk(StratusAsset asset) {
 			ulong spaceNeeded;
 
-			_activeIds.TryAdd(asset.Id, 0, out var dbPath); // Register the asset as existing, but not yet on disk; size of 0. Failure simply indicates that the asset ID already exists.
+			// Register the asset as existing, but not yet on disk; size of 0. Failure simply indicates that the asset ID already exists.
+			if (_activeIds.TryAdd(asset.Id, 0, out var dbPath)) {
+				using (var memStream = new MemoryStream()) {
+					ProtoBuf.Serializer.Serialize(memStream, asset); // This can throw, but only if something is VERY and irrecoverably wrong.
+					spaceNeeded = (ulong)memStream.Length;
+					memStream.Position = 0;
 
-			using (var memStream = new MemoryStream()) {
-				ProtoBuf.Serializer.Serialize(memStream, asset); // This can throw, but only if something is VERY and irrecoverably wrong.
-				spaceNeeded = (ulong)memStream.Length;
-				memStream.Position = 0;
-
-				try {
-					CheckDiskAndCleanup(spaceNeeded);
-				}
-				catch (Exception e) {
-					LOG.Warn($"Got an exceptions while attempting to clear some space just before writing to disk.", e);
-				}
-
-				var buffer = new byte[spaceNeeded];
-
-				Buffer.BlockCopy(memStream.GetBuffer(), 0, buffer, 0, (int)spaceNeeded);
-
-				LightningException lightningException = null;
-
-				if (_dbEnvironments.TryGetValue(dbPath, out var dbEnv)) {
 					try {
-						using (var tx = dbEnv.BeginTransaction())
-						using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
-							tx.Put(db, asset.Id.ToByteArray(), buffer);
-							tx.Commit();
-						}
-
-						_activeIds.AssetSize(asset.Id, spaceNeeded); // Set the size now that it's on disk.
-
-						return;
+						CheckDiskAndCleanup(spaceNeeded);
 					}
-					catch (LightningException e) {
-						lightningException = e;
+					catch (Exception e) {
+						LOG.Warn($"Got an exceptions while attempting to clear some space just before writing to disk.", e);
 					}
-				}
 
-				if (lightningException != null) {
-					switch (lightningException.StatusCode) {
-						case -30799:
-							//LightningDB.Native.Lmdb.MDB_KEYEXIST: Not available in lib ATM...
-							// Ignorable.
-							LOG.Warn($"{asset.Id} already exists according to local storage. Adding to memory list.", lightningException);
-							lightningException = null;
+					var buffer = new byte[spaceNeeded];
 
-							if (!_activeIds.TryAdd(asset.Id, spaceNeeded, out var dbPathx)) {
-								_activeIds.AssetSize(asset.Id, spaceNeeded);
+					Buffer.BlockCopy(memStream.GetBuffer(), 0, buffer, 0, (int)spaceNeeded);
+
+					LightningException lightningException = null;
+
+					if (_dbEnvironments.TryGetValue(dbPath, out var dbEnv)) {
+						try {
+							using (var tx = dbEnv.BeginTransaction())
+							using (var db = tx.OpenDatabase(DB_NAME, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create })) {
+								tx.Put(db, asset.Id.ToByteArray(), buffer);
+								tx.Commit();
 							}
 
-							throw new AssetExistsException(asset.Id);
-						default:
-							throw new AssetWriteException(asset.Id, lightningException);
+							_activeIds.AssetSize(asset.Id, spaceNeeded); // Set the size now that it's on disk.
+
+							return;
+						}
+						catch (LightningException e) {
+							lightningException = e;
+						}
+					}
+
+					if (lightningException != null) {
+						switch (lightningException.StatusCode) {
+							case -30799:
+								//LightningDB.Native.Lmdb.MDB_KEYEXIST: Not available in lib ATM...
+								// Ignorable.
+								LOG.Warn($"{asset.Id} already exists according to local storage. Adding to memory list.", lightningException);
+								lightningException = null;
+
+								if (!_activeIds.TryAdd(asset.Id, spaceNeeded, out var dbPathx)) {
+									_activeIds.AssetSize(asset.Id, spaceNeeded);
+								}
+
+								throw new AssetExistsException(asset.Id);
+							default:
+								throw new AssetWriteException(asset.Id, lightningException);
+						}
 					}
 				}
 			}

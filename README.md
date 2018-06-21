@@ -1,5 +1,4 @@
 <div style="float:right">
-<a href="https://travis-ci.org/kf6kjg/WHIP-LRU">Travis-CI <img alt="Travis-CI Build Status" src="https://travis-ci.org/kf6kjg/WHIP-LRU.svg?branch=master" style="display:block;"/></a>
 <a href="https://ci.appveyor.com/project/kf6kjg/WHIP-LRU">Appveyor <img alt="Appveyor Build Status" src="https://ci.appveyor.com/api/projects/status/github/kf6kjg/WHIP-LRU?svg=true&branch=master" style="display:block;"/></a>
 </div>
 
